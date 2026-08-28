@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Application.Common.Interfaces.Repositories;
@@ -38,6 +39,8 @@ public class CreateGrantCommandHandlerTests
             .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
             .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
             .AddScoped<IDelegationRepository>(_ => new DelegationRepository(_context))
+            .AddScoped<IAuthorizationAuditRepository>(_ => new AuthorizationAuditRepository(_context))
+            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
 

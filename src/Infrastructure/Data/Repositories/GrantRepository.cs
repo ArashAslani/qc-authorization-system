@@ -14,12 +14,22 @@ public sealed class GrantRepository(ApplicationDbContext context) : IGrantReposi
         return Task.CompletedTask;
     }
 
+    public Task<Grant?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        context.Grants.FindAsync([id], cancellationToken).AsTask();
+
+    public Task RemoveAsync(Grant grant, CancellationToken cancellationToken = default)
+    {
+        context.Grants.Remove(grant);
+        return Task.CompletedTask;
+    }
+
     public async Task<IReadOnlyList<Grant>> GetByPermissionAndResourceAsync(
         int permissionId,
         string? resource,
         CancellationToken cancellationToken = default) =>
         await context.Grants
             .AsNoTracking()
+            .Include(g => g.Constraints)
             .Where(g => g.PermissionId == permissionId
                      && (g.Resource == null || g.Resource == resource))
             .ToListAsync(cancellationToken);

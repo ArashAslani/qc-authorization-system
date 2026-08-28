@@ -1,3 +1,4 @@
+using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
@@ -25,11 +26,16 @@ public record CreateGrantCommand(
 public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, int>
 {
     private readonly IGrantRepository _grants;
+    private readonly IAuthorizationAuditService _audit;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateGrantCommandHandler(IGrantRepository grants, IUnitOfWork unitOfWork)
+    public CreateGrantCommandHandler(
+        IGrantRepository grants,
+        IAuthorizationAuditService audit,
+        IUnitOfWork unitOfWork)
     {
         _grants = grants;
+        _audit = audit;
         _unitOfWork = unitOfWork;
     }
 
@@ -51,6 +57,11 @@ public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, int
             request.ScopeIdentifier);
 
         await _grants.AddAsync(grant, cancellationToken);
+        await _audit.RecordAsync(
+            "GrantCreated",
+            null,
+            $"grantId=pending;subject={grant.SubjectType}:{grant.SubjectId};permissionId={grant.PermissionId}",
+            cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return grant.Id;
     }

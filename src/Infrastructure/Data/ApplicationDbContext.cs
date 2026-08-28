@@ -1,4 +1,5 @@
 using System.Reflection;
+using qc_authorization.Domain.Authorization.Audit;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RoleGroupMember> RoleGroupMembers => Set<RoleGroupMember>();
     public DbSet<Grant> Grants => Set<Grant>();
     public DbSet<Delegation> Delegations => Set<Delegation>();
+    public DbSet<AuthorizationAuditEntry> AuthorizationAuditEntries => Set<AuthorizationAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

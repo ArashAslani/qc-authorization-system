@@ -6,6 +6,10 @@ public interface IGrantRepository
 {
     Task AddAsync(Grant grant, CancellationToken cancellationToken = default);
 
+    Task<Grant?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    Task RemoveAsync(Grant grant, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Grant>> GetByPermissionAndResourceAsync(
         int permissionId,
         string? resource,
