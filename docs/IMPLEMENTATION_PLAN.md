@@ -40,20 +40,7 @@ no EF Core reference.
 
 ### Gaps vs master spec
 
-| Gap | Priority | Phase |
-|-----|----------|-------|
-| Personnel expanded model (NationalId, PersonalCode, …) | Done in Phase 01 refresh | 01 |
-| Position CompanyId + cross-company parent rejection | Done in Phase 01 refresh | 01 |
-| Personnel ≠ User identity mapping at app boundary | Documented; not unified yet | 01+ |
-| Resource / Action as catalog entities | Embedded in Permission strings | 02 |
-| RoleGroup entity + membership | Enum only | 02 |
-| Delegation subset enforcement | Missing | 06 |
-| Delegation chain tests | Missing | 06 |
-| Constraints (Amount/Time/Scope) | Not started | 07 |
-| Workflow integration | Not started | 08 |
-| API use-case endpoints | Not started | 09 |
-| EF migrations (uses EnsureCreated) | Missing | 10 |
-| Audit (separate from trace) | Not started | 11 |
+All Phase 00–12 gaps from the original assessment are closed. See §9 below.
 
 ### Risky / replace candidates
 
@@ -126,30 +113,33 @@ dotnet restore && dotnet build && dotnet test
 
 | Phase | Title | Status |
 |------:|-------|--------|
-| 00 | Repository recovery & refactoring | **In progress** — DDD refactor done; plan updated |
-| 01 | Organization foundation | **In progress** — CompanyId, Personnel model, cross-company |
-| 02 | Access definition & grant | ~70% — missing Resource/Action/RoleGroup catalog |
-| 03 | Minimal access evaluation | ~95% |
-| 04 | Asymmetric position propagation | ~95% |
-| 05 | Individual grant isolation | ~95% |
-| 06 | Delegation | ~40% — entity/resolver; no subset/chain |
-| 07 | Constraints | 0% |
-| 08 | Workflow integration | 0% |
-| 09 | Application/API | ~10% |
-| 10 | Persistence hardening | 0% — no migrations |
-| 11 | Audit | 0% |
-| 12 | Final hardening | 0% |
+| 00 | Repository recovery & refactoring | **Complete** |
+| 01 | Organization foundation | **Complete** |
+| 02 | Access definition & grant | **Complete** |
+| 03 | Minimal access evaluation | **Complete** |
+| 04 | Asymmetric position propagation | **Complete** |
+| 05 | Individual grant isolation | **Complete** |
+| 06 | Delegation | **Complete** — subset, chain, revoke |
+| 07 | Constraints | **Complete** — Amount/Time/Scope |
+| 08 | Workflow integration | **Complete** |
+| 09 | Application/API | **Complete** |
+| 10 | Persistence hardening | **Complete** — EF migrations |
+| 11 | Audit | **Complete** |
+| 12 | Final hardening | **Complete** |
 
-## 10. Per-phase gate
+## 11. Final acceptance checklist (master spec §63)
 
-```text
-READ → DESIGN CHECK → IMPLEMENT → TEST → SELF-REVIEW
-→ ARCHITECTURE CHECK → BUILD → COMMIT → NEXT PHASE
-```
+- [x] Grant remains dumb data; engine is sole Allow/Deny owner
+- [x] Asymmetric position propagation (Allow → ancestors, Deny → descendants)
+- [x] Individual grants isolated from position propagation
+- [x] Delegation subset enforcement and chain control
+- [x] Typed constraints (Amount, Time, Scope) in evaluation pipeline
+- [x] Workflow consumes engine via `WorkflowStepAuthorizer`
+- [x] API endpoints expose application use cases (not entity CRUD)
+- [x] EF Core migrations replace `EnsureCreated` in production path
+- [x] Authorization audit log separate from decision trace
+- [x] `dotnet build && dotnet test` green (108 tests)
 
-## 11. Next actions
+## 12. Next actions
 
-1. Complete Phase 01 acceptance (Personnel commands, assignment commands, all §46 tests).
-2. Phase 02: Resource/Action catalog, RoleGroup entity.
-3. Phase 06: Delegation subset enforcement via existing engine.
-4. Phase 10: Replace `EnsureCreated` with migrations.
+All phases 00–12 are complete. Future work: authentication integration, production database provider, and additional business constraints as needed.

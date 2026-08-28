@@ -60,9 +60,23 @@ in `docs/ARCHITECTURE.md`.
 dotnet run --project src/Web
 ```
 
+Apply database migrations (development auto-runs on startup; manual):
+
+```bash
+dotnet ef database update --project src/Infrastructure --startup-project src/Web
+```
+
 The default URL is printed by ASP.NET Core; OpenAPI is available at
-`/openapi/v1.json`. The database file is created next to the Web project
-on first run.
+`/openapi/v1.json`. The SQLite database file is created on first run.
+
+### API endpoint groups
+
+| Group | Use cases |
+|-------|-----------|
+| `OrganizationEndpoints` | Personnel, positions, assignments, re-parent |
+| `AuthorizationEndpoints` | Create grant, evaluate access |
+| `AccessDefinitionEndpoints` | Permissions, roles, role groups |
+| `DelegationEndpoints` | Create/revoke delegation |
 
 ## Authorization concepts
 
@@ -76,22 +90,26 @@ on first run.
   enforcing `Delegated ⊆ Effective Access of Delegator`.
 - **Access Evaluation Engine** — the only place that returns
   Allow / Deny.
-- **Decision Trace** — explains why a decision was made.
+- **Decision Trace** — explains why a decision was made (per evaluation).
+- **Authorization Audit** — records what changed (grant/delegation lifecycle).
 
 ## Implementation phases
 
 See [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the
-full per-phase plan, including the mandatory test matrix per phase and
-the per-phase commit message. Every phase ends with a build / test
-gate, a commit, and a push to `main`.
+full per-phase plan. Phases 00–12 are **complete**; each phase was gated
+with `dotnet build && dotnet test` and a local commit.
 
 ## Database
 
 SQLite via EF Core 10. The provider is selected by connection string
 (`appsettings.json`); switching to SQL Server or PostgreSQL is a
 one-line change in `src/Infrastructure/DependencyInjection.cs`. Migrations
-live under `src/Infrastructure/Data/Migrations/` and are created with
-`dotnet ef migrations add ...`.
+live under `src/Infrastructure/Data/Migrations/`:
+
+```bash
+dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/Web
+dotnet ef database update --project src/Infrastructure --startup-project src/Web
+```
 
 ## License
 

@@ -38,6 +38,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IPositionRepository, PositionRepository>();
         builder.Services.AddScoped<IPositionAssignmentRepository, PositionAssignmentRepository>();
         builder.Services.AddScoped<IDelegationRepository, DelegationRepository>();
+        builder.Services.AddScoped<IAuthorizationAuditRepository, AuthorizationAuditRepository>();
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 

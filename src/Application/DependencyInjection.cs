@@ -1,5 +1,8 @@
 using System.Reflection;
+using qc_authorization.Application.Authorization.Audit;
+using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
+using qc_authorization.Application.Workflow;
 using qc_authorization.Application.Common.Behaviours;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Services;
@@ -20,6 +23,9 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>();
         builder.Services.AddScoped<IAccessEvaluator, AccessEvaluator>();
+        builder.Services.AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>();
+        builder.Services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
+        builder.Services.AddScoped<WorkflowStepAuthorizer>();
 
         builder.Services.AddMediatR(cfg =>
         {

@@ -10,8 +10,8 @@ in the test matrix defined by the architecture spec.
 | Project | Purpose | What lives here |
 |---|---|---|
 | `tests/Domain.UnitTests` | Pure C# entity / value-object / domain-service tests | Hierarchy traversal, cycle detection, propagation rules, individual isolation |
-| `tests/Application.UnitTests` | Application service / use-case tests | Use-case handlers, validators, evaluator pipeline (with in-memory fakes) |
-| `tests/Infrastructure.IntegrationTests` | EF Core + SQLite round-trip tests | Persistence, migrations, repository contracts |
+| `tests/Application.UnitTests` | Application service / use-case tests | Evaluator pipeline, propagation, delegation, workflow |
+| `tests/Infrastructure.IntegrationTests` | EF Core round-trip tests | Persistence, migrations, audit, API queries |
 | `tests/ArchitectureTests` | NetArchTest layering rules | Dependency direction; no EF Core in Domain; no Infrastructure in Web |
 
 ## Build / Test gate
