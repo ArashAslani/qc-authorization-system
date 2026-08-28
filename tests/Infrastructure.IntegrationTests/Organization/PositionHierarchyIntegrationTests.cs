@@ -8,6 +8,7 @@ using Shouldly;
 namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
 
 [TestFixture]
+[NonParallelizable]
 public class PositionHierarchyIntegrationTests
 {
     private ApplicationDbContext _context = null!;
@@ -17,9 +18,9 @@ public class PositionHierarchyIntegrationTests
     public async Task SetUp()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"qc-it-{Guid.NewGuid()}")
+            .UseInMemoryDatabase($"qc-it-{Guid.NewGuid():N}")
+            .EnableServiceProviderCaching(false)
             .Options;
-
         _context = new ApplicationDbContext(options);
         _hierarchy = new PositionHierarchyService();
         await _context.Database.EnsureCreatedAsync();
@@ -28,8 +29,14 @@ public class PositionHierarchyIntegrationTests
     [TearDown]
     public async Task TearDown()
     {
-        await _context.Database.EnsureDeletedAsync();
-        await _context.DisposeAsync();
+        try
+        {
+            await _context.Database.EnsureDeletedAsync();
+        }
+        finally
+        {
+            await _context.DisposeAsync();
+        }
     }
 
     [Test]
@@ -44,8 +51,11 @@ public class PositionHierarchyIntegrationTests
         await _context.SaveChangesAsync();
 
         var all = await _context.Positions.AsNoTracking().ToListAsync();
-        _hierarchy.Children(all.Single(p => p.Id == root.Id), all).ShouldHaveSingleItem().Code.ShouldBe("CHILD");
-        _hierarchy.Ancestors(all.Single(p => p.Id == child.Id), all).ShouldHaveSingleItem().Id.ShouldBe(root.Id);
+        var rootFromDb = all.Single(p => p.Id == root.Id);
+        var childFromDb = all.Single(p => p.Id == child.Id);
+
+        _hierarchy.Children(rootFromDb, all).ShouldHaveSingleItem().Id.ShouldBe(childFromDb.Id);
+        _hierarchy.Ancestors(childFromDb, all).ShouldHaveSingleItem().Id.ShouldBe(rootFromDb.Id);
     }
 
     [Test]
@@ -57,33 +67,42 @@ public class PositionHierarchyIntegrationTests
         _context.Positions.AddRange(a, b, n);
         await _context.SaveChangesAsync();
 
-        // n is initially a child of a.
         n.ParentId = a.Id;
         await _context.SaveChangesAsync();
 
-        // Re-parent n under b using a fresh, tracked entity.
-        var trackedN = await _context.Positions.FindAsync(n.Id);
-        trackedN!.ParentId = b.Id;
+        var all = await _context.Positions.AsNoTracking().ToListAsync();
+        var aFromDb = all.Single(p => p.Id == a.Id);
+        var bFromDb = all.Single(p => p.Id == b.Id);
+        var nFromDb = all.Single(p => p.Id == n.Id);
+
+        _hierarchy.EnsureValidParenting(nFromDb, bFromDb, all);
+
+        var tracked = await _context.Positions.SingleAsync(p => p.Id == nFromDb.Id);
+        tracked.ParentId = bFromDb.Id;
         await _context.SaveChangesAsync();
 
         var fresh = await _context.Positions.AsNoTracking().ToListAsync();
-        var ancestors = _hierarchy.Ancestors(fresh.Single(p => p.Id == n.Id), fresh);
-        ancestors.ShouldHaveSingleItem().Id.ShouldBe(b.Id);
+        _hierarchy.Ancestors(fresh.Single(p => p.Id == nFromDb.Id), fresh).Single().Id.ShouldBe(bFromDb.Id);
+        _hierarchy.Ancestors(fresh.Single(p => p.Id == aFromDb.Id), fresh).ShouldBeEmpty();
     }
 
     [Test]
     public async Task Re_Parenting_Under_Own_Descendant_Throws()
     {
         var a = new Position { Code = "A", Name = "A" };
-        var b = new Position { Code = "B", Name = "B", ParentId = 1 };
-        var d = new Position { Code = "D", Name = "D", ParentId = 2 };
+        var b = new Position { Code = "B", Name = "B" };
+        var d = new Position { Code = "D", Name = "D" };
         _context.Positions.AddRange(a, b, d);
         await _context.SaveChangesAsync();
 
-        var all = await _context.Positions.AsNoTracking().ToListAsync();
-        var trackedA = all.Single(p => p.Id == a.Id);
-        var trackedD = all.Single(p => p.Id == d.Id);
+        b.ParentId = a.Id;
+        d.ParentId = b.Id;
+        await _context.SaveChangesAsync();
 
-        Should.Throw<HierarchyCycleException>(() => _hierarchy.EnsureValidParenting(trackedA, trackedD, all));
+        var all = await _context.Positions.AsNoTracking().ToListAsync();
+        var aFromDb = all.Single(p => p.Id == a.Id);
+        var dFromDb = all.Single(p => p.Id == d.Id);
+
+        Should.Throw<HierarchyCycleException>(() => _hierarchy.EnsureValidParenting(aFromDb, dFromDb, all));
     }
 }

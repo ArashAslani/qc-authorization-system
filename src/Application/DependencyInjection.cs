@@ -1,4 +1,5 @@
 using System.Reflection;
+using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Behaviours;
 using qc_authorization.Domain.Organization;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,9 @@ public static class DependencyInjection
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         builder.Services.AddSingleton<PositionHierarchyService>();
+
+        builder.Services.AddScoped<ICandidateGrantResolver, DirectCandidateGrantResolver>();
+        builder.Services.AddScoped<IAccessEvaluator, AccessEvaluator>();
 
         builder.Services.AddMediatR(cfg =>
         {
