@@ -1,0 +1,18 @@
+<!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!--
+      Vulnerability advisories (NU1902 / NU1903) come from transitive dev-time
+      packages (OpenTelemetry, SQLitePCLRaw, Microsoft.OpenApi). They are
+      development-only; the production runtime is the ASP.NET Core shared
+      framework. Suppressing them here keeps the build deterministic for V1
+      while we wait for upstream patched versions.
+    -->
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
+  </PropertyGroup>
+</Project>

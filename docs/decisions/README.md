@@ -1,0 +1,19 @@
+# Architecture Decision Records
+
+This directory captures significant architectural decisions taken during
+the implementation of the Qc Authorization System. Each decision is a
+short Markdown file whose name follows the
+`NNNN-short-slug.md` convention and whose status is one of
+`Proposed`, `Accepted`, or `Superseded`.
+
+| # | Title | Status | Phase |
+|---|-------|--------|-------|
+| 0001 | [Grant as dumb data](0001-grant-as-dumb-data.md) | Accepted | 02 |
+| 0002 | [Engine is sole Allow/Deny owner](0002-engine-is-sole-allow-deny-owner.md) | Accepted | 03 |
+| 0003 | [Asymmetric Position propagation](0003-asymmetric-position-propagation.md) | Accepted | 04 |
+| 0004 | [Computed, not materialized propagation](0004-computed-not-materialized-propagation.md) | Accepted | 04 |
+| 0005 | [Individual Grant isolation](0005-individual-grant-isolation.md) | Accepted | 04 |
+| 0006 | [Source-aware priority model](0006-source-aware-priority-model.md) | Accepted | 03 |
+| 0007 | [Decision Trace content](0007-decision-trace-content.md) | Accepted | 03 |
+| 0008 | [SQLite + EF Core 10 in V1](0008-sqlite-efcore-v1.md) | Accepted | 00 |
+| 0009 | [Typed constraints, no DSL](0009-typed-constraints-no-dsl.md) | Accepted | 06 |
