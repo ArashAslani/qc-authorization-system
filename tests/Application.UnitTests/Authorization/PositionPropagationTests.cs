@@ -89,7 +89,18 @@ public class PositionPropagationTests
 
         (await EvaluateForUser(80)).Effect.ShouldBe(Effect.Deny, "user in B");
         (await EvaluateForUser(81)).Effect.ShouldBe(Effect.Deny, "user in C (B's descendant)");
-        (await EvaluateForUser(82)).Effect.ShouldBe(Effect.Deny, "user in A: ancestor must NOT be affected by a Deny propagation");
+        (await EvaluateForUser(82)).Effect.ShouldBe(Effect.Deny, "user in A has no applicable grant when deny is only on descendant B");
+    }
+
+    [Test]
+    public async Task Position_Deny_On_B_Does_Not_Propagate_To_Ancestor_A()
+    {
+        _context.Grants.Add(NewGrant(SubjectType.User, 82, Effect.Allow, SourceType.User, 82, SourcePriority.IndividualOverride));
+        _context.Grants.Add(NewGrant(SubjectType.Position, _b.Id, Effect.Deny, SourceType.Position, _b.Id, SourcePriority.RoleOrRoleGroup));
+        AssignUser(82, _a.Id);
+        await _context.SaveChangesAsync();
+
+        (await EvaluateForUser(82)).Effect.ShouldBe(Effect.Allow, "ancestor must not receive propagated deny from B");
     }
 
     [Test]
