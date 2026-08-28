@@ -4,6 +4,7 @@ using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.ValueObjects;
+using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
 using NUnit.Framework;
 using Shouldly;
@@ -34,9 +35,12 @@ public class AccessEvaluatorTests
             Action = "Read",
         };
         _context.Permissions.Add(_perm);
+
+        // Seed a Position so position-typed tests have something to resolve.
+        _context.Positions.Add(new Position { Id = 200, Code = "TEST-POS", Name = "Test Pos" });
         await _context.SaveChangesAsync();
 
-        _evaluator = new AccessEvaluator(new DirectCandidateGrantResolver(_context));
+        _evaluator = new AccessEvaluator(new PositionAwareCandidateGrantResolver(_context, new PositionHierarchyService()));
     }
 
     [TearDown]

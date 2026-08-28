@@ -14,7 +14,7 @@ public static class DependencyInjection
 
         builder.Services.AddSingleton<PositionHierarchyService>();
 
-        builder.Services.AddScoped<ICandidateGrantResolver, DirectCandidateGrantResolver>();
+        builder.Services.AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>();
         builder.Services.AddScoped<IAccessEvaluator, AccessEvaluator>();
 
         builder.Services.AddMediatR(cfg =>
