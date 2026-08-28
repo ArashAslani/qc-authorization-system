@@ -187,11 +187,27 @@ public sealed class AccessEvaluationEngine
             return true;
         }
 
-        var scopeFromContext = request.Context is not null
-            && request.Context.TryGetValue("Scope", out var v) ? v as string : null;
-        var requestedScope = request.ResourceId ?? scopeFromContext;
+        if (request.Context is not null)
+        {
+            if (request.Context.TryGetValue("Scope", out var v) && v is not null)
+            {
+                if (string.Equals(v.ToString(), g.ScopeIdentifier, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
 
+            if (g.ScopeKind == ScopeKind.Company && request.Context.TryGetValue("CompanyId", out var comp) && comp is not null)
+            {
+                if (string.Equals(comp.ToString(), g.ScopeIdentifier, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        var requestedScope = request.ResourceId;
         return requestedScope is not null
-            && string.Equals(requestedScope, g.ScopeIdentifier, StringComparison.Ordinal);
+            && string.Equals(requestedScope, g.ScopeIdentifier, StringComparison.OrdinalIgnoreCase);
     }
 }
