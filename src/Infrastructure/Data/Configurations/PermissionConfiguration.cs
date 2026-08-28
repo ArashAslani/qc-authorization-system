@@ -16,6 +16,16 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
         builder.Property(p => p.Action).HasMaxLength(50).IsRequired();
         builder.Property(p => p.Description).HasMaxLength(500);
 
+        builder.HasOne(p => p.ResourceCatalog)
+            .WithMany()
+            .HasForeignKey(p => p.ResourceCatalogId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.ActionCatalog)
+            .WithMany()
+            .HasForeignKey(p => p.ActionCatalogId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(p => p.Code).IsUnique();
     }
 }

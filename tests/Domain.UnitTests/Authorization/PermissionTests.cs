@@ -12,7 +12,7 @@ public class PermissionTests
     {
         var p = Permission.Create("PERSONNEL.UPDATE", "Personnel", "Update");
         p.Code.ShouldBe("PERSONNEL.UPDATE");
-        p.Resource.ShouldBe("Personnel");
-        p.Action.ShouldBe("Update");
+        p.Resource.ShouldBe("PERSONNEL");
+        p.Action.ShouldBe("UPDATE");
     }
 }

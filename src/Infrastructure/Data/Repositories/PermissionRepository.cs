@@ -15,6 +15,9 @@ public sealed class PermissionRepository(ApplicationDbContext context) : IPermis
             .FirstOrDefaultAsync(p => p.Code.ToUpper() == normalized, cancellationToken);
     }
 
+    public async Task<Permission?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        await context.Permissions.FindAsync([id], cancellationToken);
+
     public Task AddAsync(Permission permission, CancellationToken cancellationToken = default)
     {
         context.Permissions.Add(permission);

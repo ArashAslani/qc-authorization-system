@@ -13,9 +13,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<PositionAssignment> PositionAssignments => Set<PositionAssignment>();
 
+    public DbSet<ResourceCatalog> ResourceCatalogs => Set<ResourceCatalog>();
+    public DbSet<ActionCatalog> ActionCatalogs => Set<ActionCatalog>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
+    public DbSet<RoleGroupMember> RoleGroupMembers => Set<RoleGroupMember>();
     public DbSet<Grant> Grants => Set<Grant>();
     public DbSet<Delegation> Delegations => Set<Delegation>();
 

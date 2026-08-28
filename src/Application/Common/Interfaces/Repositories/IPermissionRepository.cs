@@ -6,5 +6,7 @@ public interface IPermissionRepository
 {
     Task<Permission?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
 
+    Task<Permission?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
     Task AddAsync(Permission permission, CancellationToken cancellationToken = default);
 }
