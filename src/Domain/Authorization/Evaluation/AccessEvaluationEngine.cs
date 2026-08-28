@@ -1,3 +1,4 @@
+using qc_authorization.Domain.Authorization.Constraints;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.ValueObjects;
 
@@ -105,7 +106,40 @@ public sealed class AccessEvaluationEngine
             return new AccessDecision(Effect.Deny, DecisionReason.OutOfScope, trace);
         }
 
-        var ordered = inScope
+        var constraintPassed = new List<Grant>();
+        foreach (var g in inScope)
+        {
+            if (GrantConstraintEvaluator.AllSatisfied(g, request, out var constraintReason))
+            {
+                constraintPassed.Add(g);
+            }
+            else
+            {
+                rejected.Add(RejectedGrant.For(g, constraintReason ?? "constraint-failed"));
+            }
+        }
+
+        if (constraintPassed.Count == 0)
+        {
+            var trace = new DecisionTrace(
+                traceId,
+                request.SubjectType,
+                request.SubjectId,
+                request.PermissionCode,
+                request.Resource,
+                request.ResourceId,
+                candidates,
+                Array.Empty<Grant>(),
+                rejected,
+                Array.Empty<ConflictResolutionEntry>(),
+                ScopeResult: true,
+                ValidityResult: true,
+                FinalDecision: Effect.Deny,
+                Reason: "constraint-failed");
+            return new AccessDecision(Effect.Deny, DecisionReason.ConstraintFailed, trace);
+        }
+
+        var ordered = constraintPassed
             .OrderByDescending(g => g.Priority)
             .ThenByDescending(g => g.Effect)
             .ToList();
@@ -120,7 +154,7 @@ public sealed class AccessEvaluationEngine
             ? DecisionReason.Allowed
             : DecisionReason.Denied;
 
-        if (inScope.Count > 1)
+        if (constraintPassed.Count > 1)
         {
             reason = decision == Effect.Allow
                 ? DecisionReason.ConflictResolvedByPriority
@@ -135,7 +169,7 @@ public sealed class AccessEvaluationEngine
             request.Resource,
             request.ResourceId,
             candidates,
-            inScope,
+            constraintPassed,
             rejected,
             conflict,
             ScopeResult: true,

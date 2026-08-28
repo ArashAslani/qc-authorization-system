@@ -12,6 +12,7 @@ public enum DecisionReason
     ConflictResolvedByDenyOverAllow = 5,
     Allowed = 6,
     Denied = 7,
+    ConstraintFailed = 8,
 }
 
 /// <summary>

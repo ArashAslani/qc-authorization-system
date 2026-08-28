@@ -1,3 +1,4 @@
+using qc_authorization.Domain.Authorization.Constraints;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Exceptions;
 using qc_authorization.Domain.Authorization.ValueObjects;
@@ -36,6 +37,8 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
     public int Priority { get; private set; }
 
+    public ICollection<GrantConstraint> Constraints { get; private set; } = new List<GrantConstraint>();
+
     public Scope Scope => new(ScopeKind, ScopeIdentifier);
 
     public Validity Validity => new(ValidFrom, ValidTo);
@@ -53,7 +56,8 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
         string? resource = null,
         string? resourceId = null,
         ScopeKind scopeKind = ScopeKind.Unbounded,
-        string? scopeIdentifier = null)
+        string? scopeIdentifier = null,
+        IEnumerable<GrantConstraint>? constraints = null)
     {
         _ = new Validity(validFrom, validTo);
         _ = new Scope(scopeKind, scopeIdentifier);
@@ -63,7 +67,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
             throw new AuthorizationDomainException("SourceId must be a positive identifier.");
         }
 
-        return new Grant
+        var grant = new Grant
         {
             SubjectType = subjectType,
             SubjectId = subjectId,
@@ -79,5 +83,15 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
             ValidTo = validTo,
             Priority = priority,
         };
+
+        if (constraints is not null)
+        {
+            foreach (var constraint in constraints)
+            {
+                grant.Constraints.Add(constraint);
+            }
+        }
+
+        return grant;
     }
 }

@@ -29,5 +29,14 @@ public class GrantConfiguration : IEntityTypeConfiguration<Grant>
         // (source type, source id) for revoke/audit.
         builder.HasIndex(g => new { g.SubjectType, g.SubjectId, g.PermissionId });
         builder.HasIndex(g => new { g.SourceType, g.SourceId });
+
+        builder.OwnsMany(g => g.Constraints, c =>
+        {
+            c.ToTable("GrantConstraint");
+            c.WithOwner().HasForeignKey("GrantId");
+            c.Property(x => x.Kind).HasConversion<int>();
+            c.Property(x => x.ScopeKey).HasMaxLength(100);
+            c.Property(x => x.ScopeValue).HasMaxLength(100);
+        });
     }
 }
