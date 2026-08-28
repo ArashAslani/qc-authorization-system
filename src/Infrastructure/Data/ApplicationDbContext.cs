@@ -1,5 +1,6 @@
 using System.Reflection;
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Personnel> Personnel => Set<Personnel>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<PositionAssignment> PositionAssignments => Set<PositionAssignment>();
+
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<Grant> Grants => Set<Grant>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
