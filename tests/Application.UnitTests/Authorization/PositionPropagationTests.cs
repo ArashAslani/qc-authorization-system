@@ -127,14 +127,17 @@ public class PositionPropagationTests
     {
         _context.Grants.Add(NewGrant(SubjectType.User, 80, Effect.Allow, SourceType.User, 80, SourcePriority.IndividualOverride));
         _context.Grants.Add(NewGrant(SubjectType.Position, _c.Id, Effect.Deny, SourceType.Position, _c.Id, SourcePriority.RoleOrRoleGroup));
-        _context.PositionAssignments.Add(PositionAssignment.Create(80, _c.Id, T0.AddDays(-30)));
+        _context.PositionAssignments.Add(PositionAssignment.Create(
+            EnsurePersonnel(80).Id, _c.Id, T0.AddDays(-30)));
+        var personnel80 = EnsurePersonnel(80);
         await _context.SaveChangesAsync();
 
         (await EvaluateForUser(80)).Effect.ShouldBe(Effect.Allow);
 
-        var assignment = await _context.PositionAssignments.SingleAsync(a => a.PersonnelId == 80);
+        var assignment = await _context.PositionAssignments.SingleAsync(a => a.PersonnelId == personnel80.Id);
         _context.PositionAssignments.Remove(assignment);
-        _context.PositionAssignments.Add(PositionAssignment.Create(80, _d.Id, T0));
+        _context.PositionAssignments.Add(PositionAssignment.Create(
+            EnsurePersonnel(80).Id, _d.Id, T0));
         await _context.SaveChangesAsync();
 
         (await EvaluateForUser(80)).Effect.ShouldBe(Effect.Allow,
@@ -146,13 +149,15 @@ public class PositionPropagationTests
     {
         _context.Grants.Add(NewGrant(SubjectType.User, 80, Effect.Deny, SourceType.User, 80, SourcePriority.IndividualOverride));
         _context.Grants.Add(NewGrant(SubjectType.Position, _c.Id, Effect.Allow, SourceType.Position, _c.Id, SourcePriority.RoleOrRoleGroup));
-        _context.PositionAssignments.Add(PositionAssignment.Create(80, _c.Id, T0.AddDays(-30)));
+        _context.PositionAssignments.Add(PositionAssignment.Create(
+            EnsurePersonnel(80).Id, _c.Id, T0.AddDays(-30)));
         await _context.SaveChangesAsync();
 
         (await EvaluateForUser(80)).Effect.ShouldBe(Effect.Deny);
 
         _context.Grants.Add(NewGrant(SubjectType.User, 81, Effect.Allow, SourceType.User, 81, SourcePriority.IndividualOverride));
-        _context.PositionAssignments.Add(PositionAssignment.Create(81, _b.Id, T0.AddDays(-30)));
+        _context.PositionAssignments.Add(PositionAssignment.Create(
+            EnsurePersonnel(81).Id, _b.Id, T0.AddDays(-30)));
         await _context.SaveChangesAsync();
 
         (await EvaluateForUser(81)).Effect.ShouldBe(Effect.Allow,
@@ -162,8 +167,31 @@ public class PositionPropagationTests
     private Task<AccessDecision> EvaluateForUser(int userId) =>
         _evaluator.EvaluateAsync(new AccessRequest(SubjectType.User, userId, "Read", "Personnel", null, T0));
 
-    private void AssignUser(int userId, int positionId) =>
-        _context.PositionAssignments.Add(PositionAssignment.Create(userId, positionId, T0.AddDays(-30)));
+    private void AssignUser(int systemUserId, int positionId)
+    {
+        var personnel = EnsurePersonnel(systemUserId);
+        _context.PositionAssignments.Add(PositionAssignment.Create(
+            personnel.Id, positionId, T0.AddDays(-30)));
+    }
+
+    private Personnel EnsurePersonnel(int systemUserId)
+    {
+        var existing = _context.Personnel.Local.FirstOrDefault(p => p.SystemUserId == systemUserId)
+            ?? _context.Personnel.FirstOrDefault(p => p.SystemUserId == systemUserId);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var personnel = Personnel.Create(
+            $"NID-{systemUserId}",
+            $"User{systemUserId}",
+            "Test",
+            $"PC-{systemUserId}",
+            systemUserId: systemUserId);
+        _context.Personnel.Add(personnel);
+        return personnel;
+    }
 
     private static Position PositionWithId(int id, string code, string title, int? parentId = null, int companyId = 1)
     {

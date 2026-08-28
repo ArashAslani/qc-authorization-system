@@ -27,6 +27,7 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
+        builder.Services.AddScoped<IPersonnelRepository, PersonnelRepository>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<IGrantRepository, GrantRepository>();
         builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();

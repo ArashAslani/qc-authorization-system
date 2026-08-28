@@ -108,7 +108,7 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
             return [];
         }
 
-        var assignments = await _assignments.GetActivePositionIdsForPersonnelAsync(
+        var assignments = await _assignments.GetActivePositionIdsForSystemUserAsync(
             request.SubjectId,
             request.When,
             ct);

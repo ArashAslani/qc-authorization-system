@@ -20,6 +20,12 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
     public PersonnelGender Gender { get; private set; } = PersonnelGender.Unknown;
     public PersonnelStatus Status { get; private set; } = PersonnelStatus.Active;
 
+    /// <summary>
+    /// Optional link to the authenticated system user used in authorization requests.
+    /// Personnel and User remain distinct concepts.
+    /// </summary>
+    public int? SystemUserId { get; private set; }
+
     public List<PositionAssignment> Assignments { get; private set; } = new();
 
     public static Personnel Create(
@@ -29,7 +35,8 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
         string personalCode,
         string? phoneNumber = null,
         PersonnelGender gender = PersonnelGender.Unknown,
-        PersonnelStatus status = PersonnelStatus.Active)
+        PersonnelStatus status = PersonnelStatus.Active,
+        int? systemUserId = null)
     {
         if (string.IsNullOrWhiteSpace(nationalId))
         {
@@ -60,6 +67,17 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
             PhoneNumber = phoneNumber?.Trim(),
             Gender = gender,
             Status = status,
+            SystemUserId = systemUserId,
         };
+    }
+
+    public void LinkSystemUser(int systemUserId)
+    {
+        if (systemUserId <= 0)
+        {
+            throw new OrganizationDomainException("SystemUserId must be a positive identifier.");
+        }
+
+        SystemUserId = systemUserId;
     }
 }
