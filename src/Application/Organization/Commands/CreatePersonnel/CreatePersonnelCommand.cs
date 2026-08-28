@@ -18,10 +18,14 @@ public record CreatePersonnelCommand(
 public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelCommand, int>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IPersonnelIdentityBridge _personnelIdentityBridge;
 
-    public CreatePersonnelCommandHandler(IApplicationDbContext context)
+    public CreatePersonnelCommandHandler(
+        IApplicationDbContext context,
+        IPersonnelIdentityBridge personnelIdentityBridge)
     {
         _context = context;
+        _personnelIdentityBridge = personnelIdentityBridge;
     }
 
     public async Task<int> Handle(CreatePersonnelCommand request, CancellationToken cancellationToken)
@@ -38,6 +42,15 @@ public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelComm
 
         _context.Personnel.Add(personnel);
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (request.IdentityUserId.HasValue)
+        {
+            await _personnelIdentityBridge.LinkAsync(
+                personnel.Id,
+                request.IdentityUserId.Value,
+                cancellationToken);
+        }
+
         return personnel.Id;
     }
 }

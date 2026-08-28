@@ -1,6 +1,7 @@
 using qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
 using qc_authorization.Application.Organization.Commands.CreatePersonnel;
 using qc_authorization.Application.Organization.Commands.CreatePosition;
+using qc_authorization.Application.Organization.Commands.LinkPersonnelToIdentityUser;
 using qc_authorization.Application.Organization.Commands.ReparentPosition;
 using qc_authorization.Domain.Organization.Enums;
 using qc_authorization.Web.Infrastructure;
@@ -16,6 +17,7 @@ public class OrganizationEndpoints : IEndpointGroup
         group.MapPost(CreatePosition);
         group.MapPost(AssignPersonnel);
         group.MapPost(ReparentPosition);
+        group.MapPost(LinkPersonnelToIdentityUser);
     }
 
     private static async Task<IResult> CreatePersonnel(CreatePersonnelRequest request, ISender sender)
@@ -61,6 +63,12 @@ public class OrganizationEndpoints : IEndpointGroup
         await sender.Send(new ReparentPositionCommand(request.PositionId, request.NewParentPositionId));
         return Results.NoContent();
     }
+
+    private static async Task<IResult> LinkPersonnelToIdentityUser(LinkPersonnelRequest request, ISender sender)
+    {
+        await sender.Send(new LinkPersonnelToIdentityUserCommand(request.PersonnelId, request.IdentityUserId));
+        return Results.NoContent();
+    }
 }
 
 public record CreatePersonnelRequest(
@@ -87,3 +95,5 @@ public record AssignPersonnelRequest(
     DateTimeOffset? EffectiveTo = null);
 
 public record ReparentPositionRequest(int PositionId, int? NewParentPositionId);
+
+public record LinkPersonnelRequest(int PersonnelId, Guid IdentityUserId);

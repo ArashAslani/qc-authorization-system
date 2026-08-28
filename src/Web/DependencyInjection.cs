@@ -26,7 +26,6 @@ public static class DependencyInjection
         });
 
         builder.Services.AddCors();
-        builder.Services.AddAuthentication();
         builder.Services.AddAuthorization();
     }
 }
