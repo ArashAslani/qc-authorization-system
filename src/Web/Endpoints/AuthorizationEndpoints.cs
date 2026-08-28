@@ -1,19 +1,61 @@
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
+using qc_authorization.Application.Authorization.Commands.RevokeGrant;
 using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
+using qc_authorization.Application.Authorization.Queries.EvaluateAccessForSubject;
+using qc_authorization.Application.Authorization.Queries.GetGrantById;
+using qc_authorization.Application.Authorization.Queries.GetGrants;
 using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Web.Infrastructure;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace qc_authorization.Web.Endpoints;
 
 public class AuthorizationEndpoints : IEndpointGroup
 {
+    public static string? RoutePrefix => "/api/authorization";
+
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost(CreateGrant);
-        group.MapPost(EvaluateAccess);
+        // Grants
+        group.MapGet(GetGrants, "grants");
+        group.MapGet(GetGrantById, "grants/{id:int}");
+        group.MapPost(CreateGrant, "grants");
+        group.MapPost(RevokeGrant, "grants/{id:int}/revoke");
+
+        // Evaluation
+        group.MapPost(EvaluateAccess, "evaluate");
+        group.MapPost(SimulateEvaluation, "simulate-evaluation");
+    }
+
+    private static async Task<IResult> GetGrants(
+        [FromQuery] SubjectType? subjectType,
+        [FromQuery] int? subjectId,
+        [FromQuery] Guid? subjectUserId,
+        [FromQuery] int? permissionId,
+        [FromQuery] Effect? effect,
+        [FromQuery] SourceType? sourceType,
+        [FromQuery] bool? activeOnly,
+        ISender sender)
+    {
+        var result = await sender.Send(new GetGrantsQuery(
+            subjectType,
+            subjectId,
+            subjectUserId,
+            permissionId,
+            effect,
+            sourceType,
+            activeOnly));
+
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetGrantById(int id, ISender sender)
+    {
+        var result = await sender.Send(new GetGrantByIdQuery(id));
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> CreateGrant(CreateGrantRequest request, ISender sender)
@@ -34,7 +76,13 @@ public class AuthorizationEndpoints : IEndpointGroup
             request.ValidTo,
             request.Priority));
 
-        return Results.Created($"/api/AuthorizationEndpoints/grants/{id}", new { id });
+        return Results.Created($"/api/authorization/grants/{id}", new { id });
+    }
+
+    private static async Task<IResult> RevokeGrant(int id, ISender sender)
+    {
+        await sender.Send(new RevokeGrantCommand(id));
+        return Results.NoContent();
     }
 
     private static async Task<IResult> EvaluateAccess(
@@ -51,6 +99,23 @@ public class AuthorizationEndpoints : IEndpointGroup
             SubjectType.User,
             0,
             currentUser.UserId,
+            request.Action,
+            request.Resource,
+            request.ResourceId,
+            request.When);
+
+        var result = await sender.Send(query);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> SimulateEvaluation(
+        SimulateEvaluationRequest request,
+        ISender sender)
+    {
+        var query = new EvaluateAccessForSubjectQuery(
+            request.SubjectType,
+            request.SubjectId,
+            request.UserId,
             request.Action,
             request.Resource,
             request.ResourceId,
@@ -78,6 +143,15 @@ public record CreateGrantRequest(
     int Priority);
 
 public record EvaluateAccessRequest(
+    string Action,
+    string Resource,
+    string? ResourceId,
+    DateTimeOffset When);
+
+public record SimulateEvaluationRequest(
+    SubjectType SubjectType,
+    int SubjectId,
+    Guid? UserId,
     string Action,
     string Resource,
     string? ResourceId,

@@ -1,17 +1,46 @@
 using qc_authorization.Application.Authorization.Commands.CreateDelegation;
 using qc_authorization.Application.Authorization.Commands.RevokeDelegation;
+using qc_authorization.Application.Authorization.Queries.GetDelegationById;
+using qc_authorization.Application.Authorization.Queries.GetDelegations;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Web.Infrastructure;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace qc_authorization.Web.Endpoints;
 
 public class DelegationEndpoints : IEndpointGroup
 {
+    public static string? RoutePrefix => "/api/delegations";
+
     public static void Map(RouteGroupBuilder group)
     {
+        group.MapGet(GetDelegations);
+        group.MapGet(GetDelegationById, "{id:int}");
         group.MapPost(CreateDelegation);
-        group.MapPost(RevokeDelegation, "{id}/revoke");
+        group.MapPost(RevokeDelegation, "{id:int}/revoke");
+    }
+
+    private static async Task<IResult> GetDelegations(
+        [FromQuery] Guid? delegatorUserId,
+        [FromQuery] Guid? delegateUserId,
+        [FromQuery] int? permissionId,
+        [FromQuery] bool? activeOnly,
+        ISender sender)
+    {
+        var result = await sender.Send(new GetDelegationsQuery(
+            delegatorUserId,
+            delegateUserId,
+            permissionId,
+            activeOnly));
+
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetDelegationById(int id, ISender sender)
+    {
+        var result = await sender.Send(new GetDelegationByIdQuery(id));
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> CreateDelegation(CreateDelegationRequest request, ISender sender)
@@ -27,7 +56,7 @@ public class DelegationEndpoints : IEndpointGroup
             request.Delegable,
             request.ParentDelegationId));
 
-        return Results.Created($"/api/DelegationEndpoints/{id}", new { id });
+        return Results.Created($"/api/delegations/{id}", new { id });
     }
 
     private static async Task<IResult> RevokeDelegation(int id, ISender sender)

@@ -1,139 +1,406 @@
-﻿# For more info on HTTP files go to https://aka.ms/vs/httpfile
+﻿# Qc Authorization System — Admin & API Requests
 @Web_HostAddress = https://localhost:7024
+@BearerToken = <YourToken>
 
-@Email=administrator@localhost
-@Password=Administrator1!
-@BearerToken=<YourToken>
+### -------------------------------------------------------------
+### 1. IDENTITY & AUTHENTICATION
+### -------------------------------------------------------------
 
-# POST Users Register
-POST {{Web_HostAddress}}/api/Users/Register
+# POST Register User
+POST {{Web_HostAddress}}/api/users/register
 Content-Type: application/json
 
 {
-  "email": "{{Email}}",
-  "password": "{{Password}}"
+  "email": "admin@localhost",
+  "password": "Password1!"
 }
 
 ###
 
-# POST Users Login
-POST {{Web_HostAddress}}/api/Users/Login
+# POST Login User
+# @name login
+POST {{Web_HostAddress}}/api/users/login
 Content-Type: application/json
 
 {
-  "email": "{{Email}}",
-  "password": "{{Password}}"
+  "email": "admin@localhost",
+  "password": "Password1!"
 }
 
 ###
 
-# POST Users Refresh
-POST {{Web_HostAddress}}/api/Users/Refresh
+# GET List Users
+GET {{Web_HostAddress}}/api/users
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET User By ID
+GET {{Web_HostAddress}}/api/users/11111111-1111-1111-1111-111111111111
+Authorization: Bearer {{BearerToken}}
+
+### -------------------------------------------------------------
+### 2. ORGANIZATION MANAGEMENT
+### -------------------------------------------------------------
+
+# GET List Personnel
+GET {{Web_HostAddress}}/api/organization/personnel
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Personnel by ID
+GET {{Web_HostAddress}}/api/organization/personnel/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Personnel
+POST {{Web_HostAddress}}/api/organization/personnel
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
 {
-  "refreshToken": ""
+  "nationalId": "0012345678",
+  "firstName": "Ali",
+  "lastName": "Ahmadi",
+  "personalCode": "EMP-001",
+  "phoneNumber": "+989123456789",
+  "gender": 1,
+  "status": 1
 }
 
 ###
 
-# GET WeatherForecast
-GET {{Web_HostAddress}}/api/WeatherForecasts
-Authorization: Bearer {{BearerToken}}
-
-###
-
-# GET TodoLists
-GET {{Web_HostAddress}}/api/TodoLists
-Authorization: Bearer {{BearerToken}}
-
-###
-
-# POST TodoLists
-POST {{Web_HostAddress}}/api/TodoLists
+# POST Link Personnel to Identity User
+POST {{Web_HostAddress}}/api/organization/personnel/link-user
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
-// CreateTodoListCommand
 {
-  "Title": "Backlog"
+  "personnelId": 1,
+  "identityUserId": "11111111-1111-1111-1111-111111111111"
 }
 
 ###
 
-# PUT TodoLists
-PUT {{Web_HostAddress}}/api/TodoLists/1
+# GET List Positions
+GET {{Web_HostAddress}}/api/organization/positions
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Position by ID
+GET {{Web_HostAddress}}/api/organization/positions/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Position
+POST {{Web_HostAddress}}/api/organization/positions
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
-// UpdateTodoListCommand
 {
-  "Id": 1,
-  "Title": "Product Backlog"
+  "companyId": 1,
+  "code": "QC_MGR",
+  "title": "QC Manager",
+  "description": "Head of Quality Control Department"
 }
 
 ###
 
-# DELETE TodoLists
-DELETE {{Web_HostAddress}}/api/TodoLists/1
-Authorization: Bearer {{BearerToken}}
-
-###
-
-# GET TodoItems
-@PageNumber = 1
-@PageSize = 10
-GET {{Web_HostAddress}}/api/TodoItems?ListId=1&PageNumber={{PageNumber}}&PageSize={{PageSize}}
-
-Authorization: Bearer {{BearerToken}}
-
-###
-
-# POST TodoItems
-POST {{Web_HostAddress}}/api/TodoItems
+# POST Reparent Position
+POST {{Web_HostAddress}}/api/organization/positions/reparent
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
-// CreateTodoItemCommand
 {
-  "ListId": 1,
-  "Title": "Eat a burrito 🌯"
+  "positionId": 2,
+  "newParentPositionId": 1
 }
 
 ###
 
-#PUT TodoItems UpdateItemDetails
-PUT {{Web_HostAddress}}/api/TodoItems/UpdateItemDetails?Id=1
+# GET Position Assignments
+GET {{Web_HostAddress}}/api/organization/assignments
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Assign Personnel to Position
+POST {{Web_HostAddress}}/api/organization/assignments
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
-// UpdateTodoItemDetailCommand
 {
-  "Id": 1,
-  "ListId": 1,
-  "Priority": 3,
-  "Note": "This is a good idea!"
+  "personnelId": 1,
+  "positionId": 1,
+  "effectiveFrom": "2026-01-01T00:00:00Z"
 }
+
+### -------------------------------------------------------------
+### 3. ACCESS DEFINITIONS (CATALOGS, PERMISSIONS, ROLES)
+### -------------------------------------------------------------
+
+# GET Resource Catalogs
+GET {{Web_HostAddress}}/api/access-definitions/catalogs/resources
+Authorization: Bearer {{BearerToken}}
 
 ###
 
-# PUT TodoItems
-PUT {{Web_HostAddress}}/api/TodoItems/1
+# GET Action Catalogs
+GET {{Web_HostAddress}}/api/access-definitions/catalogs/actions
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Permissions
+GET {{Web_HostAddress}}/api/access-definitions/permissions
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Permission by ID
+GET {{Web_HostAddress}}/api/access-definitions/permissions/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Permission
+POST {{Web_HostAddress}}/api/access-definitions/permissions
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
 
-// UpdateTodoItemCommand
 {
-  "Id": 1,
-  "Title": "Eat a yummy burrito 🌯",
-  "Done": true
+  "resourceCode": "CONTROL_PLAN",
+  "resourceName": "Control Plan",
+  "actionCode": "APPROVE",
+  "actionName": "Approve",
+  "description": "Approve QC Control Plans"
 }
 
 ###
 
-# DELETE TodoItem
-DELETE {{Web_HostAddress}}/api/TodoItems/1
+# GET Roles
+GET {{Web_HostAddress}}/api/access-definitions/roles
 Authorization: Bearer {{BearerToken}}
 
 ###
+
+# GET Role by ID
+GET {{Web_HostAddress}}/api/access-definitions/roles/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Role
+POST {{Web_HostAddress}}/api/access-definitions/roles
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "code": "QC_INSPECTOR",
+  "name": "Quality Inspector",
+  "description": "Performs quality inspections"
+}
+
+###
+
+# POST Assign Permission to Role
+POST {{Web_HostAddress}}/api/access-definitions/roles/assign-permission
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "roleId": 1,
+  "permissionId": 1
+}
+
+###
+
+# GET Role Groups
+GET {{Web_HostAddress}}/api/access-definitions/role-groups
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Role Group by ID
+GET {{Web_HostAddress}}/api/access-definitions/role-groups/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Role Group
+POST {{Web_HostAddress}}/api/access-definitions/role-groups
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "code": "QC_STAFF",
+  "name": "Quality Control Staff Group",
+  "description": "All QC department roles"
+}
+
+###
+
+# POST Add Role to Role Group
+POST {{Web_HostAddress}}/api/access-definitions/role-groups/add-role
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "roleGroupId": 1,
+  "roleId": 1
+}
+
+###
+
+# GET User Assigned Roles
+GET {{Web_HostAddress}}/api/access-definitions/users/11111111-1111-1111-1111-111111111111/roles
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Assign Role to User
+POST {{Web_HostAddress}}/api/access-definitions/users/assign-role
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "userId": "11111111-1111-1111-1111-111111111111",
+  "roleId": 1,
+  "validFrom": "2026-01-01T00:00:00Z"
+}
+
+###
+
+# POST Revoke Role from User
+POST {{Web_HostAddress}}/api/access-definitions/users/revoke-role
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "userId": "11111111-1111-1111-1111-111111111111",
+  "roleId": 1
+}
+
+### -------------------------------------------------------------
+### 4. AUTHORIZATION GRANTS & ACCESS EVALUATION
+### -------------------------------------------------------------
+
+# GET List Grants
+GET {{Web_HostAddress}}/api/authorization/grants
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Grant by ID
+GET {{Web_HostAddress}}/api/authorization/grants/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Direct Grant
+POST {{Web_HostAddress}}/api/authorization/grants
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "subjectType": 0,
+  "subjectId": 0,
+  "subjectUserId": "11111111-1111-1111-1111-111111111111",
+  "permissionId": 1,
+  "resource": null,
+  "resourceId": null,
+  "scopeKind": 0,
+  "scopeIdentifier": null,
+  "effect": 0,
+  "sourceType": 0,
+  "sourceId": 0,
+  "validFrom": "2026-01-01T00:00:00Z",
+  "validTo": null,
+  "priority": 100
+}
+
+###
+
+# POST Revoke Grant
+POST {{Web_HostAddress}}/api/authorization/grants/1/revoke
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Evaluate Access (Current Authenticated User)
+POST {{Web_HostAddress}}/api/authorization/evaluate
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "action": "APPROVE",
+  "resource": "CONTROL_PLAN",
+  "resourceId": null,
+  "when": "2026-08-29T12:00:00Z"
+}
+
+###
+
+# POST Admin Simulate Evaluation (Any Subject / User)
+POST {{Web_HostAddress}}/api/authorization/simulate-evaluation
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "subjectType": 0,
+  "subjectId": 0,
+  "userId": "11111111-1111-1111-1111-111111111111",
+  "action": "APPROVE",
+  "resource": "CONTROL_PLAN",
+  "resourceId": null,
+  "when": "2026-08-29T12:00:00Z"
+}
+
+### -------------------------------------------------------------
+### 5. DELEGATIONS
+### -------------------------------------------------------------
+
+# GET List Delegations
+GET {{Web_HostAddress}}/api/delegations
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# GET Delegation by ID
+GET {{Web_HostAddress}}/api/delegations/1
+Authorization: Bearer {{BearerToken}}
+
+###
+
+# POST Create Delegation
+POST {{Web_HostAddress}}/api/delegations
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+
+{
+  "delegatorUserId": "11111111-1111-1111-1111-111111111111",
+  "delegateUserId": "22222222-2222-2222-2222-222222222222",
+  "permissionId": 1,
+  "validFrom": "2026-08-29T00:00:00Z",
+  "validTo": "2026-09-05T00:00:00Z",
+  "scopeKind": 0,
+  "delegable": true
+}
+
+###
+
+# POST Revoke Delegation
+POST {{Web_HostAddress}}/api/delegations/1/revoke
+Authorization: Bearer {{BearerToken}}
+
+### -------------------------------------------------------------
+### 6. AUDIT TRAIL
+### -------------------------------------------------------------
+
+# GET Audit Entries
+GET {{Web_HostAddress}}/api/audit/entries?pageNumber=1&pageSize=20
+Authorization: Bearer {{BearerToken}}
