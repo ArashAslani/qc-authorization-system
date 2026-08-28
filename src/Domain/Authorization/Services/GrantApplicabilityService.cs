@@ -21,14 +21,15 @@ public sealed class GrantApplicabilityService
         Grant grant,
         SubjectType requestSubjectType,
         int requestSubjectId,
+        Guid? requestUserId,
         IReadOnlySet<int> requestPositionIds,
         IReadOnlyCollection<Position> allPositions)
     {
         if (IsIndividualGrant(grant))
         {
             return requestSubjectType == SubjectType.User
-                && requestSubjectId == grant.SubjectId
-                && grant.SourceId == grant.SubjectId;
+                && requestUserId == grant.SubjectUserId
+                && grant.SourceUserId == grant.SubjectUserId;
         }
 
         if (grant.SubjectType == SubjectType.Role || grant.SubjectType == SubjectType.RoleGroup)
@@ -58,7 +59,13 @@ public sealed class GrantApplicabilityService
         if (grant.SubjectType == SubjectType.User && grant.SourceType == SourceType.Delegation)
         {
             return requestSubjectType == SubjectType.User
-                && requestSubjectId == grant.SubjectId;
+                && requestUserId == grant.SubjectUserId;
+        }
+
+        if (grant.SubjectType == SubjectType.User && grant.SourceType == SourceType.Role)
+        {
+            return requestSubjectType == SubjectType.User
+                && requestUserId == grant.SubjectUserId;
         }
 
         return requestSubjectType == grant.SubjectType

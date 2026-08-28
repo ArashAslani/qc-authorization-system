@@ -1,32 +1,35 @@
 using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Common.Interfaces.Repositories;
+using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Exceptions;
 using qc_authorization.Domain.Authorization.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Delegation;
 
 public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
 {
     private readonly IAccessEvaluator _evaluator;
-    private readonly IPermissionRepository _permissions;
+    private readonly IApplicationDbContext _context;
 
-    public DelegationSubsetPolicy(IAccessEvaluator evaluator, IPermissionRepository permissions)
+    public DelegationSubsetPolicy(IAccessEvaluator evaluator, IApplicationDbContext context)
     {
         _evaluator = evaluator;
-        _permissions = permissions;
+        _context = context;
     }
 
     public async Task EnsureDelegatorCanDelegateAsync(
-        int delegatorUserId,
+        Guid delegatorUserId,
         int permissionId,
         ScopeKind scopeKind,
         string? scopeIdentifier,
         DateTimeOffset when,
         CancellationToken cancellationToken = default)
     {
-        var permission = await _permissions.GetByIdAsync(permissionId, cancellationToken)
+        var permission = await _context.Permissions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == permissionId, cancellationToken)
             ?? throw new InvalidOperationException($"Permission {permissionId} not found.");
 
         var resourceId = scopeKind == ScopeKind.Unbounded ? null : scopeIdentifier;
@@ -34,8 +37,7 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
             ? null
             : new Dictionary<string, object> { ["Scope"] = scopeIdentifier };
 
-        var request = new AccessRequest(
-            SubjectType.User,
+        var request = AccessRequest.ForUser(
             delegatorUserId,
             permission.Action,
             permission.Resource,

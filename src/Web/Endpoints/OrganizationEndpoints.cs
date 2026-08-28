@@ -1,15 +1,7 @@
-using qc_authorization.Application.Authorization.Commands.CreateDelegation;
-using qc_authorization.Application.Authorization.Commands.CreateGrant;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.CreateRole;
-using qc_authorization.Application.Authorization.Commands.RevokeDelegation;
-using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
 using qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
 using qc_authorization.Application.Organization.Commands.CreatePersonnel;
 using qc_authorization.Application.Organization.Commands.CreatePosition;
 using qc_authorization.Application.Organization.Commands.ReparentPosition;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization.Enums;
 using qc_authorization.Web.Infrastructure;
 using MediatR;
@@ -36,7 +28,7 @@ public class OrganizationEndpoints : IEndpointGroup
             request.PhoneNumber,
             request.Gender,
             request.Status,
-            request.SystemUserId));
+            request.IdentityUserId));
 
         return Results.Created($"/api/OrganizationEndpoints/personnel/{id}", new { id });
     }
@@ -79,7 +71,7 @@ public record CreatePersonnelRequest(
     string? PhoneNumber = null,
     PersonnelGender Gender = PersonnelGender.Unknown,
     PersonnelStatus Status = PersonnelStatus.Active,
-    int? SystemUserId = null);
+    Guid? IdentityUserId = null);
 
 public record CreatePositionRequest(
     int CompanyId,

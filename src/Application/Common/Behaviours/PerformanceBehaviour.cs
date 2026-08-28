@@ -9,11 +9,11 @@ public class PerformanceBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequ
 {
     private readonly Stopwatch _timer;
     private readonly ILogger<TRequest> _logger;
-    private readonly IUser _user;
+    private readonly ICurrentUser _user;
 
     public PerformanceBehaviour(
         ILogger<TRequest> logger,
-        IUser user)
+        ICurrentUser user)
     {
         _timer = new Stopwatch();
         _logger = logger;
@@ -33,7 +33,7 @@ public class PerformanceBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequ
         if (elapsedMilliseconds > 500)
         {
             var requestName = typeof(TRequest).Name;
-            var userId = _user.Id ?? string.Empty;
+            var userId = _user.UserId?.ToString() ?? string.Empty;
 
             _logger.LogWarning("qc_authorization Long Running Request: {Name} ({ElapsedMilliseconds} milliseconds) {@UserId} {@Request}",
                 requestName, elapsedMilliseconds, userId, request);

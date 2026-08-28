@@ -27,6 +27,7 @@ public class GrantConfiguration : IEntityTypeConfiguration<Grant>
 
         // Trace-friendly index: lookups by (subject, permission) and by
         // (source type, source id) for revoke/audit.
+        builder.HasIndex(g => new { g.SubjectType, g.SubjectUserId, g.PermissionId });
         builder.HasIndex(g => new { g.SubjectType, g.SubjectId, g.PermissionId });
         builder.HasIndex(g => new { g.SourceType, g.SourceId });
 

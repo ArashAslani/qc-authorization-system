@@ -1,3 +1,4 @@
+using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.ValueObjects;
 
 namespace qc_authorization.Application.Authorization.Delegation;
@@ -5,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Delegation;
 public interface IDelegationSubsetPolicy
 {
     Task EnsureDelegatorCanDelegateAsync(
-        int delegatorUserId,
+        Guid delegatorUserId,
         int permissionId,
         ScopeKind scopeKind,
         string? scopeIdentifier,

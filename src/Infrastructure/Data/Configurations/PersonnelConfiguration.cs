@@ -21,7 +21,7 @@ public class PersonnelConfiguration : IEntityTypeConfiguration<Personnel>
 
         builder.HasIndex(p => p.NationalId).IsUnique();
         builder.HasIndex(p => p.PersonalCode).IsUnique();
-        builder.HasIndex(p => p.SystemUserId).IsUnique();
+        builder.HasIndex(p => p.IdentityUserId).IsUnique();
 
         builder.HasMany(p => p.Assignments)
             .WithOne(a => a.Personnel)

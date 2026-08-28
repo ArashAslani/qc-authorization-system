@@ -13,8 +13,8 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
 {
     private Delegation() { }
 
-    public int DelegatorUserId { get; private set; }
-    public int DelegateUserId { get; private set; }
+    public Guid DelegatorUserId { get; private set; }
+    public Guid DelegateUserId { get; private set; }
 
     public int PermissionId { get; private set; }
     public Permission Permission { get; private set; } = null!;
@@ -32,8 +32,8 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
     public Validity Validity => new(ValidFrom, ValidTo);
 
     public static Delegation Create(
-        int delegatorUserId,
-        int delegateUserId,
+        Guid delegatorUserId,
+        Guid delegateUserId,
         int permissionId,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
@@ -41,7 +41,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
         string? scopeIdentifier = null,
         bool delegable = true)
     {
-        if (delegatorUserId <= 0 || delegateUserId <= 0)
+        if (delegatorUserId == Guid.Empty || delegateUserId == Guid.Empty)
         {
             throw new AuthorizationDomainException("Delegator and delegate must be valid user identifiers.");
         }
@@ -80,9 +80,6 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
     public bool IsActiveAt(DateTimeOffset when) =>
         !IsRevoked && Validity.IsActiveAt(when);
 
-    /// <summary>
-    /// Materializes the grant fact this delegation contributes at evaluation time.
-    /// </summary>
     public Grant ToGrant()
     {
         if (IsRevoked)
@@ -95,8 +92,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
             throw new AuthorizationDomainException("Delegation must be persisted before producing a grant.");
         }
 
-        return Grant.Create(
-            SubjectType.User,
+        return Grant.CreateForUser(
             DelegateUserId,
             PermissionId,
             SourceType.Delegation,

@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
@@ -12,7 +12,7 @@ using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
@@ -29,6 +29,8 @@ public class EvaluateAccessQueryIntegrationTests
     [SetUp]
     public async Task SetUp()
     {
+        MappingConfig.RegisterMappings();
+
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"qc-eval-{Guid.NewGuid():N}")
             .Options;
@@ -37,8 +39,9 @@ public class EvaluateAccessQueryIntegrationTests
 
         var perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
         _context.Permissions.Add(perm);
-        _context.Grants.Add(Grant.Create(
-            SubjectType.User, 42, perm.Id, SourceType.User, 42, Effect.Allow, T0.AddDays(-1), null,
+        await _context.SaveChangesAsync();
+        _context.Grants.Add(Grant.CreateForUser(
+            TestUsers.UserE, perm.Id, SourceType.User, 0, Effect.Allow, T0.AddDays(-1), null,
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
@@ -50,13 +53,8 @@ public class EvaluateAccessQueryIntegrationTests
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<EvaluateAccessQuery>())
             .AddSingleton(hierarchy)
             .AddSingleton(applicability)
-            .AddSingleton(new Domain.Authorization.Evaluation.AccessEvaluationEngine())
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
-            .AddScoped<IGrantRepository>(_ => new GrantRepository(_context))
-            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(_context))
-            .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
-            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
-            .AddScoped<IDelegationRepository>(_ => new DelegationRepository(_context))
+            .AddSingleton(new AccessEvaluationEngine())
+            .AddScoped<IApplicationDbContext>(_ => _context)
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .BuildServiceProvider()
@@ -74,7 +72,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Allow_With_Trace()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 42, "Read", "Personnel", null, T0));
+            SubjectType.User, 0, TestUsers.UserE, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Allow");
         result.Trace.CandidateCount.ShouldBeGreaterThan(0);
@@ -84,7 +82,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Deny_For_Unknown_User()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 99, "Read", "Personnel", null, T0));
+            SubjectType.User, 0, TestUsers.Unknown, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Deny");
     }

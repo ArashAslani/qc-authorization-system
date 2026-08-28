@@ -1,7 +1,7 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Organization;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
 
@@ -13,29 +13,23 @@ public record AssignPersonnelToPositionCommand(
 
 public class AssignPersonnelToPositionCommandHandler : IRequestHandler<AssignPersonnelToPositionCommand, int>
 {
-    private readonly IPersonnelRepository _personnel;
-    private readonly IPositionRepository _positions;
-    private readonly IPositionAssignmentRepository _assignments;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public AssignPersonnelToPositionCommandHandler(
-        IPersonnelRepository personnel,
-        IPositionRepository positions,
-        IPositionAssignmentRepository assignments,
-        IUnitOfWork unitOfWork)
+    public AssignPersonnelToPositionCommandHandler(IApplicationDbContext context)
     {
-        _personnel = personnel;
-        _positions = positions;
-        _assignments = assignments;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<int> Handle(AssignPersonnelToPositionCommand request, CancellationToken cancellationToken)
     {
-        _ = await _personnel.GetByIdAsync(request.PersonnelId, cancellationToken)
+        _ = await _context.Personnel
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.PersonnelId, cancellationToken)
             ?? throw new InvalidOperationException($"Personnel {request.PersonnelId} not found.");
 
-        var position = await _positions.GetByIdAsync(request.PositionId, cancellationToken)
+        _ = await _context.Positions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.PositionId, cancellationToken)
             ?? throw new InvalidOperationException($"Position {request.PositionId} not found.");
 
         var assignment = PositionAssignment.Create(
@@ -44,8 +38,8 @@ public class AssignPersonnelToPositionCommandHandler : IRequestHandler<AssignPer
             request.ValidFrom,
             request.ValidTo);
 
-        await _assignments.AddAsync(assignment, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.PositionAssignments.Add(assignment);
+        await _context.SaveChangesAsync(cancellationToken);
         return assignment.Id;
     }
 }

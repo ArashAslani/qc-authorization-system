@@ -1,6 +1,7 @@
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
+using Mapster;
 using MediatR;
 
 namespace qc_authorization.Application.Authorization.Queries.EvaluateAccess;
@@ -8,6 +9,7 @@ namespace qc_authorization.Application.Authorization.Queries.EvaluateAccess;
 public record EvaluateAccessQuery(
     SubjectType SubjectType,
     int SubjectId,
+    Guid? UserId,
     string Action,
     string Resource,
     string? ResourceId,
@@ -40,22 +42,13 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
         var accessRequest = new AccessRequest(
             request.SubjectType,
             request.SubjectId,
+            request.UserId,
             request.Action,
             request.Resource,
             request.ResourceId,
             request.When);
 
         var decision = await _evaluator.EvaluateAsync(accessRequest, cancellationToken);
-
-        return new AccessDecisionDto(
-            decision.Effect.ToString(),
-            decision.Reason.ToString(),
-            new AccessDecisionTraceDto(
-                decision.Trace.TraceId,
-                decision.Trace.RequestedPermission,
-                decision.Trace.FinalDecision.ToString(),
-                decision.Trace.Reason,
-                decision.Trace.CandidateGrants.Count,
-                decision.Trace.ApplicableGrants.Count));
+        return decision.Adapt<AccessDecisionDto>();
     }
 }

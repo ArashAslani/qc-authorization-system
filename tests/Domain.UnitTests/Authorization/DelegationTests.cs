@@ -11,13 +11,15 @@ namespace qc_authorization.Domain.UnitTests.Authorization;
 public class DelegationTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly Guid Delegator = Guid.Parse("11111111-1111-1111-1111-111111111101");
+    private static readonly Guid Delegate = Guid.Parse("11111111-1111-1111-1111-111111111102");
 
     [Test]
     public void Can_Create_Delegation()
     {
-        var delegation = Delegation.Create(10, 20, 100, T0, T0.AddDays(7));
-        delegation.DelegatorUserId.ShouldBe(10);
-        delegation.DelegateUserId.ShouldBe(20);
+        var delegation = Delegation.Create(Delegator, Delegate, 100, T0, T0.AddDays(7));
+        delegation.DelegatorUserId.ShouldBe(Delegator);
+        delegation.DelegateUserId.ShouldBe(Delegate);
         delegation.Delegable.ShouldBeTrue();
     }
 
@@ -25,13 +27,13 @@ public class DelegationTests
     public void Cannot_Delegate_To_Self()
     {
         Should.Throw<AuthorizationDomainException>(() =>
-            Delegation.Create(10, 10, 100, T0, null));
+            Delegation.Create(Delegator, Delegator, 100, T0, null));
     }
 
     [Test]
     public void Revoked_Delegation_Cannot_Produce_Grant()
     {
-        var delegation = Delegation.Create(10, 20, 100, T0, null);
+        var delegation = Delegation.Create(Delegator, Delegate, 100, T0, null);
         delegation.Id = 5001;
         delegation.Revoke();
 
@@ -41,12 +43,13 @@ public class DelegationTests
     [Test]
     public void ToGrant_Produces_Delegation_Sourced_Grant()
     {
-        var delegation = Delegation.Create(10, 20, 100, T0, null, ScopeKind.Company, "C-1");
+        var delegation = Delegation.Create(Delegator, Delegate, 100, T0, null, ScopeKind.Company, "C-1");
         delegation.Id = 5001;
 
         var grant = delegation.ToGrant();
         grant.SubjectType.ShouldBe(SubjectType.User);
-        grant.SubjectId.ShouldBe(20);
+        grant.SubjectId.ShouldBe(0);
+        grant.SubjectUserId.ShouldBe(Delegate);
         grant.SourceType.ShouldBe(SourceType.Delegation);
         grant.SourceId.ShouldBe(5001);
         grant.Priority.ShouldBe(SourcePriority.Delegation);

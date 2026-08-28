@@ -1,7 +1,7 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Organization;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Organization.Commands.CreatePosition;
 
@@ -14,17 +14,12 @@ public record CreatePositionCommand(
 
 public class CreatePositionCommandHandler : IRequestHandler<CreatePositionCommand, int>
 {
-    private readonly IPositionRepository _positions;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
     private readonly PositionHierarchyService _hierarchy;
 
-    public CreatePositionCommandHandler(
-        IPositionRepository positions,
-        IUnitOfWork unitOfWork,
-        PositionHierarchyService hierarchy)
+    public CreatePositionCommandHandler(IApplicationDbContext context, PositionHierarchyService hierarchy)
     {
-        _positions = positions;
-        _unitOfWork = unitOfWork;
+        _context = context;
         _hierarchy = hierarchy;
     }
 
@@ -39,14 +34,15 @@ public class CreatePositionCommandHandler : IRequestHandler<CreatePositionComman
 
         if (request.ParentPositionId is int parentId)
         {
-            var parent = await _positions.GetByIdAsync(parentId, cancellationToken)
+            var allPositions = await _context.Positions.ToListAsync(cancellationToken);
+            var parent = allPositions.FirstOrDefault(p => p.Id == parentId)
                 ?? throw new InvalidOperationException($"Parent position {parentId} not found.");
 
-            position.Reparent(parent, await _positions.GetAllAsync(cancellationToken), _hierarchy);
+            position.Reparent(parent, allPositions, _hierarchy);
         }
 
-        await _positions.AddAsync(position, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Positions.Add(position);
+        await _context.SaveChangesAsync(cancellationToken);
         return position.Id;
     }
 }

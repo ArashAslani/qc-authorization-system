@@ -31,7 +31,9 @@ Domain
 
 - `Domain` has no references to `Microsoft.EntityFrameworkCore.*`,
   `Microsoft.AspNetCore.*`, `Infrastructure`, or `Web`.
-- `Application` has no references to `Infrastructure` or `Web`.
+- `Application` has no references to `Infrastructure` or `Web`. Handlers use
+  `IApplicationDbContext` (EF Core `DbSet` + `SaveChangesAsync`) directly —
+  no Repository or Unit of Work abstractions.
 - `Infrastructure` references `Application` and `Domain`; it owns EF Core,
   the time provider, and external integrations.
 - `Web` composes the DI graph and exposes endpoints. It contains no
@@ -129,7 +131,19 @@ Workflows do not own authorization. They declare a required permission plus
 a context; the engine evaluates it. The integration is the
 `WorkflowStepAuthorizer` in `Application/Workflow`.
 
-## 9. What is explicitly NOT built (yet)
+## 9. Authentication vs Authorization
+
+- **ASP.NET Core Identity** (`ApplicationUser` / `ApplicationRole`, Guid keys)
+  handles authentication — who is logged in.
+- **Qc Authorization** (`Grant`, `AccessEvaluationEngine`) handles business
+  authorization — what they may do.
+- `Personnel` is a business-domain concept; optional `IdentityUserId` links
+  a person to an authenticated account.
+- **Identity Role** ≠ **Qc Authorization Role** (`Domain.Authorization.Role`).
+  Role-based access flows through `RolePermission` → materialized `Grant` facts
+  → Evaluation Engine. `[Authorize(Roles=...)]` does not replace the engine.
+
+## 10. What is explicitly NOT built (yet)
 
 - Generic Rule Engine
 - Authorization DSL / Generic Policy Language

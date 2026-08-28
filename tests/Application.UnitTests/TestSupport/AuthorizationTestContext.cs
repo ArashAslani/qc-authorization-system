@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
+using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
 
 namespace qc_authorization.Application.UnitTests.TestSupport;
 
@@ -30,13 +30,7 @@ internal static class AuthorizationTestContext
         var engine = new AccessEvaluationEngine();
 
         var evaluator = new AccessEvaluator(
-            new PositionAwareCandidateGrantResolver(
-                new PermissionRepository(context),
-                new GrantRepository(context),
-                new PositionRepository(context),
-                new PositionAssignmentRepository(context),
-                new DelegationRepository(context),
-                applicability),
+            new PositionAwareCandidateGrantResolver(context, applicability),
             engine);
 
         return (context, evaluator);
@@ -44,15 +38,21 @@ internal static class AuthorizationTestContext
 
     public static IServiceProvider CreateMediatorServices(ApplicationDbContext context)
     {
+        var hierarchy = new PositionHierarchyService();
+        var applicability = new GrantApplicabilityService(hierarchy);
+        var engine = new AccessEvaluationEngine();
+
         return new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(context))
-            .AddScoped<IGrantRepository>(_ => new GrantRepository(context))
-            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(context))
-            .AddScoped<IPositionRepository>(_ => new PositionRepository(context))
-            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(context))
-            .AddScoped<IDelegationRepository>(_ => new DelegationRepository(context))
+            .AddSingleton(hierarchy)
+            .AddSingleton(applicability)
+            .AddSingleton(engine)
+            .AddScoped<IApplicationDbContext>(_ => context)
+            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
+            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
+            .AddScoped<IAccessEvaluator, AccessEvaluator>()
+            .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
             .BuildServiceProvider();
     }
 }

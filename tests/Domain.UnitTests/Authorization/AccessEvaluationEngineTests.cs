@@ -16,7 +16,7 @@ public class AccessEvaluationEngineTests
     [Test]
     public void No_Candidates_Returns_Deny()
     {
-        var request = new AccessRequest(SubjectType.Role, 1, "Read", "Personnel", null, T0);
+        var request = new AccessRequest(SubjectType.Role, 1, null, "Read", "Personnel", null, T0);
         var decision = _engine.Evaluate(request, []);
         decision.Effect.ShouldBe(Effect.Deny);
         decision.Reason.ShouldBe(DecisionReason.NoCandidateGrants);
@@ -32,7 +32,7 @@ public class AccessEvaluationEngineTests
             Grant.Create(SubjectType.Role, 1, permId, SourceType.Role, 1, Effect.Deny, T0, null, 100),
         };
         var decision = _engine.Evaluate(
-            new AccessRequest(SubjectType.Role, 1, "Read", "Personnel", null, T0),
+            new AccessRequest(SubjectType.Role, 1, null, "Read", "Personnel", null, T0),
             grants);
         decision.Effect.ShouldBe(Effect.Deny);
     }

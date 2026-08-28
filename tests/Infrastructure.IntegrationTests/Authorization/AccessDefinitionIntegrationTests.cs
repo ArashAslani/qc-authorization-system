@@ -6,10 +6,8 @@ using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
 using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
 using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
@@ -35,12 +33,7 @@ public class AccessDefinitionIntegrationTests
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreatePermissionCommand>())
             .AddSingleton<PositionHierarchyService>()
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
-            .AddScoped<IResourceCatalogRepository>(_ => new ResourceCatalogRepository(_context))
-            .AddScoped<IActionCatalogRepository>(_ => new ActionCatalogRepository(_context))
-            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(_context))
-            .AddScoped<IRoleRepository>(_ => new RoleRepository(_context))
-            .AddScoped<IRoleGroupRepository>(_ => new RoleGroupRepository(_context))
+            .AddScoped<IApplicationDbContext>(_ => _context)
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
     }

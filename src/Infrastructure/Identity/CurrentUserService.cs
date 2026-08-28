@@ -1,0 +1,36 @@
+using qc_authorization.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+
+namespace qc_authorization.Infrastructure.Identity;
+
+public sealed class CurrentUserService : ICurrentUser
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public CurrentUserService(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public Guid? UserId
+    {
+        get
+        {
+            var id = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Guid.TryParse(id, out var guid) ? guid : null;
+        }
+    }
+
+    public bool IsAuthenticated =>
+        _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+
+    public int? PersonnelId
+    {
+        get
+        {
+            var value = _httpContextAccessor.HttpContext?.User?.FindFirstValue("personnel_id");
+            return int.TryParse(value, out var id) ? id : null;
+        }
+    }
+}

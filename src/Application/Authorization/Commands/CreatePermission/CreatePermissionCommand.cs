@@ -1,7 +1,7 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.CreatePermission;
 
@@ -14,44 +14,40 @@ public record CreatePermissionCommand(
 
 public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCommand, int>
 {
-    private readonly IResourceCatalogRepository _resources;
-    private readonly IActionCatalogRepository _actions;
-    private readonly IPermissionRepository _permissions;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public CreatePermissionCommandHandler(
-        IResourceCatalogRepository resources,
-        IActionCatalogRepository actions,
-        IPermissionRepository permissions,
-        IUnitOfWork unitOfWork)
+    public CreatePermissionCommandHandler(IApplicationDbContext context)
     {
-        _resources = resources;
-        _actions = actions;
-        _permissions = permissions;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<int> Handle(CreatePermissionCommand request, CancellationToken cancellationToken)
     {
-        var resource = await _resources.GetByCodeAsync(request.ResourceCode, cancellationToken)
+        var resourceCode = request.ResourceCode.ToUpperInvariant();
+        var resource = await _context.ResourceCatalogs
+            .FirstOrDefaultAsync(r => r.Code == resourceCode, cancellationToken)
             ?? ResourceCatalog.Create(request.ResourceCode, request.ResourceName);
+
         if (resource.Id == 0)
         {
-            await _resources.AddAsync(resource, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _context.ResourceCatalogs.Add(resource);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        var action = await _actions.GetByCodeAsync(request.ActionCode, cancellationToken)
+        var actionCode = request.ActionCode.ToUpperInvariant();
+        var action = await _context.ActionCatalogs
+            .FirstOrDefaultAsync(a => a.Code == actionCode, cancellationToken)
             ?? ActionCatalog.Create(request.ActionCode, request.ActionName);
+
         if (action.Id == 0)
         {
-            await _actions.AddAsync(action, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _context.ActionCatalogs.Add(action);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         var permission = Permission.Create(resource, action, request.Description);
-        await _permissions.AddAsync(permission, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Permissions.Add(permission);
+        await _context.SaveChangesAsync(cancellationToken);
         return permission.Id;
     }
 }

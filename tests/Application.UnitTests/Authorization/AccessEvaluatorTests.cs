@@ -47,7 +47,7 @@ public class AccessEvaluatorTests
         _context.Grants.Add(NewGrant(SubjectType.Role, 50, Effect.Allow, SourceType.Role, 50, SourcePriority.RoleOrRoleGroup));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Allow);
     }
 
@@ -57,7 +57,7 @@ public class AccessEvaluatorTests
         _context.Grants.Add(NewGrant(SubjectType.Role, 50, Effect.Deny, SourceType.Role, 50, SourcePriority.RoleOrRoleGroup));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
     }
 
@@ -67,7 +67,7 @@ public class AccessEvaluatorTests
         _context.Grants.Add(NewGrant(SubjectType.Position, 200, Effect.Allow, SourceType.Position, 200, SourcePriority.PositionOverride));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Position, 200, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Position, 200, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Allow);
     }
 
@@ -77,27 +77,27 @@ public class AccessEvaluatorTests
         _context.Grants.Add(NewGrant(SubjectType.Position, 200, Effect.Deny, SourceType.Position, 200, SourcePriority.PositionOverride));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Position, 200, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Position, 200, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
     }
 
     [Test]
     public async Task User_Direct_Allow_Returns_Allow()
     {
-        _context.Grants.Add(NewGrant(SubjectType.User, 80, Effect.Allow, SourceType.User, 80, SourcePriority.IndividualOverride));
+        _context.Grants.Add(NewUserGrant(TestUsers.UserA, Effect.Allow, SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.User, 80, "Read", "Personnel", null, T0));
+        var d = await Evaluate(AccessRequest.ForUser(TestUsers.UserA, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Allow);
     }
 
     [Test]
     public async Task User_Direct_Deny_Returns_Deny()
     {
-        _context.Grants.Add(NewGrant(SubjectType.User, 80, Effect.Deny, SourceType.User, 80, SourcePriority.IndividualOverride));
+        _context.Grants.Add(NewUserGrant(TestUsers.UserA, Effect.Deny, SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.User, 80, "Read", "Personnel", null, T0));
+        var d = await Evaluate(AccessRequest.ForUser(TestUsers.UserA, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
     }
 
@@ -108,7 +108,7 @@ public class AccessEvaluatorTests
             validFrom: T0.AddDays(-10), validTo: T0.AddDays(-1)));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
         d.Reason.ShouldBe(DecisionReason.Expired);
     }
@@ -120,7 +120,7 @@ public class AccessEvaluatorTests
             validFrom: T0.AddDays(-1), validTo: T0.AddDays(7)));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Allow);
     }
 
@@ -131,7 +131,7 @@ public class AccessEvaluatorTests
             scopeKind: ScopeKind.Company, scopeIdentifier: "C-1"));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", "C-1", T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", "C-1", T0));
         d.Effect.ShouldBe(Effect.Allow);
     }
 
@@ -142,7 +142,7 @@ public class AccessEvaluatorTests
             scopeKind: ScopeKind.Company, scopeIdentifier: "C-1"));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", "C-2", T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", "C-2", T0));
         d.Effect.ShouldBe(Effect.Deny);
         d.Reason.ShouldBe(DecisionReason.OutOfScope);
     }
@@ -155,8 +155,8 @@ public class AccessEvaluatorTests
             NewGrant(SubjectType.Role, 50, Effect.Deny, SourceType.Role, 50, SourcePriority.PositionOverride));
         await _context.SaveChangesAsync();
 
-        var d1 = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
-        var d2 = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d1 = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
+        var d2 = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d1.Effect.ShouldBe(d2.Effect);
     }
 
@@ -168,7 +168,7 @@ public class AccessEvaluatorTests
             NewGrant(SubjectType.Role, 50, Effect.Deny, SourceType.Role, 50, priority: 100));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
     }
 
@@ -180,7 +180,7 @@ public class AccessEvaluatorTests
             NewGrant(SubjectType.Role, 50, Effect.Deny, SourceType.Role, 50, priority: 50));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
     }
 
@@ -192,7 +192,7 @@ public class AccessEvaluatorTests
             NewGrant(SubjectType.Role, 50, Effect.Deny, SourceType.Role, 50, SourcePriority.PositionOverride));
         await _context.SaveChangesAsync();
 
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", "r-1", T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", "r-1", T0));
 
         d.Trace.TraceId.ShouldNotBeNullOrEmpty();
         d.Trace.Subject.ShouldBe(SubjectType.Role);
@@ -211,7 +211,7 @@ public class AccessEvaluatorTests
     [Test]
     public async Task No_Candidate_Grants_Denies_And_Traces_EmptyCandidates()
     {
-        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, "Read", "Personnel", null, T0));
+        var d = await Evaluate(new AccessRequest(SubjectType.Role, 50, null, "Read", "Personnel", null, T0));
         d.Effect.ShouldBe(Effect.Deny);
         d.Reason.ShouldBe(DecisionReason.NoCandidateGrants);
         d.Trace.CandidateGrants.Count.ShouldBe(0);
@@ -219,6 +219,17 @@ public class AccessEvaluatorTests
     }
 
     private Task<AccessDecision> Evaluate(AccessRequest r) => _evaluator.EvaluateAsync(r);
+
+    private Grant NewUserGrant(Guid userId, Effect effect, int priority) =>
+        Grant.CreateForUser(
+            userId,
+            _perm.Id,
+            SourceType.User,
+            0,
+            effect,
+            T0.AddDays(-1),
+            null,
+            priority);
 
     private Grant NewGrant(
         SubjectType subjectType,

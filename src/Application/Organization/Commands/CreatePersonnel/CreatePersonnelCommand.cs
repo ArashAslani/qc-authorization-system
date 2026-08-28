@@ -1,5 +1,4 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Domain.Organization.Enums;
 using MediatR;
@@ -14,17 +13,15 @@ public record CreatePersonnelCommand(
     string? PhoneNumber = null,
     PersonnelGender Gender = PersonnelGender.Unknown,
     PersonnelStatus Status = PersonnelStatus.Active,
-    int? SystemUserId = null) : IRequest<int>;
+    Guid? IdentityUserId = null) : IRequest<int>;
 
 public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelCommand, int>
 {
-    private readonly IPersonnelRepository _personnel;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public CreatePersonnelCommandHandler(IPersonnelRepository personnel, IUnitOfWork unitOfWork)
+    public CreatePersonnelCommandHandler(IApplicationDbContext context)
     {
-        _personnel = personnel;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<int> Handle(CreatePersonnelCommand request, CancellationToken cancellationToken)
@@ -37,10 +34,10 @@ public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelComm
             request.PhoneNumber,
             request.Gender,
             request.Status,
-            request.SystemUserId);
+            request.IdentityUserId);
 
-        await _personnel.AddAsync(personnel, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Personnel.Add(personnel);
+        await _context.SaveChangesAsync(cancellationToken);
         return personnel.Id;
     }
 }

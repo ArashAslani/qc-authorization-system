@@ -9,19 +9,19 @@ namespace qc_authorization.Application.UnitTests.Common.Behaviours;
 public class RequestLoggerTests
 {
     private Mock<ILogger<RequestLoggerTests.TestRequest>> _logger = null!;
-    private Mock<IUser> _user = null!;
+    private Mock<ICurrentUser> _user = null!;
 
     [SetUp]
     public void Setup()
     {
         _logger = new Mock<ILogger<TestRequest>>();
-        _user = new Mock<IUser>();
+        _user = new Mock<ICurrentUser>();
     }
 
     [Test]
     public async Task ShouldLogUserIdIfAuthenticated()
     {
-        _user.Setup(x => x.Id).Returns(Guid.NewGuid().ToString());
+        _user.Setup(x => x.UserId).Returns(Guid.NewGuid());
 
         var requestLogger = new LoggingBehaviour<TestRequest>(_logger.Object, _user.Object);
 

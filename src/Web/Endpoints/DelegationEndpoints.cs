@@ -38,8 +38,8 @@ public class DelegationEndpoints : IEndpointGroup
 }
 
 public record CreateDelegationRequest(
-    int DelegatorUserId,
-    int DelegateUserId,
+    Guid DelegatorUserId,
+    Guid DelegateUserId,
     int PermissionId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,

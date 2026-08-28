@@ -8,9 +8,9 @@ namespace qc_authorization.Application.Common.Behaviours;
 public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly IUser _user;
+    private readonly ICurrentUser _user;
 
-    public AuthorizationBehaviour(IUser user)
+    public AuthorizationBehaviour(ICurrentUser user)
     {
         _user = user;
     }
@@ -21,7 +21,7 @@ public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRe
 
         if (authorizeAttributes.Any())
         {
-            if (_user.Id == null)
+            if (!_user.IsAuthenticated || _user.UserId is null)
             {
                 throw new UnauthorizedAccessException();
             }

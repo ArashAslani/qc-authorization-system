@@ -9,6 +9,7 @@ namespace qc_authorization.Domain.Authorization.Evaluation;
 public sealed record AccessRequest(
     SubjectType SubjectType,
     int SubjectId,
+    Guid? UserId,
     string Action,
     string Resource,
     string? ResourceId,
@@ -21,4 +22,13 @@ public sealed record AccessRequest(
     /// Case-insensitive form for matching against the catalog.
     /// </summary>
     public string NormalizedPermissionCode => PermissionCode.ToUpperInvariant();
+
+    public static AccessRequest ForUser(
+        Guid userId,
+        string action,
+        string resource,
+        string? resourceId,
+        DateTimeOffset when,
+        IReadOnlyDictionary<string, object>? context = null) =>
+        new(SubjectType.User, 0, userId, action, resource, resourceId, when, context);
 }

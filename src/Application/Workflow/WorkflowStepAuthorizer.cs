@@ -18,7 +18,7 @@ public sealed class WorkflowStepAuthorizer
     }
 
     public Task<AccessDecision> AuthorizeAsync(
-        int systemUserId,
+        Guid userId,
         WorkflowStepRequirement requirement,
         DateTimeOffset when,
         CancellationToken cancellationToken = default)
@@ -32,9 +32,8 @@ public sealed class WorkflowStepAuthorizer
             ["WorkflowStep"] = requirement.PermissionCode,
         };
 
-        var request = new AccessRequest(
-            Domain.Authorization.Enums.SubjectType.User,
-            systemUserId,
+        var request = AccessRequest.ForUser(
+            userId,
             action,
             resource,
             requirement.ResourceId,

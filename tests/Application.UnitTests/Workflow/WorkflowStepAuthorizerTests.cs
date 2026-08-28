@@ -27,8 +27,14 @@ public class WorkflowStepAuthorizerTests
         await _context.Database.EnsureCreatedAsync();
         var perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
         _context.Permissions.Add(perm);
-        _context.Grants.Add(Grant.Create(
-            SubjectType.User, 80, perm.Id, SourceType.User, 80, Effect.Allow, T0.AddDays(-1), null,
+        _context.Grants.Add(Grant.CreateForUser(
+            TestUsers.UserA,
+            perm.Id,
+            SourceType.User,
+            0,
+            Effect.Allow,
+            T0.AddDays(-1),
+            null,
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
     }
@@ -44,7 +50,7 @@ public class WorkflowStepAuthorizerTests
     public async Task Authorized_Step_Returns_Allow()
     {
         var decision = await _authorizer.AuthorizeAsync(
-            80,
+            TestUsers.UserA,
             new WorkflowStepRequirement("Personnel.Read", "Personnel"),
             T0);
 
@@ -55,7 +61,7 @@ public class WorkflowStepAuthorizerTests
     public async Task Unauthorized_Step_Returns_Deny()
     {
         var decision = await _authorizer.AuthorizeAsync(
-            99,
+            TestUsers.Unknown,
             new WorkflowStepRequirement("Personnel.Read", "Personnel"),
             T0);
 
@@ -66,7 +72,7 @@ public class WorkflowStepAuthorizerTests
     public async Task Trace_Contains_Workflow_Context()
     {
         var decision = await _authorizer.AuthorizeAsync(
-            80,
+            TestUsers.UserA,
             new WorkflowStepRequirement("Personnel.Read", "Personnel", "r-1"),
             T0);
 

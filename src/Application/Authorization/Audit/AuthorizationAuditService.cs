@@ -1,5 +1,4 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization.Audit;
 
 namespace qc_authorization.Application.Authorization.Audit;
@@ -11,13 +10,16 @@ public interface IAuthorizationAuditService
 
 public sealed class AuthorizationAuditService : IAuthorizationAuditService
 {
-    private readonly IAuthorizationAuditRepository _audit;
+    private readonly IApplicationDbContext _context;
 
-    public AuthorizationAuditService(IAuthorizationAuditRepository audit)
+    public AuthorizationAuditService(IApplicationDbContext context)
     {
-        _audit = audit;
+        _context = context;
     }
 
-    public Task RecordAsync(string eventType, int? actorUserId, string payload, CancellationToken cancellationToken = default) =>
-        _audit.AddAsync(AuthorizationAuditEntry.Create(eventType, actorUserId, payload), cancellationToken);
+    public Task RecordAsync(string eventType, int? actorUserId, string payload, CancellationToken cancellationToken = default)
+    {
+        _context.AuthorizationAuditEntries.Add(AuthorizationAuditEntry.Create(eventType, actorUserId, payload));
+        return Task.CompletedTask;
+    }
 }

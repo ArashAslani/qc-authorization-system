@@ -8,7 +8,6 @@ using qc_authorization.Application.Authorization.Commands.RevokeGrant;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
@@ -16,7 +15,7 @@ using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
@@ -58,8 +57,8 @@ public class AuthorizationAuditIntegrationTests
     public async Task Grant_Create_And_Revoke_Write_Audit_Entries()
     {
         var grantId = await _mediator.Send(new CreateGrantCommand(
-            SubjectType.User, 10, _perm.Id, null, null, ScopeKind.Unbounded, null,
-            Effect.Allow, SourceType.User, 10, T0, null, SourcePriority.IndividualOverride));
+            SubjectType.User, 0, TestUsers.UserA, _perm.Id, null, null, ScopeKind.Unbounded, null,
+            Effect.Allow, SourceType.User, 0, T0, null, SourcePriority.IndividualOverride));
 
         await _mediator.Send(new RevokeGrantCommand(grantId, 10));
 
@@ -74,12 +73,12 @@ public class AuthorizationAuditIntegrationTests
     [Test]
     public async Task Delegation_Create_And_Revoke_Write_Audit_Entries()
     {
-        _context.Grants.Add(Grant.Create(
-            SubjectType.User, 10, _perm.Id, SourceType.User, 10, Effect.Allow, T0.AddDays(-1), null,
+        _context.Grants.Add(Grant.CreateForUser(
+            TestUsers.UserA, _perm.Id, SourceType.User, 0, Effect.Allow, T0.AddDays(-1), null,
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
-        var delegationId = await _mediator.Send(new CreateDelegationCommand(10, 20, _perm.Id, T0, null));
+        var delegationId = await _mediator.Send(new CreateDelegationCommand(TestUsers.UserA, TestUsers.UserB, _perm.Id, T0, null));
         await _mediator.Send(new RevokeDelegationCommand(delegationId));
 
         (await _context.AuthorizationAuditEntries.CountAsync(x => x.EventType == "DelegationCreated")).ShouldBe(1);
@@ -98,13 +97,7 @@ public class AuthorizationAuditIntegrationTests
             .AddSingleton(hierarchy)
             .AddSingleton(applicability)
             .AddSingleton(engine)
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
-            .AddScoped<IGrantRepository>(_ => new GrantRepository(_context))
-            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(_context))
-            .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
-            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
-            .AddScoped<IDelegationRepository>(_ => new DelegationRepository(_context))
-            .AddScoped<IAuthorizationAuditRepository>(_ => new AuthorizationAuditRepository(_context))
+            .AddScoped<IApplicationDbContext>(_ => _context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()

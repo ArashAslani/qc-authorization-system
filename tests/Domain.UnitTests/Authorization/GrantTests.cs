@@ -10,23 +10,24 @@ namespace qc_authorization.Domain.UnitTests.Authorization;
 public class GrantTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly Guid UserA = Guid.Parse("11111111-1111-1111-1111-111111111101");
 
     [Test]
     public void Can_Create_Grant()
     {
-        var g = Grant.Create(
-            SubjectType.User,
-            1,
+        var g = Grant.CreateForUser(
+            UserA,
             100,
             SourceType.User,
-            1,
+            0,
             Effect.Allow,
             T0,
             null,
             100);
 
         g.SubjectType.ShouldBe(SubjectType.User);
-        g.SubjectId.ShouldBe(1);
+        g.SubjectId.ShouldBe(0);
+        g.SubjectUserId.ShouldBe(UserA);
     }
 
     [Test]
@@ -50,12 +51,11 @@ public class GrantTests
     [Test]
     public void Grant_Allow_Effect_Is_Preserved()
     {
-        var g = Grant.Create(
-            SubjectType.User,
-            1,
+        var g = Grant.CreateForUser(
+            UserA,
             1,
             SourceType.User,
-            1,
+            0,
             Effect.Allow,
             T0,
             null,
@@ -67,12 +67,11 @@ public class GrantTests
     [Test]
     public void Grant_Deny_Effect_Is_Supported()
     {
-        var g = Grant.Create(
-            SubjectType.User,
-            1,
+        var g = Grant.CreateForUser(
+            UserA,
             1,
             SourceType.User,
-            1,
+            0,
             Effect.Deny,
             T0,
             null,
@@ -84,12 +83,11 @@ public class GrantTests
     [Test]
     public void Grant_Stores_Priority()
     {
-        var g = Grant.Create(
-            SubjectType.User,
-            1,
+        var g = Grant.CreateForUser(
+            UserA,
             1,
             SourceType.User,
-            1,
+            0,
             Effect.Allow,
             T0,
             null,
@@ -103,7 +101,9 @@ public class GrantTests
     {
         foreach (SubjectType t in Enum.GetValues(typeof(SubjectType)))
         {
-            var g = Grant.Create(t, 1, 1, SourceType.User, 1, Effect.Allow, T0, null, 1);
+            var g = t == SubjectType.User
+                ? Grant.CreateForUser(UserA, 1, SourceType.User, 0, Effect.Allow, T0, null, 1)
+                : Grant.Create(t, 1, 1, SourceType.Role, 1, Effect.Allow, T0, null, 1);
             g.SubjectType.ShouldBe(t);
         }
     }
@@ -113,7 +113,9 @@ public class GrantTests
     {
         foreach (SourceType s in Enum.GetValues(typeof(SourceType)))
         {
-            var g = Grant.Create(SubjectType.User, 1, 1, s, 1, Effect.Allow, T0, null, 1);
+            var g = s == SourceType.User
+                ? Grant.CreateForUser(UserA, 1, s, 0, Effect.Allow, T0, null, 1)
+                : Grant.Create(SubjectType.User, 0, 1, s, 1, Effect.Allow, T0, null, 1, subjectUserId: UserA);
             g.SourceType.ShouldBe(s);
         }
     }
@@ -122,6 +124,6 @@ public class GrantTests
     public void Grant_Rejects_Invalid_SourceId()
     {
         Should.Throw<AuthorizationDomainException>(() =>
-            Grant.Create(SubjectType.User, 1, 1, SourceType.User, 0, Effect.Allow, T0, null, 1));
+            Grant.Create(SubjectType.User, 0, 1, SourceType.User, 0, Effect.Allow, T0, null, 1, subjectUserId: UserA));
     }
 }

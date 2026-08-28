@@ -25,6 +25,9 @@ app.UseCors(static builder =>
         .AllowAnyHeader()
         .AllowAnyOrigin());
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapOpenApi();
 app.UseExceptionHandler(options => { });
 app.MapEndpoints(typeof(Program).Assembly);

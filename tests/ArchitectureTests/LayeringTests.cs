@@ -37,7 +37,7 @@ public class LayeringTests
     [Test]
     public void Application_ShouldNotDependOnInfrastructureOrWeb()
     {
-        var result = Types.InAssembly(typeof(Application.Common.Interfaces.IUser).Assembly)
+        var result = Types.InAssembly(typeof(Application.Common.Interfaces.IApplicationDbContext).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(InfrastructureNamespace, WebNamespace)
             .GetResult();
@@ -47,12 +47,27 @@ public class LayeringTests
     }
 
     [Test]
-    public void Application_ShouldNotReferenceEntityFrameworkCore()
+    public void Application_ShouldNotContainRepositoryAbstractions()
     {
-        var asm = typeof(Application.Common.Interfaces.IUser).Assembly;
-        var refs = asm.GetReferencedAssemblies().Select(a => a.Name ?? string.Empty);
-        Assert.That(refs.Any(r => r.StartsWith("Microsoft.EntityFrameworkCore")), Is.False,
-            "Application must not reference Microsoft.EntityFrameworkCore.*");
+        var result = Types.InAssembly(typeof(Application.Common.Interfaces.IApplicationDbContext).Assembly)
+            .ShouldNot()
+            .HaveNameEndingWith("Repository")
+            .GetResult();
+
+        Assert.That(result.IsSuccessful, Is.True,
+            "Repository abstractions must not exist in Application: " + string.Join(", ", result.FailingTypeNames ?? Array.Empty<string>()));
+    }
+
+    [Test]
+    public void Application_ShouldNotContainUnitOfWork()
+    {
+        var result = Types.InAssembly(typeof(Application.Common.Interfaces.IApplicationDbContext).Assembly)
+            .ShouldNot()
+            .HaveNameMatching("UnitOfWork")
+            .GetResult();
+
+        Assert.That(result.IsSuccessful, Is.True,
+            "UnitOfWork must not exist in Application: " + string.Join(", ", result.FailingTypeNames ?? Array.Empty<string>()));
     }
 
     [Test]

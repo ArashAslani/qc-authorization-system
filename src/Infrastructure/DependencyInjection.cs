@@ -1,12 +1,11 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Infrastructure.Data;
 using qc_authorization.Infrastructure.Data.Interceptors;
-using qc_authorization.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using qc_authorization.Infrastructure.Identity;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -27,18 +26,9 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
-        builder.Services.AddScoped<IResourceCatalogRepository, ResourceCatalogRepository>();
-        builder.Services.AddScoped<IActionCatalogRepository, ActionCatalogRepository>();
-        builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-        builder.Services.AddScoped<IRoleGroupRepository, RoleGroupRepository>();
-        builder.Services.AddScoped<IPersonnelRepository, PersonnelRepository>();
-        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-        builder.Services.AddScoped<IGrantRepository, GrantRepository>();
-        builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-        builder.Services.AddScoped<IPositionRepository, PositionRepository>();
-        builder.Services.AddScoped<IPositionAssignmentRepository, PositionAssignmentRepository>();
-        builder.Services.AddScoped<IDelegationRepository, DelegationRepository>();
-        builder.Services.AddScoped<IAuthorizationAuditRepository, AuthorizationAuditRepository>();
+        builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
+        builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 

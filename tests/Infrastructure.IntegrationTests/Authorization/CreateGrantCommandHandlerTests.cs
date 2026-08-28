@@ -1,15 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
@@ -33,13 +32,7 @@ public class CreateGrantCommandHandlerTests
         _mediator = new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
-            .AddScoped<IGrantRepository>(_ => new GrantRepository(_context))
-            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(_context))
-            .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
-            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
-            .AddScoped<IDelegationRepository>(_ => new DelegationRepository(_context))
-            .AddScoped<IAuthorizationAuditRepository>(_ => new AuthorizationAuditRepository(_context))
+            .AddScoped<IApplicationDbContext>(_ => _context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
@@ -63,6 +56,7 @@ public class CreateGrantCommandHandlerTests
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.Role,
             SubjectId: 50,
+            SubjectUserId: null,
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,
@@ -93,6 +87,7 @@ public class CreateGrantCommandHandlerTests
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.Position,
             SubjectId: 200,
+            SubjectUserId: null,
             PermissionId: permissionId,
             Resource: "Personnel",
             ResourceId: null,
@@ -121,7 +116,8 @@ public class CreateGrantCommandHandlerTests
 
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.User,
-            SubjectId: 80,
+            SubjectId: 0,
+            SubjectUserId: TestUsers.UserA,
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,
@@ -129,7 +125,7 @@ public class CreateGrantCommandHandlerTests
             ScopeIdentifier: null,
             Effect.Allow,
             SourceType.User,
-            SourceId: 80,
+            SourceId: 0,
             from,
             to,
             Priority: SourcePriority.IndividualOverride));
@@ -137,6 +133,7 @@ public class CreateGrantCommandHandlerTests
         var g = await _context.Grants.SingleAsync(x => x.Id == id);
         g.ValidFrom.ShouldBe(from);
         g.ValidTo.ShouldBe(to);
+        g.SubjectUserId.ShouldBe(TestUsers.UserA);
     }
 
     [Test]
@@ -147,6 +144,7 @@ public class CreateGrantCommandHandlerTests
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.RoleGroup,
             SubjectId: 999,
+            SubjectUserId: null,
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,

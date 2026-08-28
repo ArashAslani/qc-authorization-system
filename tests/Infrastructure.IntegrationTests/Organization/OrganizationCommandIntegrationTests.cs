@@ -2,14 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
 using qc_authorization.Application.Organization.Commands.CreatePersonnel;
 using qc_authorization.Application.Organization.Commands.CreatePosition;
 using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Enums;
 using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Data.Repositories;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
@@ -35,10 +33,7 @@ public class OrganizationCommandIntegrationTests
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreatePositionCommand>())
             .AddSingleton<PositionHierarchyService>()
-            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
-            .AddScoped<IPersonnelRepository>(_ => new PersonnelRepository(_context))
-            .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
-            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
+            .AddScoped<IApplicationDbContext>(_ => _context)
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
     }
@@ -51,20 +46,20 @@ public class OrganizationCommandIntegrationTests
     }
 
     [Test]
-    public async Task Can_Create_Personnel_With_SystemUserId()
+    public async Task Can_Create_Personnel_With_IdentityUserId()
     {
         var id = await _mediator.Send(new CreatePersonnelCommand(
-            "1234567890", "Ali", "Ahmadi", "PC-001", SystemUserId: 80));
+            "1234567890", "Ali", "Ahmadi", "PC-001", IdentityUserId: TestUsers.UserA));
 
         var p = await _context.Personnel.SingleAsync(x => x.Id == id);
-        p.SystemUserId.ShouldBe(80);
+        p.IdentityUserId.ShouldBe(TestUsers.UserA);
     }
 
     [Test]
     public async Task Can_Assign_Personnel_To_Position()
     {
         var personnelId = await _mediator.Send(new CreatePersonnelCommand(
-            "1234567890", "Ali", "Ahmadi", "PC-001", SystemUserId: 80));
+            "1234567890", "Ali", "Ahmadi", "PC-001", IdentityUserId: TestUsers.UserA));
         var positionId = await _mediator.Send(new CreatePositionCommand(1, "ENG", "Engineer", null, null));
         var from = DateTimeOffset.UtcNow.AddDays(-1);
 

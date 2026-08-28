@@ -1,8 +1,10 @@
 using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
+using qc_authorization.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
 using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
 using qc_authorization.Application.Authorization.Commands.CreatePermission;
 using qc_authorization.Application.Authorization.Commands.CreateRole;
 using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
+using qc_authorization.Application.Authorization.Commands.RevokeAuthorizationRoleFromUser;
 using qc_authorization.Web.Infrastructure;
 using MediatR;
 
@@ -17,6 +19,8 @@ public class AccessDefinitionEndpoints : IEndpointGroup
         group.MapPost(AssignPermissionToRole);
         group.MapPost(CreateRoleGroup);
         group.MapPost(AddRoleToGroup);
+        group.MapPost(AssignRoleToUser);
+        group.MapPost(RevokeRoleFromUser);
     }
 
     private static async Task<IResult> CreatePermission(CreatePermissionRequest request, ISender sender)
@@ -54,6 +58,19 @@ public class AccessDefinitionEndpoints : IEndpointGroup
         await sender.Send(new AddRoleToGroupCommand(request.RoleGroupId, request.RoleId));
         return Results.NoContent();
     }
+
+    private static async Task<IResult> AssignRoleToUser(AssignRoleToUserRequest request, ISender sender)
+    {
+        await sender.Send(new AssignAuthorizationRoleToUserCommand(
+            request.UserId, request.RoleId, request.ValidFrom, request.ValidTo));
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> RevokeRoleFromUser(RevokeRoleFromUserRequest request, ISender sender)
+    {
+        await sender.Send(new RevokeAuthorizationRoleFromUserCommand(request.UserId, request.RoleId));
+        return Results.NoContent();
+    }
 }
 
 public record CreatePermissionRequest(
@@ -70,3 +87,11 @@ public record AssignPermissionToRoleRequest(int RoleId, int PermissionId);
 public record CreateRoleGroupRequest(string Code, string Name, string? Description = null);
 
 public record AddRoleToGroupRequest(int RoleGroupId, int RoleId);
+
+public record AssignRoleToUserRequest(
+    Guid UserId,
+    int RoleId,
+    DateTimeOffset ValidFrom,
+    DateTimeOffset? ValidTo = null);
+
+public record RevokeRoleFromUserRequest(Guid UserId, int RoleId);

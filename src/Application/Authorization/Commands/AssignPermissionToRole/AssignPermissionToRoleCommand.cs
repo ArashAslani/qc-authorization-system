@@ -1,7 +1,7 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
 
@@ -9,33 +9,31 @@ public record AssignPermissionToRoleCommand(int RoleId, int PermissionId) : IReq
 
 public class AssignPermissionToRoleCommandHandler : IRequestHandler<AssignPermissionToRoleCommand>
 {
-    private readonly IRoleRepository _roles;
-    private readonly IPermissionRepository _permissions;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public AssignPermissionToRoleCommandHandler(
-        IRoleRepository roles,
-        IPermissionRepository permissions,
-        IUnitOfWork unitOfWork)
+    public AssignPermissionToRoleCommandHandler(IApplicationDbContext context)
     {
-        _roles = roles;
-        _permissions = permissions;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task Handle(AssignPermissionToRoleCommand request, CancellationToken cancellationToken)
     {
-        _ = await _roles.GetByIdAsync(request.RoleId, cancellationToken)
+        _ = await _context.AuthorizationRoles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == request.RoleId, cancellationToken)
             ?? throw new InvalidOperationException($"Role {request.RoleId} not found.");
-        _ = await _permissions.GetByIdAsync(request.PermissionId, cancellationToken)
+
+        _ = await _context.Permissions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == request.PermissionId, cancellationToken)
             ?? throw new InvalidOperationException($"Permission {request.PermissionId} not found.");
 
-        await _roles.AddPermissionAsync(new RolePermission
+        _context.RolePermissions.Add(new RolePermission
         {
             RoleId = request.RoleId,
             PermissionId = request.PermissionId,
-        }, cancellationToken);
+        });
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

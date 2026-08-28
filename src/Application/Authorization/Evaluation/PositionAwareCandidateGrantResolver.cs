@@ -1,54 +1,49 @@
-using qc_authorization.Application.Common.Interfaces.Repositories;
+using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Enums;
+using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Organization;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Evaluation;
 
 /// <summary>
-/// Resolves candidate grants using repositories and domain propagation rules.
+/// Resolves candidate grants using EF Core and domain propagation rules.
 /// </summary>
 public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolver
 {
-    private readonly IPermissionRepository _permissions;
-    private readonly IGrantRepository _grants;
-    private readonly IPositionRepository _positions;
-    private readonly IPositionAssignmentRepository _assignments;
-    private readonly IDelegationRepository _delegations;
+    private readonly IApplicationDbContext _context;
     private readonly GrantApplicabilityService _applicability;
 
     public PositionAwareCandidateGrantResolver(
-        IPermissionRepository permissions,
-        IGrantRepository grants,
-        IPositionRepository positions,
-        IPositionAssignmentRepository assignments,
-        IDelegationRepository delegations,
+        IApplicationDbContext context,
         GrantApplicabilityService applicability)
     {
-        _permissions = permissions;
-        _grants = grants;
-        _positions = positions;
-        _assignments = assignments;
-        _delegations = delegations;
+        _context = context;
         _applicability = applicability;
     }
 
     public async Task<IReadOnlyList<Grant>> ResolveAsync(AccessRequest request, CancellationToken cancellationToken)
     {
-        var permission = await _permissions.GetByCodeAsync(request.NormalizedPermissionCode, cancellationToken);
+        var normalizedCode = request.NormalizedPermissionCode;
+        var permission = await _context.Permissions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Code.ToUpper() == normalizedCode, cancellationToken);
+
         if (permission is null)
         {
             return Array.Empty<Grant>();
         }
 
-        var allGrants = await _grants.GetByPermissionAndResourceAsync(
-            permission.Id,
-            request.Resource,
-            cancellationToken);
+        var allGrants = await _context.Grants
+            .AsNoTracking()
+            .Include(g => g.Constraints)
+            .Where(g => g.PermissionId == permission.Id
+                     && (g.Resource == null || g.Resource == request.Resource))
+            .ToListAsync(cancellationToken);
 
-        var allPositions = await _positions.GetAllAsync(cancellationToken);
+        var allPositions = await _context.Positions.AsNoTracking().ToListAsync(cancellationToken);
         var requestPositionIds = await ResolveRequestPositions(request, cancellationToken);
 
         var result = new List<Grant>();
@@ -59,6 +54,7 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
                     grant,
                     request.SubjectType,
                     request.SubjectId,
+                    request.UserId,
                     requestPositionIds,
                     allPositions))
             {
@@ -66,30 +62,34 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
             }
         }
 
-        foreach (var delegation in await _delegations.GetActiveForDelegateAsync(
-                     request.SubjectId,
-                     request.When,
-                     cancellationToken))
+        if (request.SubjectType == SubjectType.User && request.UserId is Guid userId)
         {
-            if (delegation.PermissionId != permission.Id)
-            {
-                continue;
-            }
+            var activeDelegations = await _context.Delegations
+                .AsNoTracking()
+                .Where(d => d.DelegateUserId == userId
+                         && !d.IsRevoked
+                         && d.ValidFrom <= request.When
+                         && (d.ValidTo == null || request.When <= d.ValidTo))
+                .ToListAsync(cancellationToken);
 
-            if (request.SubjectType != SubjectType.User)
+            foreach (var delegation in activeDelegations)
             {
-                continue;
-            }
+                if (delegation.PermissionId != permission.Id)
+                {
+                    continue;
+                }
 
-            var delegatedGrant = delegation.ToGrant();
-            if (_applicability.Applies(
-                    delegatedGrant,
-                    request.SubjectType,
-                    request.SubjectId,
-                    requestPositionIds,
-                    allPositions))
-            {
-                result.Add(delegatedGrant);
+                var delegatedGrant = delegation.ToGrant();
+                if (_applicability.Applies(
+                        delegatedGrant,
+                        request.SubjectType,
+                        request.SubjectId,
+                        request.UserId,
+                        requestPositionIds,
+                        allPositions))
+                {
+                    result.Add(delegatedGrant);
+                }
             }
         }
 
@@ -103,16 +103,19 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
             return [request.SubjectId];
         }
 
-        if (request.SubjectType != SubjectType.User)
+        if (request.SubjectType != SubjectType.User || request.UserId is not Guid userId)
         {
             return [];
         }
 
-        var assignments = await _assignments.GetActivePositionIdsForSystemUserAsync(
-            request.SubjectId,
-            request.When,
-            ct);
+        var positionIds = await _context.PositionAssignments
+            .AsNoTracking()
+            .Where(a => a.Personnel.IdentityUserId == userId
+                     && a.ValidFrom <= request.When
+                     && (a.ValidTo == null || request.When <= a.ValidTo))
+            .Select(a => a.PositionId)
+            .ToListAsync(ct);
 
-        return new HashSet<int>(assignments);
+        return new HashSet<int>(positionIds);
     }
 }

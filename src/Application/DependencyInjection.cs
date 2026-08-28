@@ -1,4 +1,6 @@
 using System.Reflection;
+using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
@@ -15,6 +17,8 @@ public static class DependencyInjection
 {
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
+        MappingConfig.RegisterMappings();
+
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         builder.Services.AddSingleton<PositionHierarchyService>();

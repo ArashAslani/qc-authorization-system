@@ -17,6 +17,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
     public SubjectType SubjectType { get; private set; }
     public int SubjectId { get; private set; }
+    public Guid? SubjectUserId { get; private set; }
 
     public int PermissionId { get; private set; }
     public Permission Permission { get; private set; } = null!;
@@ -31,6 +32,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
     public SourceType SourceType { get; private set; }
     public int SourceId { get; private set; }
+    public Guid? SourceUserId { get; private set; }
 
     public DateTimeOffset ValidFrom { get; private set; }
     public DateTimeOffset? ValidTo { get; private set; }
@@ -57,20 +59,28 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
         string? resourceId = null,
         ScopeKind scopeKind = ScopeKind.Unbounded,
         string? scopeIdentifier = null,
-        IEnumerable<GrantConstraint>? constraints = null)
+        IEnumerable<GrantConstraint>? constraints = null,
+        Guid? subjectUserId = null,
+        Guid? sourceUserId = null)
     {
         _ = new Validity(validFrom, validTo);
         _ = new Scope(scopeKind, scopeIdentifier);
 
-        if (sourceId <= 0)
+        if (sourceId <= 0 && sourceUserId is null)
         {
-            throw new AuthorizationDomainException("SourceId must be a positive identifier.");
+            throw new AuthorizationDomainException("SourceId or SourceUserId must be provided.");
+        }
+
+        if (subjectType == SubjectType.User && subjectUserId is null)
+        {
+            throw new AuthorizationDomainException("SubjectUserId is required for user grants.");
         }
 
         var grant = new Grant
         {
             SubjectType = subjectType,
             SubjectId = subjectId,
+            SubjectUserId = subjectUserId,
             PermissionId = permissionId,
             Resource = resource,
             ResourceId = resourceId,
@@ -79,6 +89,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
             Effect = effect,
             SourceType = sourceType,
             SourceId = sourceId,
+            SourceUserId = sourceUserId,
             ValidFrom = validFrom,
             ValidTo = validTo,
             Priority = priority,
@@ -94,4 +105,37 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
         return grant;
     }
+
+    public static Grant CreateForUser(
+        Guid subjectUserId,
+        int permissionId,
+        SourceType sourceType,
+        int sourceId,
+        Effect effect,
+        DateTimeOffset validFrom,
+        DateTimeOffset? validTo,
+        int priority,
+        Guid? sourceUserId = null,
+        string? resource = null,
+        string? resourceId = null,
+        ScopeKind scopeKind = ScopeKind.Unbounded,
+        string? scopeIdentifier = null,
+        IEnumerable<GrantConstraint>? constraints = null) =>
+        Create(
+            SubjectType.User,
+            0,
+            permissionId,
+            sourceType,
+            sourceId,
+            effect,
+            validFrom,
+            validTo,
+            priority,
+            resource,
+            resourceId,
+            scopeKind,
+            scopeIdentifier,
+            constraints,
+            subjectUserId,
+            sourceUserId ?? (sourceType == SourceType.User ? subjectUserId : null));
 }

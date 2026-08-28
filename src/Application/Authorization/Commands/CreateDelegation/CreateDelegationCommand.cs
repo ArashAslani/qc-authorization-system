@@ -1,17 +1,17 @@
 using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Exceptions;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.CreateDelegation;
 
 public record CreateDelegationCommand(
-    int DelegatorUserId,
-    int DelegateUserId,
+    Guid DelegatorUserId,
+    Guid DelegateUserId,
     int PermissionId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
@@ -22,28 +22,26 @@ public record CreateDelegationCommand(
 
 public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCommand, int>
 {
-    private readonly IDelegationRepository _delegations;
+    private readonly IApplicationDbContext _context;
     private readonly IDelegationSubsetPolicy _subsetPolicy;
     private readonly IAuthorizationAuditService _audit;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CreateDelegationCommandHandler(
-        IDelegationRepository delegations,
+        IApplicationDbContext context,
         IDelegationSubsetPolicy subsetPolicy,
-        IAuthorizationAuditService audit,
-        IUnitOfWork unitOfWork)
+        IAuthorizationAuditService audit)
     {
-        _delegations = delegations;
+        _context = context;
         _subsetPolicy = subsetPolicy;
         _audit = audit;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<int> Handle(CreateDelegationCommand request, CancellationToken cancellationToken)
     {
         if (request.ParentDelegationId is int parentId)
         {
-            var parent = await _delegations.GetByIdAsync(parentId, cancellationToken)
+            var parent = await _context.Delegations
+                .FirstOrDefaultAsync(d => d.Id == parentId, cancellationToken)
                 ?? throw new InvalidOperationException($"Parent delegation {parentId} not found.");
 
             if (parent.IsRevoked)
@@ -75,13 +73,13 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
             request.ScopeIdentifier,
             request.Delegable);
 
-        await _delegations.AddAsync(delegation, cancellationToken);
+        _context.Delegations.Add(delegation);
         await _audit.RecordAsync(
             "DelegationCreated",
-            request.DelegatorUserId,
+            null,
             $"delegateUserId={request.DelegateUserId};permissionId={request.PermissionId}",
             cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return delegation.Id;
     }

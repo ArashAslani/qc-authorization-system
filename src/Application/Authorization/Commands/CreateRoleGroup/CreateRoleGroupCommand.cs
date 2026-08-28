@@ -1,5 +1,4 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using MediatR;
 
@@ -9,20 +8,18 @@ public record CreateRoleGroupCommand(string Code, string Name, string? Descripti
 
 public class CreateRoleGroupCommandHandler : IRequestHandler<CreateRoleGroupCommand, int>
 {
-    private readonly IRoleGroupRepository _roleGroups;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public CreateRoleGroupCommandHandler(IRoleGroupRepository roleGroups, IUnitOfWork unitOfWork)
+    public CreateRoleGroupCommandHandler(IApplicationDbContext context)
     {
-        _roleGroups = roleGroups;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<int> Handle(CreateRoleGroupCommand request, CancellationToken cancellationToken)
     {
         var group = RoleGroup.Create(request.Code, request.Name, request.Description);
-        await _roleGroups.AddAsync(group, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.RoleGroups.Add(group);
+        await _context.SaveChangesAsync(cancellationToken);
         return group.Id;
     }
 }

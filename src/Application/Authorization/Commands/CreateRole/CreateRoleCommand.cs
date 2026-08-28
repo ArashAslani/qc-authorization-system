@@ -1,5 +1,4 @@
 using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using MediatR;
 
@@ -9,20 +8,18 @@ public record CreateRoleCommand(string Code, string Name, string? Description = 
 
 public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, int>
 {
-    private readonly IRoleRepository _roles;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IApplicationDbContext _context;
 
-    public CreateRoleCommandHandler(IRoleRepository roles, IUnitOfWork unitOfWork)
+    public CreateRoleCommandHandler(IApplicationDbContext context)
     {
-        _roles = roles;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<int> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
         var role = Role.Create(request.Code, request.Name, request.Description);
-        await _roles.AddAsync(role, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.AuthorizationRoles.Add(role);
+        await _context.SaveChangesAsync(cancellationToken);
         return role.Id;
     }
 }

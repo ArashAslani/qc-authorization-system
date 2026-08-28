@@ -6,7 +6,7 @@ namespace qc_authorization.Domain.Organization;
 
 /// <summary>
 /// A real person in the organization. Not the same concept as an authorization
-/// <c>SubjectType.User</c>; system users are mapped at the application boundary.
+/// <c>SubjectType.User</c>; authenticated users are mapped at the application boundary.
 /// </summary>
 public class Personnel : BaseAuditableEntity, IAggregateRoot
 {
@@ -21,10 +21,10 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
     public PersonnelStatus Status { get; private set; } = PersonnelStatus.Active;
 
     /// <summary>
-    /// Optional link to the authenticated system user used in authorization requests.
+    /// Optional link to the ASP.NET Core Identity user.
     /// Personnel and User remain distinct concepts.
     /// </summary>
-    public int? SystemUserId { get; private set; }
+    public Guid? IdentityUserId { get; private set; }
 
     public List<PositionAssignment> Assignments { get; private set; } = new();
 
@@ -36,7 +36,7 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
         string? phoneNumber = null,
         PersonnelGender gender = PersonnelGender.Unknown,
         PersonnelStatus status = PersonnelStatus.Active,
-        int? systemUserId = null)
+        Guid? identityUserId = null)
     {
         if (string.IsNullOrWhiteSpace(nationalId))
         {
@@ -67,17 +67,17 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
             PhoneNumber = phoneNumber?.Trim(),
             Gender = gender,
             Status = status,
-            SystemUserId = systemUserId,
+            IdentityUserId = identityUserId,
         };
     }
 
-    public void LinkSystemUser(int systemUserId)
+    public void LinkIdentityUser(Guid identityUserId)
     {
-        if (systemUserId <= 0)
+        if (identityUserId == Guid.Empty)
         {
-            throw new OrganizationDomainException("SystemUserId must be a positive identifier.");
+            throw new OrganizationDomainException("IdentityUserId must be a valid identifier.");
         }
 
-        SystemUserId = systemUserId;
+        IdentityUserId = identityUserId;
     }
 }
