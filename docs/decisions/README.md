@@ -17,3 +17,4 @@ short Markdown file whose name follows the
 | 0007 | [Decision Trace content](0007-decision-trace-content.md) | Accepted | 03 |
 | 0008 | [SQLite + EF Core 10 in V1](0008-sqlite-efcore-v1.md) | Accepted | 00 |
 | 0009 | [Typed constraints, no DSL](0009-typed-constraints-no-dsl.md) | Accepted | 06 |
+| 0010 | [Identity Role vs Qc Authorization Role separation](0010-identity-vs-qc-role-separation.md) | Accepted | Identity audit |

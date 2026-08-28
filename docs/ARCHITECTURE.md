@@ -142,6 +142,10 @@ a context; the engine evaluates it. The integration is the
 - **Identity Role** ≠ **Qc Authorization Role** (`Domain.Authorization.Role`).
   Role-based access flows through `RolePermission` → materialized `Grant` facts
   → Evaluation Engine. `[Authorize(Roles=...)]` does not replace the engine.
+- `ApplicationRole` is intentionally thin — do not extend it with Qc
+  permission catalog data. `IdentityRoleClaim` is not used for business
+  permissions. See ADR
+  [0010 — Identity Role vs Qc Authorization Role separation](decisions/0010-identity-vs-qc-role-separation.md).
 
 ## 10. What is explicitly NOT built (yet)
 
