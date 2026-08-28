@@ -118,7 +118,7 @@ The trace is a first-class part of the engine contract.
 
 ## 7. Constraints
 
-Phase 06 introduces three typed constraints — `AmountConstraint`,
+Phase 07 introduces three typed constraints — `AmountConstraint`,
 `TimeConstraint`, `ScopeConstraint` — each deterministic, testable, and
 traceable. No generic DSL, no expression parser. Adding a new constraint
 type means adding a new class, not changing the engine.
