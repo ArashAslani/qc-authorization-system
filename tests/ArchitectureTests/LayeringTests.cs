@@ -47,6 +47,15 @@ public class LayeringTests
     }
 
     [Test]
+    public void Application_ShouldNotReferenceEntityFrameworkCore()
+    {
+        var asm = typeof(Application.Common.Interfaces.IUser).Assembly;
+        var refs = asm.GetReferencedAssemblies().Select(a => a.Name ?? string.Empty);
+        Assert.That(refs.Any(r => r.StartsWith("Microsoft.EntityFrameworkCore")), Is.False,
+            "Application must not reference Microsoft.EntityFrameworkCore.*");
+    }
+
+    [Test]
     public void Infrastructure_MayDependOnDomainAndApplication_ButNotWeb()
     {
         var result = Types.InAssembly(typeof(Infrastructure.Data.ApplicationDbContext).Assembly)

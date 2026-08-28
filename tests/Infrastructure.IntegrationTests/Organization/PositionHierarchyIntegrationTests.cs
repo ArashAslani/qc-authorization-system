@@ -42,11 +42,11 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Can_Create_Position_And_Assign_Parent()
     {
-        var root = new Position { Code = "ROOT", Name = "Root" };
+        var root = Position.Create(1, "ROOT", "Root");
         _context.Positions.Add(root);
         await _context.SaveChangesAsync();
 
-        var child = new Position { Code = "CHILD", Name = "Child", ParentId = root.Id };
+        var child = Position.Create(1, "CHILD", "Child", parentPositionId: root.Id);
         _context.Positions.Add(child);
         await _context.SaveChangesAsync();
 
@@ -61,13 +61,15 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Can_Re_Parent_Position()
     {
-        var a = new Position { Code = "A", Name = "A" };
-        var b = new Position { Code = "B", Name = "B" };
-        var n = new Position { Code = "N", Name = "N" };
+        var a = Position.Create(1, "A", "A");
+        var b = Position.Create(1, "B", "B");
+        var n = Position.Create(1, "N", "N");
         _context.Positions.AddRange(a, b, n);
         await _context.SaveChangesAsync();
 
-        n.ParentId = a.Id;
+        var trackedN = await _context.Positions.SingleAsync(p => p.Id == n.Id);
+        var trackedA = await _context.Positions.SingleAsync(p => p.Id == a.Id);
+        trackedN.Reparent(trackedA, await _context.Positions.AsNoTracking().ToListAsync(), _hierarchy);
         await _context.SaveChangesAsync();
 
         var all = await _context.Positions.AsNoTracking().ToListAsync();
@@ -78,7 +80,7 @@ public class PositionHierarchyIntegrationTests
         _hierarchy.EnsureValidParenting(nFromDb, bFromDb, all);
 
         var tracked = await _context.Positions.SingleAsync(p => p.Id == nFromDb.Id);
-        tracked.ParentId = bFromDb.Id;
+        tracked.Reparent(bFromDb, all, _hierarchy);
         await _context.SaveChangesAsync();
 
         var fresh = await _context.Positions.AsNoTracking().ToListAsync();
@@ -89,14 +91,18 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Re_Parenting_Under_Own_Descendant_Throws()
     {
-        var a = new Position { Code = "A", Name = "A" };
-        var b = new Position { Code = "B", Name = "B" };
-        var d = new Position { Code = "D", Name = "D" };
+        var a = Position.Create(1, "A", "A");
+        var b = Position.Create(1, "B", "B");
+        var d = Position.Create(1, "D", "D");
         _context.Positions.AddRange(a, b, d);
         await _context.SaveChangesAsync();
 
-        b.ParentId = a.Id;
-        d.ParentId = b.Id;
+        var trackedB = await _context.Positions.SingleAsync(p => p.Id == b.Id);
+        var trackedD = await _context.Positions.SingleAsync(p => p.Id == d.Id);
+        var trackedA = await _context.Positions.SingleAsync(p => p.Id == a.Id);
+
+        trackedB.Reparent(trackedA, await _context.Positions.AsNoTracking().ToListAsync(), _hierarchy);
+        trackedD.Reparent(trackedB, await _context.Positions.AsNoTracking().ToListAsync(), _hierarchy);
         await _context.SaveChangesAsync();
 
         var all = await _context.Positions.AsNoTracking().ToListAsync();
@@ -104,5 +110,21 @@ public class PositionHierarchyIntegrationTests
         var dFromDb = all.Single(p => p.Id == d.Id);
 
         Should.Throw<HierarchyCycleException>(() => _hierarchy.EnsureValidParenting(aFromDb, dFromDb, all));
+    }
+
+    [Test]
+    public async Task Cross_Company_Parent_Is_Rejected()
+    {
+        var companyA = Position.Create(1, "A", "A");
+        var companyBRoot = Position.Create(2, "B", "B");
+        _context.Positions.AddRange(companyA, companyBRoot);
+        await _context.SaveChangesAsync();
+
+        var trackedA = await _context.Positions.SingleAsync(p => p.Id == companyA.Id);
+        var trackedB = await _context.Positions.SingleAsync(p => p.Id == companyBRoot.Id);
+        var all = await _context.Positions.AsNoTracking().ToListAsync();
+
+        Should.Throw<OrganizationDomainException>(() =>
+            trackedA.Reparent(trackedB, all, _hierarchy));
     }
 }

@@ -1,6 +1,6 @@
 using qc_authorization.Domain.Authorization.Enums;
 
-namespace qc_authorization.Application.Authorization.Evaluation;
+namespace qc_authorization.Domain.Authorization.Evaluation;
 
 public enum DecisionReason
 {

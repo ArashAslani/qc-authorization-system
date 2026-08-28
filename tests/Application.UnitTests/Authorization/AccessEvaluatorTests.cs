@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.UnitTests.TestSupport;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
+using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
@@ -22,25 +22,16 @@ public class AccessEvaluatorTests
     [SetUp]
     public async Task SetUp()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"qc-eval-{Guid.NewGuid()}")
-            .Options;
-        _context = new ApplicationDbContext(options);
+        (_context, _evaluator) = AuthorizationTestContext.Create();
         await _context.Database.EnsureCreatedAsync();
 
-        _perm = new Permission
-        {
-            Code = "PERSONNEL.READ",
-            Resource = "Personnel",
-            Action = "Read",
-        };
+        _perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
         _context.Permissions.Add(_perm);
 
-        // Seed a Position so position-typed tests have something to resolve.
-        _context.Positions.Add(new Position { Id = 200, Code = "TEST-POS", Name = "Test Pos" });
+        var position = Position.Create(1, "TEST-POS", "Test Pos");
+        position.Id = 200;
+        _context.Positions.Add(position);
         await _context.SaveChangesAsync();
-
-        _evaluator = new AccessEvaluator(new PositionAwareCandidateGrantResolver(_context, new PositionHierarchyService()));
     }
 
     [TearDown]
@@ -50,7 +41,6 @@ public class AccessEvaluatorTests
         await _context.DisposeAsync();
     }
 
-    // --- role allow / deny ---
     [Test]
     public async Task Role_Allow_Returns_Allow()
     {
@@ -71,7 +61,6 @@ public class AccessEvaluatorTests
         d.Effect.ShouldBe(Effect.Deny);
     }
 
-    // --- position allow / deny ---
     [Test]
     public async Task Position_Allow_Returns_Allow()
     {
@@ -92,7 +81,6 @@ public class AccessEvaluatorTests
         d.Effect.ShouldBe(Effect.Deny);
     }
 
-    // --- user direct allow / deny ---
     [Test]
     public async Task User_Direct_Allow_Returns_Allow()
     {
@@ -113,7 +101,6 @@ public class AccessEvaluatorTests
         d.Effect.ShouldBe(Effect.Deny);
     }
 
-    // --- expired / valid ---
     [Test]
     public async Task Expired_Grant_Denies()
     {
@@ -137,7 +124,6 @@ public class AccessEvaluatorTests
         d.Effect.ShouldBe(Effect.Allow);
     }
 
-    // --- in-scope / out-of-scope ---
     [Test]
     public async Task In_Scope_Allows()
     {
@@ -161,7 +147,6 @@ public class AccessEvaluatorTests
         d.Reason.ShouldBe(DecisionReason.OutOfScope);
     }
 
-    // --- multiple grants ---
     [Test]
     public async Task Multiple_Grants_AreDeterministic()
     {
@@ -175,7 +160,6 @@ public class AccessEvaluatorTests
         d1.Effect.ShouldBe(d2.Effect);
     }
 
-    // --- priority ---
     [Test]
     public async Task Higher_Priority_Wins()
     {
@@ -200,7 +184,6 @@ public class AccessEvaluatorTests
         d.Effect.ShouldBe(Effect.Deny);
     }
 
-    // --- decision trace ---
     [Test]
     public async Task Decision_Trace_Contains_AllRequiredFields()
     {
@@ -247,21 +230,17 @@ public class AccessEvaluatorTests
         ScopeKind scopeKind = ScopeKind.Unbounded,
         string? scopeIdentifier = null,
         DateTimeOffset? validFrom = null,
-        DateTimeOffset? validTo = null)
-    {
-        return new Grant
-        {
-            SubjectType = subjectType,
-            SubjectId = subjectId,
-            PermissionId = _perm.Id,
-            Effect = effect,
-            SourceType = sourceType,
-            SourceId = sourceId,
-            Priority = priority,
-            ScopeKind = scopeKind,
-            ScopeIdentifier = scopeIdentifier,
-            ValidFrom = validFrom ?? T0.AddDays(-1),
-            ValidTo = validTo,
-        };
-    }
+        DateTimeOffset? validTo = null) =>
+        Grant.Create(
+            subjectType,
+            subjectId,
+            _perm.Id,
+            sourceType,
+            sourceId,
+            effect,
+            validFrom ?? T0.AddDays(-1),
+            validTo,
+            priority,
+            scopeKind: scopeKind,
+            scopeIdentifier: scopeIdentifier);
 }

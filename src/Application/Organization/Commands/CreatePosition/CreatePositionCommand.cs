@@ -1,43 +1,52 @@
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Organization;
 using MediatR;
 
 namespace qc_authorization.Application.Organization.Commands.CreatePosition;
 
-public record CreatePositionCommand(string Code, string Name, int? ParentId) : IRequest<int>;
+public record CreatePositionCommand(
+    int CompanyId,
+    string Code,
+    string Title,
+    string? Description,
+    int? ParentPositionId) : IRequest<int>;
 
 public class CreatePositionCommandHandler : IRequestHandler<CreatePositionCommand, int>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IPositionRepository _positions;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly PositionHierarchyService _hierarchy;
 
-    public CreatePositionCommandHandler(IApplicationDbContext context, PositionHierarchyService hierarchy)
+    public CreatePositionCommandHandler(
+        IPositionRepository positions,
+        IUnitOfWork unitOfWork,
+        PositionHierarchyService hierarchy)
     {
-        _context = context;
+        _positions = positions;
+        _unitOfWork = unitOfWork;
         _hierarchy = hierarchy;
     }
 
     public async Task<int> Handle(CreatePositionCommand request, CancellationToken cancellationToken)
     {
-        var position = new Position
-        {
-            Code = request.Code,
-            Name = request.Name,
-            ParentId = request.ParentId,
-        };
+        var position = Position.Create(
+            request.CompanyId,
+            request.Code,
+            request.Title,
+            request.Description,
+            request.ParentPositionId);
 
-        if (request.ParentId is int parentId)
+        if (request.ParentPositionId is int parentId)
         {
-            var parent = await _context.Positions.FindAsync(new object?[] { parentId }, cancellationToken)
+            var parent = await _positions.GetByIdAsync(parentId, cancellationToken)
                 ?? throw new InvalidOperationException($"Parent position {parentId} not found.");
-            _hierarchy.EnsureValidParenting(position, parent, await LoadAll(cancellationToken));
+
+            position.Reparent(parent, await _positions.GetAllAsync(cancellationToken), _hierarchy);
         }
 
-        _context.Positions.Add(position);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _positions.AddAsync(position, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return position.Id;
     }
-
-    private async Task<List<Position>> LoadAll(CancellationToken ct) =>
-        await _context.Positions.AsNoTracking().ToListAsync(ct);
 }

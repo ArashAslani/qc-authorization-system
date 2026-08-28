@@ -1,206 +1,155 @@
 # Qc Authorization System — Implementation Plan
 
+> **Authoritative spec:** `docs/Sources/Qc_Authorization_Master_Implementation_Spec.md`  
+> **Architecture summary:** `docs/ARCHITECTURE.md`  
+> **ADRs:** `docs/decisions/`
+
 ## 1. Goal
 
-Deliver a CleanArchitecture-based, .NET 10, SQLite-backed Authorization / Access
-Management system whose behavior matches the architecture and execution
-specifications stored in this repository. Every architectural decision is
-captured in `docs/decisions/`.
+Deliver a Clean Architecture + DDD-oriented, .NET 10, SQLite-backed Authorization /
+Access Management system. `Grant = dumb data`; `Access Evaluation Engine = sole
+owner of Allow/Deny`.
 
-## 2. Solution structure
+## 2. Repository assessment (Phase 00)
 
-```text
-D:\Identity\qc-authorization-system
-├── qc-authorization.slnx
-├── global.json
-├── Directory.Build.props
-├── Directory.Packages.props
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── IMPLEMENTATION_PLAN.md
-│   ├── TESTING.md
-│   └── decisions/
-│       ├── 0001-grant-as-dumb-data.md
-│       ├── 0002-engine-is-sole-allow-deny-owner.md
-│       ├── 0003-asymmetric-position-propagation.md
-│       ├── 0004-computed-not-materialized-propagation.md
-│       ├── 0005-individual-grant-isolation.md
-│       ├── 0006-source-aware-priority-model.md
-│       ├── 0007-decision-trace-content.md
-│       ├── 0008-sqlite-efcore-v1.md
-│       └── 0009-typed-constraints-no-dsl.md
-├── src/
-│   ├── Domain/                 pure C# entities, value objects, domain services
-│   ├── Application/            use cases, MediatR, IAccessEvaluator, contracts
-│   ├── Infrastructure/         EF Core, persistence, time provider
-│   ├── Shared/                 cross-cutting primitives
-│   ├── ServiceDefaults/        OpenTelemetry + default service registration
-│   └── Web/                    ASP.NET Core minimal API + DI composition
-└── tests/
-    ├── Domain.UnitTests/                 xUnit/NUnit unit tests for the Domain
-    ├── Application.UnitTests/            NUnit unit tests for Application services
-    ├── Infrastructure.IntegrationTests/  EF Core + SQLite integration tests
-    └── ArchitectureTests/                NetArchTest layering + dependency rules
-```
-
-Dependency direction is enforced by `tests/ArchitectureTests/LayeringTests.cs`:
+### Current structure (aligned)
 
 ```text
-Domain       →  (no references to anything beyond the BCL)
-Application  →  Domain
-Infrastructure → Application, Domain
-Web          → Application, Infrastructure, Domain
+src/Domain          → entities, value objects, domain services, evaluation engine
+src/Application     → MediatR commands, repository ports, evaluator façade
+src/Infrastructure  → EF Core, repository implementations
+src/Web             → composition root (feature endpoints pending)
+tests/*             → Domain, Application, Integration, Architecture tests
 ```
 
-## 3. Architectural north star
+Layering enforced by `tests/ArchitectureTests/LayeringTests.cs`. Application has
+no EF Core reference.
 
-- **Grant = dumb data.** No `CanPropagate()`, `IsDelegationValid()`,
-  `CanOverride()`, `EvaluateConstraint()`, or `ResolveConflict()` on `Grant`.
-- **Engine = sole owner of Allow/Deny.** No controller, workflow handler, or
-  domain object other than the Access Evaluation Engine produces a final
-  `AccessDecision`.
-- **Computed propagation.** Position Grants propagate to ancestors, Revokes
-  propagate to descendants, both computed at evaluation time. The hierarchy
-  is read live; we do not materialize derived grant rows.
-- **Asymmetric Grant vs. Revoke propagation.** Implemented as separate
-  concepts (`ResolveAncestors(P)` and `ResolveDescendants(P)`); not a single
-  generic `Propagate(Position, Operation)`.
-- **Individual Grant isolation.** A grant with `SubjectType = User` and
-  `SourceType = User` is an Individual Grant; it never participates in
-  position hierarchy propagation in either direction.
-- **Source-aware priority.** Baseline ordering: Individual Override >
-  Position Override > Delegation > Role / RoleGroup > Propagated. Equal
-  priority: `Deny > Allow`. The order is recorded on each grant and shown
-  in the trace.
-- **Decision Trace is mandatory.** Every decision returns a trace that
-  records subject, requested permission, resource, candidate / applicable /
-  rejected grants, scope / validity / conflict results, final decision,
-  reason, and a trace id.
-- **No DSL, no rule engine.** Constraints are concrete typed classes
-  (Amount, Time, Scope). New business rules = new typed classes, not a
-  generic expression language.
+### Reusable / correct
 
-## 4. Domain model (final, all phases)
+| Area | Status |
+|------|--------|
+| Grant as dumb data | Aligned — `Grant.Create()` validates facts only |
+| Access Evaluation Engine | Aligned — `AccessEvaluationEngine` in Domain |
+| Asymmetric propagation | Aligned — `GrantApplicabilityService` |
+| Individual grant isolation | Aligned + tested |
+| Repository pattern | Aligned — ports in Application, EF in Infrastructure |
+| Decision trace | Aligned |
+| Source-aware priority | Aligned — `SourcePriority` |
+| Position hierarchy service | Aligned — ancestors/descendants/cycle detection |
+
+### Gaps vs master spec
+
+| Gap | Priority | Phase |
+|-----|----------|-------|
+| Personnel expanded model (NationalId, PersonalCode, …) | Done in Phase 01 refresh | 01 |
+| Position CompanyId + cross-company parent rejection | Done in Phase 01 refresh | 01 |
+| Personnel ≠ User identity mapping at app boundary | Documented; not unified yet | 01+ |
+| Resource / Action as catalog entities | Embedded in Permission strings | 02 |
+| RoleGroup entity + membership | Enum only | 02 |
+| Delegation subset enforcement | Missing | 06 |
+| Delegation chain tests | Missing | 06 |
+| Constraints (Amount/Time/Scope) | Not started | 07 |
+| Workflow integration | Not started | 08 |
+| API use-case endpoints | Not started | 09 |
+| EF migrations (uses EnsureCreated) | Missing | 10 |
+| Audit (separate from trace) | Not started | 11 |
+
+### Risky / replace candidates
+
+- `DirectCandidateGrantResolver` — unused; remove or keep for Phase 03 regression
+- Application tests reference Infrastructure for in-memory EF — acceptable for now
+- `SubjectType.User` uses integer IDs without explicit User aggregate — clarify at API layer
+
+## 3. Solution structure
+
+Unchanged from prior plan. See master spec §6.
+
+## 4. Architectural north star
+
+Unchanged. See `docs/ARCHITECTURE.md` and ADRs 0001–0009.
+
+## 5. Domain model (target)
+
+### Organization
 
 ```text
-Organization
-  Personnel
-  Position
-  PositionAssignment (Personnel ↔ Position with ValidFrom/ValidTo)
-  Position.ParentId (self-reference)
-
-Authorization
-  Resource           (catalog)
-  Action             (catalog)
-  Permission         (Resource + Action + Code)
-  Role
-  RolePermission
-  Grant
-    Subject (User | Position | Role | RoleGroup)
-    SubjectType
-    Permission
-    Resource / ResourceId
-    Scope
-    Effect (Allow | Deny)
-    SourceType (User | Position | Role | RoleGroup | Delegation)
-    SourceId
-    ValidFrom / ValidTo
-    Priority
-  Delegation
-    Delegator, Delegate
-    Permission
-    Scope
-    ValidFrom / ValidTo
-    Subset (effective access of delegator)
-    Delegable (bool)
+Personnel (NationalId, FirstName, LastName, PersonalCode, PhoneNumber, Gender, Status)
+Position (CompanyId, Code, Title, Description, ParentPositionId, Status)
+PositionAssignment (PersonnelId, PositionId, ValidFrom, ValidTo)
 ```
 
-## 5. Application use cases (final, all phases)
+### Access definition (Phase 02)
 
-- Permission management: create/list permissions.
-- Role management: create roles, attach permissions.
-- Grant management: create / list / revoke grants.
-- Authorization evaluation: evaluate `AccessRequest` → `AccessDecision` + trace.
-- Position hierarchy access: get children / ancestors / descendants;
-  re-parent with cycle prevention.
-- Delegation management: create / list / revoke delegations with subset
-  enforcement and chain control.
-- Workflow integration: hand a `WorkflowStepRequirement` to the engine and
-  get a decision back.
+```text
+Resource, Action, Permission
+Role, RolePermission, RoleGroup
+Grant (dumb data)
+```
 
-## 6. Persistence model
+### Evaluation (Phase 03–05)
 
-EF Core 10 with SQLite (file-based, under `qc-authorization.db` in the Web
-project). The provider is swap-friendly: switching to SQL Server or
-PostgreSQL is a connection-string and a `UseSqlServer` / `UseNpgsql` change.
-Migrations live under `src/Infrastructure/Data/Migrations/`.
+```text
+AccessRequest, AccessDecision, DecisionTrace
+AccessEvaluationEngine
+GrantApplicabilityService
+```
 
-## 7. API boundaries
+### Delegation (Phase 06)
 
-ASP.NET Core minimal API with `IEndpointGroup` classes per feature. Domain
-entities never appear in API contracts; Application DTOs do. Each endpoint
-that requires authorization passes through the engine via a MediatR command
-or a direct `IAccessEvaluator` call.
+```text
+Delegation, Delegable, subset enforcement, chain control
+```
+
+## 6. Application use cases (target)
+
+- Organization: create personnel, positions, assignments, re-parent
+- Authorization: create/list grants, evaluate access
+- Delegation: create/revoke with subset check
+- Workflow: step authorization via engine
+- API: thin endpoints over MediatR commands (Phase 09)
+
+## 7. Persistence
+
+EF Core 10 + SQLite. Migrations under `src/Infrastructure/Data/Migrations/` (Phase 10).
+No materialized propagation grants.
 
 ## 8. Testing strategy
 
-- **Domain.UnitTests** — entity invariants, hierarchy traversal, cycle
-  detection, propagation rules.
-- **Application.UnitTests** — use cases, validators, evaluator pipeline
-  (with in-memory fakes for repositories and the time provider).
-- **Infrastructure.IntegrationTests** — EF Core + SQLite round-trips for
-  grants, roles, and delegations.
-- **ArchitectureTests** — NetArchTest rules that fail the build if Domain
-  depends on EF Core / ASP.NET / Infrastructure / Web, or if Application
-  depends on Infrastructure / Web.
-
-A phase is not complete until:
+See master spec §§45–52 and `docs/TESTING.md`. Every phase gate:
 
 ```text
-dotnet restore          PASS
-dotnet build            PASS
-dotnet test             PASS  (all projects)
+dotnet restore && dotnet build && dotnet test
 ```
 
-## 9. Phases and dependencies
+## 9. Phase plan (master spec §55)
 
-| Phase | Title                                | Depends on       | Commit                                                            |
-|------:|--------------------------------------|------------------|-------------------------------------------------------------------|
-| 01    | Organization Foundation              | —                | `feat(org): implement organization foundation`                    |
-| 02    | Access Definitions & Grant           | Phase 01         | `feat(auth): implement access definitions and grant model`        |
-| 03    | Minimal Access Evaluation Engine     | Phase 02         | `feat(auth): implement minimal access evaluation engine`           |
-| 04    | Asymmetric Position Propagation      | Phase 03         | `feat(auth): implement asymmetric position propagation`            |
-| 04b   | Individual Grant Isolation (tests)   | Phase 04         | `test(auth): enforce isolated individual grants`                  |
-| 05    | Delegation                           | Phase 04         | `feat(auth): implement delegation`                                |
-| 06    | Constraints (Amount / Time / Scope)  | Phase 05         | `feat(auth): implement authorization constraints`                 |
-| 07    | Workflow Integration                 | Phase 06         | `feat(auth): integrate authorization with workflow`               |
-| 08    | API / Application Layer              | Phase 07         | `feat(api): expose authorization application use cases`           |
+| Phase | Title | Status |
+|------:|-------|--------|
+| 00 | Repository recovery & refactoring | **In progress** — DDD refactor done; plan updated |
+| 01 | Organization foundation | **In progress** — CompanyId, Personnel model, cross-company |
+| 02 | Access definition & grant | ~70% — missing Resource/Action/RoleGroup catalog |
+| 03 | Minimal access evaluation | ~95% |
+| 04 | Asymmetric position propagation | ~95% |
+| 05 | Individual grant isolation | ~95% |
+| 06 | Delegation | ~40% — entity/resolver; no subset/chain |
+| 07 | Constraints | 0% |
+| 08 | Workflow integration | 0% |
+| 09 | Application/API | ~10% |
+| 10 | Persistence hardening | 0% — no migrations |
+| 11 | Audit | 0% |
+| 12 | Final hardening | 0% |
 
-Performance & Scale (caching, projection, materialized read models) is
-explicitly deferred until a real performance use case exists, per the
-architecture spec.
-
-## 10. Per-phase gate (lifecycle)
+## 10. Per-phase gate
 
 ```text
-READ
-  ↓
-IMPLEMENT
-  ↓
-TEST
-  ↓
-SELF-REVIEW
-  ↓
-ARCHITECTURE CHECK (run tests/ArchitectureTests)
-  ↓
-BUILD (dotnet build)
-  ↓
-COMMIT (with the phase commit message)
-  ↓
-PUSH
-  ↓
-NEXT PHASE
+READ → DESIGN CHECK → IMPLEMENT → TEST → SELF-REVIEW
+→ ARCHITECTURE CHECK → BUILD → COMMIT → NEXT PHASE
 ```
 
-A phase is only complete when its commit is on the public `main` branch and
-the build is green.
+## 11. Next actions
+
+1. Complete Phase 01 acceptance (Personnel commands, assignment commands, all §46 tests).
+2. Phase 02: Resource/Action catalog, RoleGroup entity.
+3. Phase 06: Delegation subset enforcement via existing engine.
+4. Phase 10: Replace `EnsureCreated` with migrations.

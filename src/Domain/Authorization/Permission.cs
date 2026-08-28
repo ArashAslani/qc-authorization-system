@@ -1,21 +1,40 @@
+using qc_authorization.Domain.Authorization.Exceptions;
+using qc_authorization.Domain.Common;
+
 namespace qc_authorization.Domain.Authorization;
 
-public class Permission : BaseAuditableEntity
+public class Permission : BaseAuditableEntity, IAggregateRoot
 {
-    /// <summary>
-    /// Stable business code, e.g. <c>PERSONNEL.UPDATE</c>.
-    /// </summary>
-    public string Code { get; set; } = string.Empty;
+    private Permission() { }
 
-    /// <summary>
-    /// Logical resource the permission operates on, e.g. <c>Personnel</c>.
-    /// </summary>
-    public string Resource { get; set; } = string.Empty;
+    public string Code { get; private set; } = string.Empty;
+    public string Resource { get; private set; } = string.Empty;
+    public string Action { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
 
-    /// <summary>
-    /// Action the permission allows, e.g. <c>Read</c>, <c>Update</c>.
-    /// </summary>
-    public string Action { get; set; } = string.Empty;
+    public static Permission Create(string code, string resource, string action, string? description = null)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            throw new AuthorizationDomainException("Permission code is required.");
+        }
 
-    public string? Description { get; set; }
+        if (string.IsNullOrWhiteSpace(resource))
+        {
+            throw new AuthorizationDomainException("Permission resource is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(action))
+        {
+            throw new AuthorizationDomainException("Permission action is required.");
+        }
+
+        return new Permission
+        {
+            Code = code.Trim().ToUpperInvariant(),
+            Resource = resource.Trim(),
+            Action = action.Trim(),
+            Description = description,
+        };
+    }
 }

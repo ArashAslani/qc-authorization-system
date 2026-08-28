@@ -11,11 +11,16 @@ public class PersonnelConfiguration : IEntityTypeConfiguration<Personnel>
         builder.ToTable("Personnel");
         builder.HasKey(p => p.Id);
 
+        builder.Property(p => p.NationalId).HasMaxLength(32).IsRequired();
         builder.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
-        builder.Property(p => p.Email).HasMaxLength(256);
+        builder.Property(p => p.PersonalCode).HasMaxLength(64).IsRequired();
+        builder.Property(p => p.PhoneNumber).HasMaxLength(32);
+        builder.Property(p => p.Gender).HasConversion<int>();
+        builder.Property(p => p.Status).HasConversion<int>();
 
-        builder.HasIndex(p => p.Email).IsUnique().HasFilter(null);
+        builder.HasIndex(p => p.NationalId).IsUnique();
+        builder.HasIndex(p => p.PersonalCode).IsUnique();
 
         builder.HasMany(p => p.Assignments)
             .WithOne(a => a.Personnel)

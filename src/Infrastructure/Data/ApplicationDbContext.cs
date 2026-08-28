@@ -1,12 +1,11 @@
 using System.Reflection;
-using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Infrastructure.Data;
 
-public class ApplicationDbContext : DbContext, IApplicationDbContext
+public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
@@ -18,6 +17,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<Grant> Grants => Set<Grant>();
+    public DbSet<Delegation> Delegations => Set<Delegation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

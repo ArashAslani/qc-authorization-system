@@ -1,5 +1,6 @@
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
+using qc_authorization.Domain.Authorization.Exceptions;
 using NUnit.Framework;
 using Shouldly;
 
@@ -13,17 +14,17 @@ public class GrantTests
     [Test]
     public void Can_Create_Grant()
     {
-        var g = new Grant
-        {
-            SubjectType = SubjectType.User,
-            SubjectId = 1,
-            PermissionId = 100,
-            SourceType = SourceType.User,
-            SourceId = 1,
-            Effect = Effect.Allow,
-            ValidFrom = T0,
-            Priority = 100,
-        };
+        var g = Grant.Create(
+            SubjectType.User,
+            1,
+            100,
+            SourceType.User,
+            1,
+            Effect.Allow,
+            T0,
+            null,
+            100);
+
         g.SubjectType.ShouldBe(SubjectType.User);
         g.SubjectId.ShouldBe(1);
     }
@@ -31,36 +32,69 @@ public class GrantTests
     [Test]
     public void Grant_Has_Source_Traceability()
     {
-        var g = new Grant
-        {
-            SubjectType = SubjectType.Role,
-            SubjectId = 50,
-            PermissionId = 100,
-            SourceType = SourceType.Role,
-            SourceId = 50,
-        };
+        var g = Grant.Create(
+            SubjectType.Role,
+            50,
+            100,
+            SourceType.Role,
+            50,
+            Effect.Allow,
+            T0,
+            null,
+            50);
+
         g.SourceType.ShouldBe(SourceType.Role);
         g.SourceId.ShouldBe(50);
     }
 
     [Test]
-    public void Grant_Allow_Effect_Defaults_To_Allow()
+    public void Grant_Allow_Effect_Is_Preserved()
     {
-        var g = new Grant { Effect = Effect.Allow };
+        var g = Grant.Create(
+            SubjectType.User,
+            1,
+            1,
+            SourceType.User,
+            1,
+            Effect.Allow,
+            T0,
+            null,
+            1);
+
         g.Effect.ShouldBe(Effect.Allow);
     }
 
     [Test]
     public void Grant_Deny_Effect_Is_Supported()
     {
-        var g = new Grant { Effect = Effect.Deny };
+        var g = Grant.Create(
+            SubjectType.User,
+            1,
+            1,
+            SourceType.User,
+            1,
+            Effect.Deny,
+            T0,
+            null,
+            1);
+
         g.Effect.ShouldBe(Effect.Deny);
     }
 
     [Test]
     public void Grant_Stores_Priority()
     {
-        var g = new Grant { Priority = 90 };
+        var g = Grant.Create(
+            SubjectType.User,
+            1,
+            1,
+            SourceType.User,
+            1,
+            Effect.Allow,
+            T0,
+            null,
+            90);
+
         g.Priority.ShouldBe(90);
     }
 
@@ -69,18 +103,25 @@ public class GrantTests
     {
         foreach (SubjectType t in Enum.GetValues(typeof(SubjectType)))
         {
-            var g = new Grant { SubjectType = t };
+            var g = Grant.Create(t, 1, 1, SourceType.User, 1, Effect.Allow, T0, null, 1);
             g.SubjectType.ShouldBe(t);
         }
     }
 
     [Test]
-    public void Grant_Supports_All_SourceTypes_ExceptNone()
+    public void Grant_Supports_All_SourceTypes()
     {
         foreach (SourceType s in Enum.GetValues(typeof(SourceType)))
         {
-            var g = new Grant { SourceType = s };
+            var g = Grant.Create(SubjectType.User, 1, 1, s, 1, Effect.Allow, T0, null, 1);
             g.SourceType.ShouldBe(s);
         }
+    }
+
+    [Test]
+    public void Grant_Rejects_Invalid_SourceId()
+    {
+        Should.Throw<AuthorizationDomainException>(() =>
+            Grant.Create(SubjectType.User, 1, 1, SourceType.User, 0, Effect.Allow, T0, null, 1));
     }
 }

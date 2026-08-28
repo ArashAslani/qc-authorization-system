@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Infrastructure.Data;
+using qc_authorization.Infrastructure.Data.Repositories;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
@@ -27,19 +29,19 @@ public class CreateGrantCommandHandlerTests
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
 
-        var services = new ServiceCollection()
+        _mediator = new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
-            .AddScoped(_ => (IApplicationDbContext)_context)
-            .BuildServiceProvider();
-        _mediator = services.GetRequiredService<IMediator>();
+            .AddScoped<IUnitOfWork>(_ => new UnitOfWork(_context))
+            .AddScoped<IGrantRepository>(_ => new GrantRepository(_context))
+            .AddScoped<IPermissionRepository>(_ => new PermissionRepository(_context))
+            .AddScoped<IPositionRepository>(_ => new PositionRepository(_context))
+            .AddScoped<IPositionAssignmentRepository>(_ => new PositionAssignmentRepository(_context))
+            .AddScoped<IDelegationRepository>(_ => new DelegationRepository(_context))
+            .BuildServiceProvider()
+            .GetRequiredService<IMediator>();
 
-        _context.Permissions.Add(new Permission
-        {
-            Code = "PERSONNEL.READ",
-            Resource = "Personnel",
-            Action = "Read",
-        });
+        _context.Permissions.Add(Permission.Create("PERSONNEL.READ", "Personnel", "Read"));
         await _context.SaveChangesAsync();
     }
 

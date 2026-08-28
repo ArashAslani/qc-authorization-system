@@ -1,11 +1,9 @@
-using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 
-namespace qc_authorization.Application.Authorization.Evaluation;
+namespace qc_authorization.Domain.Authorization.Evaluation;
 
 /// <summary>
-/// Mandatory per-decision trace (see ADR 0007). The trace explains why
-/// a request received ALLOW or DENY. It is intentionally simple.
+/// Mandatory per-decision trace (see ADR 0007).
 /// </summary>
 public sealed record DecisionTrace(
     string TraceId,

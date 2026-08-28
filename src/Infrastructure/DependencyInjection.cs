@@ -1,6 +1,8 @@
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Interfaces.Repositories;
 using qc_authorization.Infrastructure.Data;
 using qc_authorization.Infrastructure.Data.Interceptors;
+using qc_authorization.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +27,12 @@ public static class DependencyInjection
             options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
-        builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+        builder.Services.AddScoped<IGrantRepository, GrantRepository>();
+        builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+        builder.Services.AddScoped<IPositionRepository, PositionRepository>();
+        builder.Services.AddScoped<IPositionAssignmentRepository, PositionAssignmentRepository>();
+        builder.Services.AddScoped<IDelegationRepository, DelegationRepository>();
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 

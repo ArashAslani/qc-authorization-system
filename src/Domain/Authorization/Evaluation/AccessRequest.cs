@@ -1,7 +1,6 @@
-using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 
-namespace qc_authorization.Application.Authorization.Evaluation;
+namespace qc_authorization.Domain.Authorization.Evaluation;
 
 /// <summary>
 /// Input to the Access Evaluation Engine. The Engine is the only
@@ -19,9 +18,7 @@ public sealed record AccessRequest(
     public string PermissionCode => $"{Resource}.{Action}";
 
     /// <summary>
-    /// Case-insensitive form for matching against the catalog. Permission
-    /// codes in this system are conventionally upper-case (e.g.
-    /// <c>PERSONNEL.READ</c>) but comparisons must not be case-sensitive.
+    /// Case-insensitive form for matching against the catalog.
     /// </summary>
     public string NormalizedPermissionCode => PermissionCode.ToUpperInvariant();
 }
