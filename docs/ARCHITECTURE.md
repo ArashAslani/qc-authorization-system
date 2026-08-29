@@ -1,6 +1,8 @@
 # Qc Authorization — Architecture
 
 This document is a short, working summary of the architectural decisions.
+For a Persian product mental model and design rationale (entity purposes and
+defense of the architecture), see [DESIGN_MENTAL_MODEL.md](DESIGN_MENTAL_MODEL.md).
 The full source of truth is the spec document
 `Qc_Authorization_Architecture_Final.md` and the per-decision ADRs in
 `docs/decisions/`.
