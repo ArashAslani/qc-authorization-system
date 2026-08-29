@@ -10,11 +10,11 @@ public class CreateDelegationCommandValidator : AbstractValidator<CreateDelegati
             .NotEqual(x => x.DelegateUserId)
             .WithMessage("A user cannot delegate to themselves.");
 
-        RuleFor(x => x.PermissionId).GreaterThan(0);
+        RuleFor(x => x.PermissionId).NotEqual(Guid.Empty);
 
         When(x => x.ParentDelegationId.HasValue, () =>
         {
-            RuleFor(x => x.ParentDelegationId!.Value).GreaterThan(0);
+            RuleFor(x => x.ParentDelegationId!.Value).NotEqual(Guid.Empty);
         });
 
         RuleFor(x => x.ValidTo)

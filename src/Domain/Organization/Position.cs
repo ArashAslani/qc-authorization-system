@@ -8,25 +8,25 @@ public class Position : BaseAuditableEntity, IAggregateRoot
 {
     private Position() { }
 
-    public int CompanyId { get; private set; }
+    public Guid CompanyId { get; private set; }
     public string Code { get; private set; } = string.Empty;
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public PositionStatus Status { get; private set; } = PositionStatus.Active;
 
-    public int? ParentPositionId { get; private set; }
+    public Guid? ParentPositionId { get; private set; }
     public Position? Parent { get; private set; }
     public List<Position> Children { get; private set; } = new();
 
     public static Position Create(
-        int companyId,
+        Guid companyId,
         string code,
         string title,
         string? description = null,
-        int? parentPositionId = null,
+        Guid? parentPositionId = null,
         PositionStatus status = PositionStatus.Active)
     {
-        if (companyId <= 0)
+        if (companyId == Guid.Empty)
         {
             throw new OrganizationDomainException("CompanyId must be a positive identifier.");
         }

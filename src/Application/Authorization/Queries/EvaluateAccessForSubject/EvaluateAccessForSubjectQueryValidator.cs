@@ -15,7 +15,7 @@ public class EvaluateAccessForSubjectQueryValidator : AbstractValidator<Evaluate
 
         When(x => x.SubjectType != Domain.Authorization.Enums.SubjectType.User, () =>
         {
-            RuleFor(x => x.SubjectId).GreaterThan(0);
+            RuleFor(x => x.SubjectId).NotEqual(Guid.Empty);
         });
     }
 }

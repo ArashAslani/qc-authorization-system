@@ -4,7 +4,7 @@ public class AssignPermissionToRoleCommandValidator : AbstractValidator<AssignPe
 {
     public AssignPermissionToRoleCommandValidator()
     {
-        RuleFor(x => x.RoleId).GreaterThan(0);
-        RuleFor(x => x.PermissionId).GreaterThan(0);
+        RuleFor(x => x.RoleId).NotEqual(Guid.Empty);
+        RuleFor(x => x.PermissionId).NotEqual(Guid.Empty);
     }
 }

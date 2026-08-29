@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.RemovePermissionFromRole;
 
-public record RemovePermissionFromRoleCommand(int RoleId, int PermissionId) : IRequest;
+public record RemovePermissionFromRoleCommand(Guid RoleId, Guid PermissionId) : IRequest;
 
 public class RemovePermissionFromRoleCommandHandler : IRequestHandler<RemovePermissionFromRoleCommand>
 {

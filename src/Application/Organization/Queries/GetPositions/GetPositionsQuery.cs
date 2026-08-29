@@ -6,17 +6,17 @@ using Microsoft.EntityFrameworkCore;
 namespace qc_authorization.Application.Organization.Queries.GetPositions;
 
 public record GetPositionsQuery(
-    int? CompanyId = null,
+    Guid? CompanyId = null,
     string? SearchTerm = null,
-    int? ParentPositionId = null) : IRequest<IReadOnlyList<PositionDto>>;
+    Guid? ParentPositionId = null) : IRequest<IReadOnlyList<PositionDto>>;
 
 public record PositionDto(
-    int Id,
-    int CompanyId,
+    Guid Id,
+    Guid CompanyId,
     string Code,
     string Title,
     string? Description,
-    int? ParentPositionId,
+    Guid? ParentPositionId,
     string? ParentPositionTitle,
     PositionStatus Status);
 

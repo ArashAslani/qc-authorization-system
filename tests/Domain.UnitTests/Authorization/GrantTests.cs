@@ -1,6 +1,7 @@
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Exceptions;
+using qc_authorization.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
@@ -17,16 +18,16 @@ public class GrantTests
     {
         var g = Grant.CreateForUser(
             UserA,
-            100,
+            TestGuids.Permission100,
             SourceType.User,
-            0,
+            Guid.Empty,
             Effect.Allow,
             T0,
             null,
             100);
 
         g.SubjectType.ShouldBe(SubjectType.User);
-        g.SubjectId.ShouldBe(0);
+        g.SubjectId.ShouldBe(Guid.Empty);
         g.SubjectUserId.ShouldBe(UserA);
     }
 
@@ -35,17 +36,17 @@ public class GrantTests
     {
         var g = Grant.Create(
             SubjectType.Role,
-            50,
-            100,
+            TestGuids.Subject50,
+            TestGuids.Permission100,
             SourceType.Role,
-            50,
+            TestGuids.Subject50,
             Effect.Allow,
             T0,
             null,
             50);
 
         g.SourceType.ShouldBe(SourceType.Role);
-        g.SourceId.ShouldBe(50);
+        g.SourceId.ShouldBe(TestGuids.Subject50);
     }
 
     [Test]
@@ -53,9 +54,9 @@ public class GrantTests
     {
         var g = Grant.CreateForUser(
             UserA,
-            1,
+            TestGuids.Permission1,
             SourceType.User,
-            0,
+            Guid.Empty,
             Effect.Allow,
             T0,
             null,
@@ -69,9 +70,9 @@ public class GrantTests
     {
         var g = Grant.CreateForUser(
             UserA,
-            1,
+            TestGuids.Permission1,
             SourceType.User,
-            0,
+            Guid.Empty,
             Effect.Deny,
             T0,
             null,
@@ -85,9 +86,9 @@ public class GrantTests
     {
         var g = Grant.CreateForUser(
             UserA,
-            1,
+            TestGuids.Permission1,
             SourceType.User,
-            0,
+            Guid.Empty,
             Effect.Allow,
             T0,
             null,
@@ -102,8 +103,8 @@ public class GrantTests
         foreach (SubjectType t in Enum.GetValues(typeof(SubjectType)))
         {
             var g = t == SubjectType.User
-                ? Grant.CreateForUser(UserA, 1, SourceType.User, 0, Effect.Allow, T0, null, 1)
-                : Grant.Create(t, 1, 1, SourceType.Role, 1, Effect.Allow, T0, null, 1);
+                ? Grant.CreateForUser(UserA, TestGuids.Permission1, SourceType.User, Guid.Empty, Effect.Allow, T0, null, 1)
+                : Grant.Create(t, TestGuids.Role1, TestGuids.Permission1, SourceType.Role, TestGuids.Role1, Effect.Allow, T0, null, 1);
             g.SubjectType.ShouldBe(t);
         }
     }
@@ -114,8 +115,8 @@ public class GrantTests
         foreach (SourceType s in Enum.GetValues(typeof(SourceType)))
         {
             var g = s == SourceType.User
-                ? Grant.CreateForUser(UserA, 1, s, 0, Effect.Allow, T0, null, 1)
-                : Grant.Create(SubjectType.User, 0, 1, s, 1, Effect.Allow, T0, null, 1, subjectUserId: UserA);
+                ? Grant.CreateForUser(UserA, TestGuids.Permission1, s, Guid.Empty, Effect.Allow, T0, null, 1)
+                : Grant.Create(SubjectType.User, Guid.Empty, TestGuids.Permission1, s, TestGuids.Role1, Effect.Allow, T0, null, 1, subjectUserId: UserA);
             g.SourceType.ShouldBe(s);
         }
     }
@@ -124,6 +125,6 @@ public class GrantTests
     public void Grant_Rejects_Invalid_SourceId()
     {
         Should.Throw<AuthorizationDomainException>(() =>
-            Grant.Create(SubjectType.User, 0, 1, SourceType.User, 0, Effect.Allow, T0, null, 1, subjectUserId: UserA));
+            Grant.Create(SubjectType.User, Guid.Empty, TestGuids.Permission1, SourceType.User, Guid.Empty, Effect.Allow, T0, null, 1, subjectUserId: UserA));
     }
 }

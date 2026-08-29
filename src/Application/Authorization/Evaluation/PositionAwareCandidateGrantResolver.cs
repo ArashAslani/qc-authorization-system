@@ -10,18 +10,22 @@ namespace qc_authorization.Application.Authorization.Evaluation;
 
 /// <summary>
 /// Resolves candidate grants using EF Core and domain propagation rules.
+/// Position grants are scoped to the active company workspace.
 /// </summary>
 public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolver
 {
     private readonly IApplicationDbContext _context;
     private readonly GrantApplicabilityService _applicability;
+    private readonly ICurrentUser _currentUser;
 
     public PositionAwareCandidateGrantResolver(
         IApplicationDbContext context,
-        GrantApplicabilityService applicability)
+        GrantApplicabilityService applicability,
+        ICurrentUser currentUser)
     {
         _context = context;
         _applicability = applicability;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<Grant>> ResolveAsync(AccessRequest request, CancellationToken cancellationToken)
@@ -96,7 +100,7 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
         return result;
     }
 
-    private async Task<HashSet<int>> ResolveRequestPositions(AccessRequest request, CancellationToken ct)
+    private async Task<HashSet<Guid>> ResolveRequestPositions(AccessRequest request, CancellationToken ct)
     {
         if (request.SubjectType == SubjectType.Position)
         {
@@ -108,14 +112,39 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
             return [];
         }
 
+        var activeCompanyId = ResolveActiveCompanyId(request);
+        if (!activeCompanyId.HasValue)
+        {
+            return [];
+        }
+
         var positionIds = await _context.PositionAssignments
             .AsNoTracking()
+            .Include(a => a.Position)
             .Where(a => a.Personnel.IdentityUserId == userId
+                     && a.Position.CompanyId == activeCompanyId.Value
                      && a.ValidFrom <= request.When
                      && (a.ValidTo == null || request.When <= a.ValidTo))
             .Select(a => a.PositionId)
             .ToListAsync(ct);
 
-        return new HashSet<int>(positionIds);
+        return new HashSet<Guid>(positionIds);
+    }
+
+    private Guid? ResolveActiveCompanyId(AccessRequest request)
+    {
+        if (request.Context is not null
+            && request.Context.TryGetValue("CompanyId", out var companyId)
+            && companyId is not null)
+        {
+            return companyId switch
+            {
+                Guid g => g,
+                _ when Guid.TryParse(companyId.ToString(), out var parsed) => parsed,
+                _ => null,
+            };
+        }
+
+        return _currentUser.ActiveCompanyId;
     }
 }

@@ -6,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Queries.GetRoleGroups;
 
 public record GetRoleGroupsQuery(string? SearchTerm = null) : IRequest<IReadOnlyList<RoleGroupDto>>;
 
-public record RoleGroupDto(int Id, string Code, string Name, string? Description, int MemberRoleCount);
+public record RoleGroupDto(Guid Id, string Code, string Name, string? Description, int MemberRoleCount);
 
 public class GetRoleGroupsQueryHandler : IRequestHandler<GetRoleGroupsQuery, IReadOnlyList<RoleGroupDto>>
 {

@@ -3,6 +3,7 @@ using qc_authorization.Domain.Authorization.Constraints;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.ValueObjects;
+using qc_authorization.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
@@ -19,7 +20,7 @@ public class ConstraintTests
     {
         var constraint = new AmountConstraint(1000m);
         var request = new AccessRequest(
-            SubjectType.User, 0, UserA, "Approve", "Payment", null, T0,
+            SubjectType.User, Guid.Empty, UserA, "Approve", "Payment", null, T0,
             new Dictionary<string, object> { ["Amount"] = 500m });
 
         constraint.IsSatisfied(request, out _).ShouldBeTrue();
@@ -30,7 +31,7 @@ public class ConstraintTests
     {
         var constraint = new AmountConstraint(1000m);
         var request = new AccessRequest(
-            SubjectType.User, 0, UserA, "Approve", "Payment", null, T0,
+            SubjectType.User, Guid.Empty, UserA, "Approve", "Payment", null, T0,
             new Dictionary<string, object> { ["Amount"] = 1500m });
 
         constraint.IsSatisfied(request, out var reason).ShouldBeFalse();
@@ -41,7 +42,7 @@ public class ConstraintTests
     public void TimeConstraint_Passes_Inside_Window()
     {
         var constraint = new TimeConstraint(new TimeOnly(9, 0), new TimeOnly(17, 0));
-        var request = new AccessRequest(SubjectType.User, 0, UserA, "Read", "Personnel", null, T0);
+        var request = new AccessRequest(SubjectType.User, Guid.Empty, UserA, "Read", "Personnel", null, T0);
 
         constraint.IsSatisfied(request, out _).ShouldBeTrue();
     }
@@ -50,7 +51,7 @@ public class ConstraintTests
     public void TimeConstraint_Fails_Outside_Window()
     {
         var constraint = new TimeConstraint(new TimeOnly(11, 0), new TimeOnly(17, 0));
-        var request = new AccessRequest(SubjectType.User, 0, UserA, "Read", "Personnel", null, T0);
+        var request = new AccessRequest(SubjectType.User, Guid.Empty, UserA, "Read", "Personnel", null, T0);
 
         constraint.IsSatisfied(request, out var reason).ShouldBeFalse();
         reason.ShouldBe("outside-time-window");
@@ -61,7 +62,7 @@ public class ConstraintTests
     {
         var constraint = new ScopeConstraint("Branch", "B-1");
         var request = new AccessRequest(
-            SubjectType.User, 0, UserA, "Read", "Personnel", null, T0,
+            SubjectType.User, Guid.Empty, UserA, "Read", "Personnel", null, T0,
             new Dictionary<string, object> { ["Branch"] = "B-1" });
 
         constraint.IsSatisfied(request, out _).ShouldBeTrue();
@@ -72,12 +73,13 @@ public class ConstraintTests
     {
         var engine = new AccessEvaluationEngine();
         var grant = Grant.Create(
-            SubjectType.Role, 1, 1, SourceType.Role, 1, Effect.Allow, T0.AddDays(-1), null, 10,
+            SubjectType.Role, TestGuids.Role1, TestGuids.Permission1, SourceType.Role, TestGuids.Role1,
+            Effect.Allow, T0.AddDays(-1), null, 10,
             constraints: [GrantConstraint.FromAmount(100m)]);
 
         var decision = engine.Evaluate(
             new AccessRequest(
-                SubjectType.Role, 1, null, "Approve", "Payment", null, T0,
+                SubjectType.Role, TestGuids.Role1, null, "Approve", "Payment", null, T0,
                 new Dictionary<string, object> { ["Amount"] = 200m }),
             [grant]);
 

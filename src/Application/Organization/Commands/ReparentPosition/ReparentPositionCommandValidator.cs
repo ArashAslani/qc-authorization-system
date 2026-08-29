@@ -4,11 +4,11 @@ public class ReparentPositionCommandValidator : AbstractValidator<ReparentPositi
 {
     public ReparentPositionCommandValidator()
     {
-        RuleFor(x => x.PositionId).GreaterThan(0);
+        RuleFor(x => x.PositionId).NotEqual(Guid.Empty);
 
         When(x => x.NewParentPositionId.HasValue, () =>
         {
-            RuleFor(x => x.NewParentPositionId!.Value).GreaterThan(0);
+            RuleFor(x => x.NewParentPositionId!.Value).NotEqual(Guid.Empty);
             RuleFor(x => x.NewParentPositionId!.Value)
                 .NotEqual(x => x.PositionId)
                 .WithMessage("A position cannot be its own parent.");

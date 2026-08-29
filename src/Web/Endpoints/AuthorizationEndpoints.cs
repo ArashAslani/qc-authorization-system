@@ -21,9 +21,9 @@ public class AuthorizationEndpoints : IEndpointGroup
     {
         // Grants
         group.MapGet(GetGrants, "grants");
-        group.MapGet(GetGrantById, "grants/{id:int}");
+        group.MapGet(GetGrantById, "grants/{id:guid}");
         group.MapPost(CreateGrant, "grants");
-        group.MapPost(RevokeGrant, "grants/{id:int}/revoke");
+        group.MapPost(RevokeGrant, "grants/{id:guid}/revoke");
 
         // Evaluation
         group.MapPost(EvaluateAccess, "evaluate");
@@ -32,9 +32,9 @@ public class AuthorizationEndpoints : IEndpointGroup
 
     private static async Task<IResult> GetGrants(
         [FromQuery] SubjectType? subjectType,
-        [FromQuery] int? subjectId,
+        [FromQuery] Guid? subjectId,
         [FromQuery] Guid? subjectUserId,
-        [FromQuery] int? permissionId,
+        [FromQuery] Guid? permissionId,
         [FromQuery] Effect? effect,
         [FromQuery] SourceType? sourceType,
         [FromQuery] bool? activeOnly,
@@ -52,7 +52,7 @@ public class AuthorizationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetGrantById(int id, ISender sender)
+    private static async Task<IResult> GetGrantById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetGrantByIdQuery(id));
         return Results.Ok(result);
@@ -79,7 +79,7 @@ public class AuthorizationEndpoints : IEndpointGroup
         return Results.Created($"/api/authorization/grants/{id}", new { id });
     }
 
-    private static async Task<IResult> RevokeGrant(int id, ISender sender)
+    private static async Task<IResult> RevokeGrant(Guid id, ISender sender)
     {
         await sender.Send(new RevokeGrantCommand(id));
         return Results.NoContent();
@@ -97,7 +97,7 @@ public class AuthorizationEndpoints : IEndpointGroup
 
         var query = new EvaluateAccessQuery(
             SubjectType.User,
-            0,
+            Guid.Empty,
             currentUser.UserId,
             request.Action,
             request.Resource,
@@ -128,16 +128,16 @@ public class AuthorizationEndpoints : IEndpointGroup
 
 public record CreateGrantRequest(
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? SubjectUserId,
-    int PermissionId,
+    Guid PermissionId,
     string? Resource,
     string? ResourceId,
     ScopeKind ScopeKind,
     string? ScopeIdentifier,
     Effect Effect,
     SourceType SourceType,
-    int SourceId,
+    Guid SourceId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
     int Priority);
@@ -150,7 +150,7 @@ public record EvaluateAccessRequest(
 
 public record SimulateEvaluationRequest(
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? UserId,
     string Action,
     string Resource,

@@ -3,7 +3,7 @@ using MediatR;
 
 namespace qc_authorization.Application.Organization.Commands.LinkPersonnelToIdentityUser;
 
-public record LinkPersonnelToIdentityUserCommand(int PersonnelId, Guid IdentityUserId) : IRequest;
+public record LinkPersonnelToIdentityUserCommand(Guid PersonnelId, Guid IdentityUserId) : IRequest;
 
 public class LinkPersonnelToIdentityUserCommandHandler : IRequestHandler<LinkPersonnelToIdentityUserCommand>
 {

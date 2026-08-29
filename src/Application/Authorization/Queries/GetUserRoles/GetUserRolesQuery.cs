@@ -8,7 +8,7 @@ namespace qc_authorization.Application.Authorization.Queries.GetUserRoles;
 public record GetUserRolesQuery(Guid UserId) : IRequest<IReadOnlyList<UserAssignedRoleDto>>;
 
 public record UserAssignedRoleDto(
-    int RoleId,
+    Guid RoleId,
     string RoleCode,
     string RoleName,
     DateTimeOffset ValidFrom,

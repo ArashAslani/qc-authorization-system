@@ -4,7 +4,7 @@ public class LinkPersonnelToIdentityUserCommandValidator : AbstractValidator<Lin
 {
     public LinkPersonnelToIdentityUserCommandValidator()
     {
-        RuleFor(x => x.PersonnelId).GreaterThan(0);
+        RuleFor(x => x.PersonnelId).NotEqual(Guid.Empty);
         RuleFor(x => x.IdentityUserId).NotEmpty();
     }
 }

@@ -7,23 +7,23 @@ using NotFoundException = qc_authorization.Application.Common.Exceptions.NotFoun
 
 namespace qc_authorization.Application.Organization.Queries.GetPositionById;
 
-public record GetPositionByIdQuery(int Id) : IRequest<PositionDetailsDto>;
+public record GetPositionByIdQuery(Guid Id) : IRequest<PositionDetailsDto>;
 
 public record PositionDetailsDto(
-    int Id,
-    int CompanyId,
+    Guid Id,
+    Guid CompanyId,
     string Code,
     string Title,
     string? Description,
-    int? ParentPositionId,
+    Guid? ParentPositionId,
     string? ParentPositionTitle,
     PositionStatus Status,
     IReadOnlyList<PositionChildDto> Children,
     IReadOnlyList<PositionAssigneeDto> ActiveAssignees);
 
-public record PositionChildDto(int Id, string Code, string Title);
+public record PositionChildDto(Guid Id, string Code, string Title);
 
-public record PositionAssigneeDto(int AssignmentId, int PersonnelId, string FullName, string PersonalCode, DateTimeOffset ValidFrom);
+public record PositionAssigneeDto(Guid AssignmentId, Guid PersonnelId, string FullName, string PersonalCode, DateTimeOffset ValidFrom);
 
 public class GetPositionByIdQueryHandler : IRequestHandler<GetPositionByIdQuery, PositionDetailsDto>
 {

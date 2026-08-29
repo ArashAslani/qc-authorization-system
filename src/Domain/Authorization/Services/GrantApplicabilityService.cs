@@ -20,9 +20,9 @@ public sealed class GrantApplicabilityService
     public bool Applies(
         Grant grant,
         SubjectType requestSubjectType,
-        int requestSubjectId,
+        Guid requestSubjectId,
         Guid? requestUserId,
-        IReadOnlySet<int> requestPositionIds,
+        IReadOnlySet<Guid> requestPositionIds,
         IReadOnlyCollection<Position> allPositions)
     {
         if (IsIndividualGrant(grant))
@@ -72,12 +72,12 @@ public sealed class GrantApplicabilityService
             && requestSubjectId == grant.SubjectId;
     }
 
-    public HashSet<int> EffectivePositionIds(
+    public HashSet<Guid> EffectivePositionIds(
         Grant grant,
         Position grantPosition,
         IReadOnlyCollection<Position> allPositions)
     {
-        var ids = new HashSet<int> { grantPosition.Id };
+        var ids = new HashSet<Guid> { grantPosition.Id };
 
         if (grant.Effect == Effect.Allow)
         {

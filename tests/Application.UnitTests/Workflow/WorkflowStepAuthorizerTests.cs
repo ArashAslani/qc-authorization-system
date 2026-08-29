@@ -10,6 +10,8 @@ using Shouldly;
 
 namespace qc_authorization.Application.UnitTests.Workflow;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class WorkflowStepAuthorizerTests
 {
@@ -31,7 +33,7 @@ public class WorkflowStepAuthorizerTests
             TestUsers.UserA,
             perm.Id,
             SourceType.User,
-            0,
+            Guid.Empty,
             Effect.Allow,
             T0.AddDays(-1),
             null,

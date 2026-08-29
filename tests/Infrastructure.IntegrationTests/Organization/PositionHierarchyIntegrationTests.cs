@@ -7,6 +7,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 [NonParallelizable]
 public class PositionHierarchyIntegrationTests
@@ -42,11 +44,11 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Can_Create_Position_And_Assign_Parent()
     {
-        var root = Position.Create(1, "ROOT", "Root");
+        var root = Position.Create(TestGuids.CompanyA, "ROOT", "Root");
         _context.Positions.Add(root);
         await _context.SaveChangesAsync();
 
-        var child = Position.Create(1, "CHILD", "Child", parentPositionId: root.Id);
+        var child = Position.Create(TestGuids.CompanyA, "CHILD", "Child", parentPositionId: root.Id);
         _context.Positions.Add(child);
         await _context.SaveChangesAsync();
 
@@ -61,9 +63,9 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Can_Re_Parent_Position()
     {
-        var a = Position.Create(1, "A", "A");
-        var b = Position.Create(1, "B", "B");
-        var n = Position.Create(1, "N", "N");
+        var a = Position.Create(TestGuids.CompanyA, "A", "A");
+        var b = Position.Create(TestGuids.CompanyA, "B", "B");
+        var n = Position.Create(TestGuids.CompanyA, "N", "N");
         _context.Positions.AddRange(a, b, n);
         await _context.SaveChangesAsync();
 
@@ -91,9 +93,9 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Re_Parenting_Under_Own_Descendant_Throws()
     {
-        var a = Position.Create(1, "A", "A");
-        var b = Position.Create(1, "B", "B");
-        var d = Position.Create(1, "D", "D");
+        var a = Position.Create(TestGuids.CompanyA, "A", "A");
+        var b = Position.Create(TestGuids.CompanyA, "B", "B");
+        var d = Position.Create(TestGuids.CompanyA, "D", "D");
         _context.Positions.AddRange(a, b, d);
         await _context.SaveChangesAsync();
 
@@ -115,8 +117,8 @@ public class PositionHierarchyIntegrationTests
     [Test]
     public async Task Cross_Company_Parent_Is_Rejected()
     {
-        var companyA = Position.Create(1, "A", "A");
-        var companyBRoot = Position.Create(2, "B", "B");
+        var companyA = Position.Create(TestGuids.CompanyA, "A", "A");
+        var companyBRoot = Position.Create(TestGuids.CompanyB, "B", "B");
         _context.Positions.AddRange(companyA, companyBRoot);
         await _context.SaveChangesAsync();
 

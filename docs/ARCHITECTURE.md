@@ -147,7 +147,55 @@ a context; the engine evaluates it. The integration is the
   permissions. See ADR
   [0010 — Identity Role vs Qc Authorization Role separation](decisions/0010-identity-vs-qc-role-separation.md).
 
-## 10. What is explicitly NOT built (yet)
+## 10. Identifier strategy
+
+All entity and foreign-key identifiers use **`Guid`** — no integer primary keys.
+
+| Area | Identifier |
+|---|---|
+| Aggregates (`Personnel`, `Position`, `Grant`, `Role`, …) | `Guid Id` via `BaseEntity` |
+| Company reference on `Position` | `Guid CompanyId` (no `Company` aggregate in this bounded context) |
+| Identity users | `Guid` (`ApplicationUser` / `IdentityUser<Guid>`) |
+| JWT workspace claim | `active_company_id` as Guid string |
+| User-scoped grants | `SubjectUserId` / `SourceUserId` (`Guid?`) |
+
+`Priority` remains `int` (ordering, not identity). Enum underlying values are unchanged.
+
+## 11. Company Workspace Context
+
+One person (`Personnel`) may hold multiple active `PositionAssignment` rows
+across multiple companies. The system never unions position grants across
+companies in a single evaluation.
+
+### Active company
+
+- JWT carries `active_company_id` (and optionally `national_id`).
+- `ICurrentUser.ActiveCompanyId` exposes the claim to application code.
+- `PositionAwareCandidateGrantResolver` loads position IDs only for
+  assignments whose `Position.CompanyId` matches the active company.
+- Within the active company, grants from **all** active positions are
+  unioned — no engine algorithm change is required.
+- If a user subject has no active company, position-based grants are
+  excluded; direct user grants may still apply.
+- Admin simulate/evaluate endpoints may override via
+  `AccessRequest.Context["CompanyId"]`.
+
+### Login and switch
+
+- Login accepts national ID (`کد ملی`) or email.
+- Default `active_company_id` comes from the assignment marked
+  `IsPrimary`; if none is set, the first company by sorted `CompanyId`
+  with active assignments is used (deterministic fallback).
+- `POST /api/users/me/switch-company` validates membership and reissues JWT.
+- `GET /api/users/me/workspaces` lists companies and positions per company.
+
+### Primary assignment
+
+- `PositionAssignment.IsPrimary` marks the default company at login.
+- `SetPrimaryPositionAssignmentCommand` clears other primaries for the same
+  personnel and sets one — at most one primary per person (application rule).
+
+## 12. What is explicitly NOT built (yet)
 
 - Generic Rule Engine
 - Authorization DSL / Generic Policy Language

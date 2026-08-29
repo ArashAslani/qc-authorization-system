@@ -5,10 +5,12 @@ using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
+using qc_authorization.Tests.TestSupport;
 
 namespace qc_authorization.Application.UnitTests.TestSupport;
 
@@ -17,8 +19,9 @@ namespace qc_authorization.Application.UnitTests.TestSupport;
 /// </summary>
 internal static class AuthorizationTestContext
 {
-    public static (ApplicationDbContext Context, AccessEvaluator Evaluator) Create()
+    public static (ApplicationDbContext Context, AccessEvaluator Evaluator) Create(Guid? activeCompanyId = null)
     {
+        var companyId = activeCompanyId ?? TestGuids.CompanyA;
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"qc-auth-{Guid.NewGuid():N}")
             .EnableServiceProviderCaching(false)
@@ -28,16 +31,20 @@ internal static class AuthorizationTestContext
         var hierarchy = new PositionHierarchyService();
         var applicability = new GrantApplicabilityService(hierarchy);
         var engine = new AccessEvaluationEngine();
+        var currentUser = new StaticCurrentUser(activeCompanyId: companyId);
 
         var evaluator = new AccessEvaluator(
-            new PositionAwareCandidateGrantResolver(context, applicability),
+            new PositionAwareCandidateGrantResolver(context, applicability, currentUser),
             engine);
 
         return (context, evaluator);
     }
 
-    public static IServiceProvider CreateMediatorServices(ApplicationDbContext context)
+    public static IServiceProvider CreateMediatorServices(ApplicationDbContext context, Guid? activeCompanyId = null)
     {
+        var companyId = activeCompanyId ?? TestGuids.CompanyA;
+        MappingConfig.RegisterMappings();
+
         var hierarchy = new PositionHierarchyService();
         var applicability = new GrantApplicabilityService(hierarchy);
         var engine = new AccessEvaluationEngine();
@@ -48,6 +55,7 @@ internal static class AuthorizationTestContext
             .AddSingleton(hierarchy)
             .AddSingleton(applicability)
             .AddSingleton(engine)
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: companyId))
             .AddScoped<IApplicationDbContext>(_ => context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()

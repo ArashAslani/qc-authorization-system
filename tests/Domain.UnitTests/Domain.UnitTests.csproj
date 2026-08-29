@@ -24,4 +24,8 @@
         <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\TestSupport\TestGuids.cs" Link="TestSupport\TestGuids.cs" />
+    </ItemGroup>
+
 </Project>

@@ -18,6 +18,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class OrganizationQueryIntegrationTests
 {
@@ -79,8 +81,8 @@ public class OrganizationQueryIntegrationTests
     [Test]
     public async Task Can_Query_Positions_And_Hierarchy()
     {
-        var rootPosId = await _mediator.Send(new CreatePositionCommand(1, "CEO", "Chief Executive Officer", "Top Level", null));
-        var childPosId = await _mediator.Send(new CreatePositionCommand(1, "QC_DIR", "QC Director", "Director Level", rootPosId));
+        var rootPosId = await _mediator.Send(new CreatePositionCommand(TestGuids.CompanyA, "CEO", "Chief Executive Officer", "Top Level", null));
+        var childPosId = await _mediator.Send(new CreatePositionCommand(TestGuids.CompanyA, "QC_DIR", "QC Director", "Director Level", rootPosId));
 
         var allPositions = await _mediator.Send(new GetPositionsQuery());
         allPositions.Count.ShouldBe(2);
@@ -98,7 +100,7 @@ public class OrganizationQueryIntegrationTests
     public async Task Can_Query_PositionAssignments()
     {
         var pId = await _mediator.Send(new CreatePersonnelCommand("3333333333", "Hassan", "Moradi", "P-103"));
-        var posId = await _mediator.Send(new CreatePositionCommand(1, "AUDITOR", "Lead Auditor", null, null));
+        var posId = await _mediator.Send(new CreatePositionCommand(TestGuids.CompanyA, "AUDITOR", "Lead Auditor", null, null));
 
         var from = DateTimeOffset.UtcNow.AddDays(-5);
         await _mediator.Send(new AssignPersonnelToPositionCommand(pId, posId, from));

@@ -1,9 +1,11 @@
-﻿using qc_authorization.Application.Common.Exceptions;
+using qc_authorization.Application.Common.Exceptions;
 using FluentValidation.Results;
 using NUnit.Framework;
 using Shouldly;
 
 namespace qc_authorization.Application.UnitTests.Common.Exceptions;
+
+using qc_authorization.Tests.TestSupport;
 
 public class ValidationExceptionTests
 {

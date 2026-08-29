@@ -7,7 +7,7 @@ namespace qc_authorization.Application.Authorization.Queries.EvaluateAccessForSu
 
 public record EvaluateAccessForSubjectQuery(
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? UserId,
     string Action,
     string Resource,
@@ -22,7 +22,7 @@ public record AdminAccessDecisionDto(
 public record AdminDecisionTraceDto(
     string TraceId,
     string SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     string RequestedPermission,
     string Resource,
     string? ResourceId,
@@ -34,25 +34,25 @@ public record AdminDecisionTraceDto(
     IReadOnlyList<AdminTraceConflictEntryDto> ConflictResolution);
 
 public record AdminTraceGrantSummaryDto(
-    int Id,
+    Guid Id,
     string SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? SubjectUserId,
     string SourceType,
-    int SourceId,
+    Guid SourceId,
     int Priority,
     string Effect);
 
 public record AdminTraceRejectedGrantDto(
-    int GrantId,
+    Guid GrantId,
     string SourceType,
-    int SourceId,
+    Guid SourceId,
     string Reason);
 
 public record AdminTraceConflictEntryDto(
-    int GrantId,
+    Guid GrantId,
     string SourceType,
-    int SourceId,
+    Guid SourceId,
     int Priority,
     string Effect,
     bool Won);

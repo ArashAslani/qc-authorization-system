@@ -34,5 +34,14 @@ public class ApplicationDbContext
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            var idProperty = entityType.FindProperty("Id");
+            if (idProperty?.ClrType == typeof(Guid))
+            {
+                builder.Entity(entityType.ClrType).Property("Id").ValueGeneratedOnAdd();
+            }
+        }
     }
 }

@@ -7,13 +7,13 @@ using NotFoundException = qc_authorization.Application.Common.Exceptions.NotFoun
 
 namespace qc_authorization.Application.Authorization.Queries.GetDelegationById;
 
-public record GetDelegationByIdQuery(int Id) : IRequest<DelegationDetailsDto>;
+public record GetDelegationByIdQuery(Guid Id) : IRequest<DelegationDetailsDto>;
 
 public record DelegationDetailsDto(
-    int Id,
+    Guid Id,
     Guid DelegatorUserId,
     Guid DelegateUserId,
-    int PermissionId,
+    Guid PermissionId,
     string PermissionCode,
     string PermissionResource,
     string PermissionAction,

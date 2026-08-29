@@ -7,10 +7,10 @@ public class AuthorizationAuditEntry : BaseAuditableEntity
     private AuthorizationAuditEntry() { }
 
     public string EventType { get; private set; } = string.Empty;
-    public int? ActorUserId { get; private set; }
+    public Guid? ActorUserId { get; private set; }
     public string Payload { get; private set; } = string.Empty;
 
-    public static AuthorizationAuditEntry Create(string eventType, int? actorUserId, string payload) =>
+    public static AuthorizationAuditEntry Create(string eventType, Guid? actorUserId, string payload) =>
         new()
         {
             EventType = eventType,

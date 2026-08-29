@@ -8,7 +8,7 @@ public class EvaluateAccessQueryValidator : AbstractValidator<EvaluateAccessQuer
     {
         When(x => x.SubjectType != SubjectType.User, () =>
         {
-            RuleFor(x => x.SubjectId).GreaterThan(0);
+            RuleFor(x => x.SubjectId).NotEqual(Guid.Empty);
         });
 
         When(x => x.SubjectType == SubjectType.User, () =>

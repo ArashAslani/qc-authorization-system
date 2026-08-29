@@ -5,6 +5,6 @@ public class RevokeAuthorizationRoleFromUserCommandValidator : AbstractValidator
     public RevokeAuthorizationRoleFromUserCommandValidator()
     {
         RuleFor(x => x.UserId).NotEmpty();
-        RuleFor(x => x.RoleId).GreaterThan(0);
+        RuleFor(x => x.RoleId).NotEqual(Guid.Empty);
     }
 }

@@ -3,6 +3,7 @@ using qc_authorization.Application.Organization.Commands.CreatePersonnel;
 using qc_authorization.Application.Organization.Commands.CreatePosition;
 using qc_authorization.Application.Organization.Commands.LinkPersonnelToIdentityUser;
 using qc_authorization.Application.Organization.Commands.ReparentPosition;
+using qc_authorization.Application.Organization.Commands.SetPrimaryPositionAssignment;
 using qc_authorization.Application.Organization.Queries.GetPersonnel;
 using qc_authorization.Application.Organization.Queries.GetPersonnelById;
 using qc_authorization.Application.Organization.Queries.GetPositionAssignments;
@@ -23,19 +24,20 @@ public class OrganizationEndpoints : IEndpointGroup
     {
         // Personnel
         group.MapGet(GetPersonnel, "personnel");
-        group.MapGet(GetPersonnelById, "personnel/{id:int}");
+        group.MapGet(GetPersonnelById, "personnel/{id:guid}");
         group.MapPost(CreatePersonnel, "personnel");
         group.MapPost(LinkPersonnelToIdentityUser, "personnel/link-user");
 
         // Positions
         group.MapGet(GetPositions, "positions");
-        group.MapGet(GetPositionById, "positions/{id:int}");
+        group.MapGet(GetPositionById, "positions/{id:guid}");
         group.MapPost(CreatePosition, "positions");
         group.MapPost(ReparentPosition, "positions/reparent");
 
         // Assignments
         group.MapGet(GetPositionAssignments, "assignments");
         group.MapPost(AssignPersonnel, "assignments");
+        group.MapPost(SetPrimaryAssignment, "assignments/set-primary");
     }
 
     private static async Task<IResult> GetPersonnel(
@@ -48,7 +50,7 @@ public class OrganizationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetPersonnelById(int id, ISender sender)
+    private static async Task<IResult> GetPersonnelById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetPersonnelByIdQuery(id));
         return Results.Ok(result);
@@ -76,16 +78,16 @@ public class OrganizationEndpoints : IEndpointGroup
     }
 
     private static async Task<IResult> GetPositions(
-        [FromQuery] int? companyId,
+        [FromQuery] Guid? companyId,
         [FromQuery] string? searchTerm,
-        [FromQuery] int? parentPositionId,
+        [FromQuery] Guid? parentPositionId,
         ISender sender)
     {
         var result = await sender.Send(new GetPositionsQuery(companyId, searchTerm, parentPositionId));
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetPositionById(int id, ISender sender)
+    private static async Task<IResult> GetPositionById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetPositionByIdQuery(id));
         return Results.Ok(result);
@@ -110,8 +112,8 @@ public class OrganizationEndpoints : IEndpointGroup
     }
 
     private static async Task<IResult> GetPositionAssignments(
-        [FromQuery] int? personnelId,
-        [FromQuery] int? positionId,
+        [FromQuery] Guid? personnelId,
+        [FromQuery] Guid? positionId,
         [FromQuery] bool? activeOnly,
         ISender sender)
     {
@@ -129,6 +131,12 @@ public class OrganizationEndpoints : IEndpointGroup
 
         return Results.Created($"/api/organization/assignments/{id}", new { id });
     }
+
+    private static async Task<IResult> SetPrimaryAssignment(SetPrimaryAssignmentRequest request, ISender sender)
+    {
+        await sender.Send(new SetPrimaryPositionAssignmentCommand(request.PersonnelId, request.AssignmentId));
+        return Results.NoContent();
+    }
 }
 
 public record CreatePersonnelRequest(
@@ -142,18 +150,20 @@ public record CreatePersonnelRequest(
     Guid? IdentityUserId = null);
 
 public record CreatePositionRequest(
-    int CompanyId,
+    Guid CompanyId,
     string Code,
     string Title,
-    int? ParentPositionId = null,
+    Guid? ParentPositionId = null,
     string? Description = null);
 
 public record AssignPersonnelRequest(
-    int PersonnelId,
-    int PositionId,
+    Guid PersonnelId,
+    Guid PositionId,
     DateTimeOffset EffectiveFrom,
     DateTimeOffset? EffectiveTo = null);
 
-public record ReparentPositionRequest(int PositionId, int? NewParentPositionId);
+public record ReparentPositionRequest(Guid PositionId, Guid? NewParentPositionId);
 
-public record LinkPersonnelRequest(int PersonnelId, Guid IdentityUserId);
+public record LinkPersonnelRequest(Guid PersonnelId, Guid IdentityUserId);
+
+public record SetPrimaryAssignmentRequest(Guid PersonnelId, Guid AssignmentId);

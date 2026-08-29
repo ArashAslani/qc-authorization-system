@@ -5,16 +5,16 @@ using Microsoft.EntityFrameworkCore;
 namespace qc_authorization.Application.Organization.Queries.GetPositionAssignments;
 
 public record GetPositionAssignmentsQuery(
-    int? PersonnelId = null,
-    int? PositionId = null,
+    Guid? PersonnelId = null,
+    Guid? PositionId = null,
     bool? ActiveOnly = null) : IRequest<IReadOnlyList<PositionAssignmentDto>>;
 
 public record PositionAssignmentDto(
-    int Id,
-    int PersonnelId,
+    Guid Id,
+    Guid PersonnelId,
     string PersonnelName,
     string PersonalCode,
-    int PositionId,
+    Guid PositionId,
     string PositionCode,
     string PositionTitle,
     DateTimeOffset ValidFrom,

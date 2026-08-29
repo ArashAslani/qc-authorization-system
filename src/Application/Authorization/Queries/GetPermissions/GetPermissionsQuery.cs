@@ -10,13 +10,13 @@ public record GetPermissionsQuery(
     string? SearchTerm = null) : IRequest<IReadOnlyList<PermissionDto>>;
 
 public record PermissionDto(
-    int Id,
+    Guid Id,
     string Code,
     string Resource,
     string Action,
     string? Description,
-    int? ResourceCatalogId,
-    int? ActionCatalogId);
+    Guid? ResourceCatalogId,
+    Guid? ActionCatalogId);
 
 public class GetPermissionsQueryHandler : IRequestHandler<GetPermissionsQuery, IReadOnlyList<PermissionDto>>
 {

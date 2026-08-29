@@ -22,5 +22,7 @@ public class PositionAssignmentConfiguration : IEntityTypeConfiguration<Position
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(a => new { a.PersonnelId, a.PositionId, a.ValidFrom });
+
+        builder.Property(a => a.IsPrimary).IsRequired().HasDefaultValue(false);
     }
 }

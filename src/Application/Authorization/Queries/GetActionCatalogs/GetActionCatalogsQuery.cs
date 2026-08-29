@@ -6,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Queries.GetActionCatalogs;
 
 public record GetActionCatalogsQuery(string? SearchTerm = null) : IRequest<IReadOnlyList<ActionCatalogDto>>;
 
-public record ActionCatalogDto(int Id, string Code, string Name);
+public record ActionCatalogDto(Guid Id, string Code, string Name);
 
 public class GetActionCatalogsQueryHandler : IRequestHandler<GetActionCatalogsQuery, IReadOnlyList<ActionCatalogDto>>
 {

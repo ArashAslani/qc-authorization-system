@@ -6,17 +6,17 @@ using NotFoundException = qc_authorization.Application.Common.Exceptions.NotFoun
 
 namespace qc_authorization.Application.Authorization.Queries.GetPermissionById;
 
-public record GetPermissionByIdQuery(int Id) : IRequest<PermissionDetailsDto>;
+public record GetPermissionByIdQuery(Guid Id) : IRequest<PermissionDetailsDto>;
 
 public record PermissionDetailsDto(
-    int Id,
+    Guid Id,
     string Code,
     string Resource,
     string Action,
     string? Description,
-    int? ResourceCatalogId,
+    Guid? ResourceCatalogId,
     string? ResourceCatalogName,
-    int? ActionCatalogId,
+    Guid? ActionCatalogId,
     string? ActionCatalogName,
     int RolesCount,
     int GrantsCount);

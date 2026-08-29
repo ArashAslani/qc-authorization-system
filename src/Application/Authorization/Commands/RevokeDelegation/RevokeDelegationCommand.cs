@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.RevokeDelegation;
 
-public record RevokeDelegationCommand(int DelegationId) : IRequest;
+public record RevokeDelegationCommand(Guid DelegationId) : IRequest;
 
 public class RevokeDelegationCommandHandler : IRequestHandler<RevokeDelegationCommand>
 {

@@ -4,13 +4,13 @@ public class CreatePositionCommandValidator : AbstractValidator<CreatePositionCo
 {
     public CreatePositionCommandValidator()
     {
-        RuleFor(x => x.CompanyId).GreaterThan(0);
+        RuleFor(x => x.CompanyId).NotEqual(Guid.Empty);
         RuleFor(x => x.Code).NotEmpty();
         RuleFor(x => x.Title).NotEmpty();
 
         When(x => x.ParentPositionId.HasValue, () =>
         {
-            RuleFor(x => x.ParentPositionId!.Value).GreaterThan(0);
+            RuleFor(x => x.ParentPositionId!.Value).NotEqual(Guid.Empty);
         });
     }
 }

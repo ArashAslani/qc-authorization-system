@@ -11,7 +11,7 @@ using qc_authorization.Infrastructure.Data;
 namespace qc_authorization.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260828221541_InitialCreate")]
+    [Migration("20260829000737_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,11 +20,110 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
 
-            modelBuilder.Entity("qc_authorization.Domain.Authorization.ActionCatalog", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("qc_authorization.Domain.Authorization.ActionCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -58,12 +157,12 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Audit.AuthorizationAuditEntry", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
-                    b.Property<int?>("ActorUserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -97,9 +196,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Delegation", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -110,11 +209,11 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<bool>("Delegable")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("DelegateUserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("DelegateUserId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("DelegatorUserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("DelegatorUserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("INTEGER");
@@ -125,8 +224,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ScopeIdentifier")
                         .HasMaxLength(100)
@@ -154,9 +253,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Grant", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -173,8 +272,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
@@ -194,17 +293,23 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<int>("ScopeKind")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SourceId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SourceType")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SubjectId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("SourceUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SubjectType")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SubjectUserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("ValidFrom")
                         .HasColumnType("TEXT");
@@ -220,22 +325,24 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
                     b.HasIndex("SubjectType", "SubjectId", "PermissionId");
 
+                    b.HasIndex("SubjectType", "SubjectUserId", "PermissionId");
+
                     b.ToTable("Grant", (string)null);
                 });
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Permission", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ActionCatalogId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ActionCatalogId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -263,8 +370,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ResourceCatalogId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ResourceCatalogId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -280,9 +387,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.ResourceCatalog", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -319,9 +426,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Role", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -359,9 +466,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RoleGroup", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -398,9 +505,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RoleGroupMember", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -414,11 +521,11 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleGroupId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleGroupId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -432,9 +539,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RolePermission", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -448,11 +555,11 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -466,9 +573,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.Personnel", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -483,6 +590,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
                     b.Property<int>("Gender")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("IdentityUserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("TEXT");
@@ -512,10 +622,10 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("SystemUserId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("IdentityUserId")
+                        .IsUnique();
 
                     b.HasIndex("NationalId")
                         .IsUnique();
@@ -523,25 +633,22 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.HasIndex("PersonalCode")
                         .IsUnique();
 
-                    b.HasIndex("SystemUserId")
-                        .IsUnique();
-
                     b.ToTable("Personnel", (string)null);
                 });
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.Position", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -559,8 +666,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParentPositionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ParentPositionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
@@ -584,9 +691,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.PositionAssignment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -594,17 +701,22 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PersonnelId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PersonnelId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("PositionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PositionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("ValidFrom")
                         .HasColumnType("TEXT");
@@ -619,6 +731,154 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.HasIndex("PersonnelId", "PositionId", "ValidFrom");
 
                     b.ToTable("PositionAssignment", (string)null);
+                });
+
+            modelBuilder.Entity("qc_authorization.Infrastructure.Identity.ApplicationRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("qc_authorization.Infrastructure.Identity.ApplicationUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PersonnelId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("PersonnelId");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+                {
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+                {
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+                {
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+                {
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+                {
+                    b.HasOne("qc_authorization.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Delegation", b =>
@@ -642,8 +902,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
                     b.OwnsMany("qc_authorization.Domain.Authorization.Constraints.GrantConstraint", "Constraints", b1 =>
                         {
-                            b1.Property<int>("GrantId")
-                                .HasColumnType("INTEGER");
+                            b1.Property<Guid>("GrantId")
+                                .HasColumnType("TEXT");
 
                             b1.Property<int>("Id")
                                 .ValueGeneratedOnAdd()
@@ -764,6 +1024,14 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Navigation("Personnel");
 
                     b.Navigation("Position");
+                });
+
+            modelBuilder.Entity("qc_authorization.Infrastructure.Identity.ApplicationUser", b =>
+                {
+                    b.HasOne("qc_authorization.Domain.Organization.Personnel", null)
+                        .WithMany()
+                        .HasForeignKey("PersonnelId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Role", b =>

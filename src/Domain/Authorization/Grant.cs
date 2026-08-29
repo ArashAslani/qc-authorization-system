@@ -16,10 +16,10 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
     private Grant() { }
 
     public SubjectType SubjectType { get; private set; }
-    public int SubjectId { get; private set; }
+    public Guid SubjectId { get; private set; }
     public Guid? SubjectUserId { get; private set; }
 
-    public int PermissionId { get; private set; }
+    public Guid PermissionId { get; private set; }
     public Permission Permission { get; private set; } = null!;
 
     public string? Resource { get; private set; }
@@ -31,7 +31,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
     public Effect Effect { get; private set; } = Effect.Allow;
 
     public SourceType SourceType { get; private set; }
-    public int SourceId { get; private set; }
+    public Guid SourceId { get; private set; }
     public Guid? SourceUserId { get; private set; }
 
     public DateTimeOffset ValidFrom { get; private set; }
@@ -47,10 +47,10 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
     public static Grant Create(
         SubjectType subjectType,
-        int subjectId,
-        int permissionId,
+        Guid subjectId,
+        Guid permissionId,
         SourceType sourceType,
-        int sourceId,
+        Guid sourceId,
         Effect effect,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
@@ -66,7 +66,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
         _ = new Validity(validFrom, validTo);
         _ = new Scope(scopeKind, scopeIdentifier);
 
-        if (sourceId <= 0 && sourceUserId is null)
+        if (sourceId == Guid.Empty && sourceUserId is null)
         {
             throw new AuthorizationDomainException("SourceId or SourceUserId must be provided.");
         }
@@ -108,9 +108,9 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
 
     public static Grant CreateForUser(
         Guid subjectUserId,
-        int permissionId,
+        Guid permissionId,
         SourceType sourceType,
-        int sourceId,
+        Guid sourceId,
         Effect effect,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
@@ -123,7 +123,7 @@ public class Grant : BaseAuditableEntity, IAggregateRoot
         IEnumerable<GrantConstraint>? constraints = null) =>
         Create(
             SubjectType.User,
-            0,
+            Guid.Empty,
             permissionId,
             sourceType,
             sourceId,

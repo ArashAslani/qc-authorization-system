@@ -118,9 +118,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.ActionCatalog", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -154,12 +154,12 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Audit.AuthorizationAuditEntry", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
-                    b.Property<int?>("ActorUserId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -193,9 +193,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Delegation", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -221,8 +221,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ScopeIdentifier")
                         .HasMaxLength(100)
@@ -250,9 +250,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Grant", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -269,8 +269,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
@@ -290,8 +290,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<int>("ScopeKind")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SourceId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SourceType")
                         .HasColumnType("INTEGER");
@@ -299,8 +299,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<Guid?>("SourceUserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SubjectId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SubjectType")
                         .HasColumnType("INTEGER");
@@ -329,17 +329,17 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Permission", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ActionCatalogId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ActionCatalogId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -367,8 +367,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ResourceCatalogId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ResourceCatalogId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -384,9 +384,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.ResourceCatalog", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -423,9 +423,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.Role", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -463,9 +463,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RoleGroup", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -502,9 +502,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RoleGroupMember", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -518,11 +518,11 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleGroupId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleGroupId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -536,9 +536,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Authorization.RolePermission", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -552,11 +552,11 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -570,9 +570,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.Personnel", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -635,17 +635,17 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.Position", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -663,8 +663,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParentPositionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ParentPositionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
@@ -688,9 +688,9 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("qc_authorization.Domain.Organization.PositionAssignment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("TEXT");
@@ -698,17 +698,22 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PersonnelId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PersonnelId")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("PositionId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("PositionId")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("ValidFrom")
                         .HasColumnType("TEXT");
@@ -789,8 +794,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PersonnelId")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("PersonnelId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("TEXT");
@@ -894,8 +899,8 @@ namespace qc_authorization.Infrastructure.Data.Migrations
 
                     b.OwnsMany("qc_authorization.Domain.Authorization.Constraints.GrantConstraint", "Constraints", b1 =>
                         {
-                            b1.Property<int>("GrantId")
-                                .HasColumnType("INTEGER");
+                            b1.Property<Guid>("GrantId")
+                                .HasColumnType("TEXT");
 
                             b1.Property<int>("Id")
                                 .ValueGeneratedOnAdd()

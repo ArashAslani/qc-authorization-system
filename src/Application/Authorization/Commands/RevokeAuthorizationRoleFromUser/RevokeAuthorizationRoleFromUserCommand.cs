@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.RevokeAuthorizationRoleFromUser;
 
-public record RevokeAuthorizationRoleFromUserCommand(Guid UserId, int RoleId) : IRequest;
+public record RevokeAuthorizationRoleFromUserCommand(Guid UserId, Guid RoleId) : IRequest;
 
 public class RevokeAuthorizationRoleFromUserCommandHandler : IRequestHandler<RevokeAuthorizationRoleFromUserCommand>
 {

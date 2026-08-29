@@ -8,11 +8,17 @@ namespace qc_authorization.Infrastructure.Identity;
 
 public sealed class JwtTokenService
 {
+    public const string ActiveCompanyIdClaim = "active_company_id";
+    public const string NationalIdClaim = "national_id";
+
     private readonly JwtOptions _options;
 
     public JwtTokenService(IOptions<JwtOptions> options) => _options = options.Value;
 
-    public string GenerateToken(ApplicationUser user)
+    public string GenerateToken(ApplicationUser user) =>
+        GenerateToken(user, activeCompanyId: null, nationalId: null);
+
+    public string GenerateToken(ApplicationUser user, Guid? activeCompanyId, string? nationalId = null)
     {
         var claims = new List<Claim>
         {
@@ -34,6 +40,16 @@ public sealed class JwtTokenService
         if (user.PersonnelId.HasValue)
         {
             claims.Add(new Claim("personnel_id", user.PersonnelId.Value.ToString()));
+        }
+
+        if (activeCompanyId.HasValue)
+        {
+            claims.Add(new Claim(ActiveCompanyIdClaim, activeCompanyId.Value.ToString()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(nationalId))
+        {
+            claims.Add(new Claim(NationalIdClaim, nationalId));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));

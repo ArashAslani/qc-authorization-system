@@ -7,27 +7,33 @@ public class PositionAssignment : BaseAuditableEntity, IAggregateRoot
 {
     private PositionAssignment() { }
 
-    public int PersonnelId { get; private set; }
+    public Guid PersonnelId { get; private set; }
     public Personnel Personnel { get; private set; } = null!;
 
-    public int PositionId { get; private set; }
+    public Guid PositionId { get; private set; }
     public Position Position { get; private set; } = null!;
 
     public DateTimeOffset ValidFrom { get; private set; }
     public DateTimeOffset? ValidTo { get; private set; }
 
+    /// <summary>
+    /// When true, this assignment determines the default company workspace at login.
+    /// At most one assignment per personnel may be primary (enforced in application layer).
+    /// </summary>
+    public bool IsPrimary { get; private set; }
+
     public static PositionAssignment Create(
-        int personnelId,
-        int positionId,
+        Guid personnelId,
+        Guid positionId,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo = null)
     {
-        if (personnelId <= 0)
+        if (personnelId == Guid.Empty)
         {
             throw new OrganizationDomainException("PersonnelId must be a positive identifier.");
         }
 
-        if (positionId <= 0)
+        if (positionId == Guid.Empty)
         {
             throw new OrganizationDomainException("PositionId must be a positive identifier.");
         }
@@ -45,4 +51,8 @@ public class PositionAssignment : BaseAuditableEntity, IAggregateRoot
             ValidTo = validTo,
         };
     }
+
+    public void MarkAsPrimary() => IsPrimary = true;
+
+    public void ClearPrimary() => IsPrimary = false;
 }

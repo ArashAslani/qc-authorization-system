@@ -1,10 +1,12 @@
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Domain.Authorization;
+using qc_authorization.Domain.Authorization.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
 
-public record AddRoleToGroupCommand(int RoleGroupId, int RoleId) : IRequest;
+public record AddRoleToGroupCommand(Guid RoleGroupId, Guid RoleId) : IRequest;
 
 public class AddRoleToGroupCommandHandler : IRequestHandler<AddRoleToGroupCommand>
 {
@@ -18,15 +20,33 @@ public class AddRoleToGroupCommandHandler : IRequestHandler<AddRoleToGroupComman
     public async Task Handle(AddRoleToGroupCommand request, CancellationToken cancellationToken)
     {
         var role = await _context.AuthorizationRoles
+            .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == request.RoleId, cancellationToken)
             ?? throw new InvalidOperationException($"Role {request.RoleId} not found.");
 
-        var group = await _context.RoleGroups
-            .Include(g => g.Members)
-            .FirstOrDefaultAsync(g => g.Id == request.RoleGroupId, cancellationToken)
-            ?? throw new InvalidOperationException($"RoleGroup {request.RoleGroupId} not found.");
+        var groupExists = await _context.RoleGroups
+            .AsNoTracking()
+            .AnyAsync(g => g.Id == request.RoleGroupId, cancellationToken);
 
-        group.AddRole(role);
+        if (!groupExists)
+        {
+            throw new InvalidOperationException($"RoleGroup {request.RoleGroupId} not found.");
+        }
+
+        var alreadyMember = await _context.RoleGroupMembers
+            .AnyAsync(m => m.RoleGroupId == request.RoleGroupId && m.RoleId == request.RoleId, cancellationToken);
+
+        if (alreadyMember)
+        {
+            throw new AuthorizationDomainException($"Role {role.Code} is already in the group.");
+        }
+
+        _context.RoleGroupMembers.Add(new RoleGroupMember
+        {
+            RoleGroupId = request.RoleGroupId,
+            RoleId = request.RoleId,
+        });
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

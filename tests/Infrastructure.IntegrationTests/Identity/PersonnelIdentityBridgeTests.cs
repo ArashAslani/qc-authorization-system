@@ -18,6 +18,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Identity;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class PersonnelIdentityBridgeTests
 {

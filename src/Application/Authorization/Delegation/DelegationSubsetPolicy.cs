@@ -21,7 +21,7 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
 
     public async Task EnsureDelegatorCanDelegateAsync(
         Guid delegatorUserId,
-        int permissionId,
+        Guid permissionId,
         ScopeKind scopeKind,
         string? scopeIdentifier,
         DateTimeOffset when,

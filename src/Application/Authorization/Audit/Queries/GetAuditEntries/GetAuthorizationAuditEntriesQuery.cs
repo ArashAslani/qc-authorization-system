@@ -6,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Audit.Queries.GetAuditEntri
 
 public record GetAuthorizationAuditEntriesQuery(
     string? EventType = null,
-    int? ActorUserId = null,
+    Guid? ActorUserId = null,
     DateTimeOffset? From = null,
     DateTimeOffset? To = null,
     int PageNumber = 1,
@@ -19,9 +19,9 @@ public record PaginatedAuditEntriesDto(
     int PageSize);
 
 public record AuditEntryDto(
-    int Id,
+    Guid Id,
     string EventType,
-    int? ActorUserId,
+    Guid? ActorUserId,
     string Payload,
     DateTimeOffset Created);
 

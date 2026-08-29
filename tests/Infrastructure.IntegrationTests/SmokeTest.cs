@@ -1,5 +1,7 @@
 namespace qc_authorization.Infrastructure.IntegrationTests;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class SmokeTest
 {

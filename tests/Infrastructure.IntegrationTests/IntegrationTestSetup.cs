@@ -3,6 +3,8 @@ using NUnit.Framework;
 
 namespace qc_authorization.Infrastructure.IntegrationTests;
 
+using qc_authorization.Tests.TestSupport;
+
 [SetUpFixture]
 public class IntegrationTestSetup
 {
