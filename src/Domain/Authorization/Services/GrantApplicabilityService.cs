@@ -62,7 +62,8 @@ public sealed class GrantApplicabilityService
                 && requestUserId == grant.SubjectUserId;
         }
 
-        if (grant.SubjectType == SubjectType.User && grant.SourceType == SourceType.Role)
+        if (grant.SubjectType == SubjectType.User
+            && (grant.SourceType == SourceType.Role || grant.SourceType == SourceType.RoleGroup))
         {
             return requestSubjectType == SubjectType.User
                 && requestUserId == grant.SubjectUserId;

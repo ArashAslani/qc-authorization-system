@@ -13,6 +13,7 @@ public record RoleGroupDetailsDto(
     string Code,
     string Name,
     string? Description,
+    Domain.Authorization.Enums.CatalogStatus Status,
     IReadOnlyList<RoleGroupMemberItemDto> MemberRoles);
 
 public record RoleGroupMemberItemDto(Guid RoleId, string Code, string Name, string? Description);
@@ -51,6 +52,7 @@ public class GetRoleGroupByIdQueryHandler : IRequestHandler<GetRoleGroupByIdQuer
             group.Code,
             group.Name,
             group.Description,
+            group.Status,
             memberRoles);
     }
 }

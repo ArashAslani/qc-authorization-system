@@ -2,6 +2,7 @@ using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
+using qc_authorization.Domain.Authorization.Exceptions;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,22 @@ public class AssignAuthorizationRoleToUserCommandHandler : IRequestHandler<Assig
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == request.RoleId, cancellationToken)
             ?? throw new InvalidOperationException($"Role {request.RoleId} not found.");
+
+        if (role.Status != CatalogStatus.Active)
+        {
+            throw new AuthorizationDomainException($"Role {role.Code} is inactive.");
+        }
+
+        var existingGrants = await _context.Grants
+            .Where(g => g.SubjectUserId == request.UserId
+                     && g.SourceType == SourceType.Role
+                     && g.SourceId == request.RoleId)
+            .ToListAsync(cancellationToken);
+
+        if (existingGrants.Count > 0)
+        {
+            _context.Grants.RemoveRange(existingGrants);
+        }
 
         var rolePermissions = await _context.RolePermissions
             .AsNoTracking()

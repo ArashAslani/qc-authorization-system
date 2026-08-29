@@ -106,9 +106,17 @@ public class UsersEndpoints : IEndpointGroup
         ICurrentUser currentUser,
         ISender sender)
     {
-        if (!currentUser.IsAuthenticated || currentUser.PersonnelId is not Guid personnelId)
+        if (!currentUser.IsAuthenticated)
         {
             return Results.Unauthorized();
+        }
+
+        if (currentUser.PersonnelId is not Guid personnelId)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Personnel link required",
+                detail: "Multi-company workspace is only available for users linked to a personnel record.");
         }
 
         var workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(personnelId));
@@ -227,9 +235,17 @@ public class UsersEndpoints : IEndpointGroup
         ApplicationDbContext context,
         ISender sender)
     {
-        if (!currentUser.IsAuthenticated || currentUser.UserId is not Guid userId || currentUser.PersonnelId is not Guid personnelId)
+        if (!currentUser.IsAuthenticated || currentUser.UserId is not Guid userId)
         {
             return Results.Unauthorized();
+        }
+
+        if (currentUser.PersonnelId is not Guid personnelId)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Personnel link required",
+                detail: "Company switch is only available for users linked to a personnel record.");
         }
 
         var workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(personnelId));

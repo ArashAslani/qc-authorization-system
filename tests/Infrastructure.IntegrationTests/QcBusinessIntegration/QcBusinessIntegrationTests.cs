@@ -14,6 +14,7 @@ using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using qc_authorization.Tests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -81,13 +82,8 @@ public class QcBusinessIntegrationTests
                 cfg.RegisterServicesFromAssemblyContaining<CreatePermissionCommand>();
                 cfg.RegisterServicesFromAssemblyContaining<ApproveControlPlanCommand>();
             })
-            .AddSingleton<PositionHierarchyService>()
-            .AddSingleton<GrantApplicabilityService>()
-            .AddSingleton<AccessEvaluationEngine>()
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
-            .AddScoped<IAccessEvaluator, AccessEvaluator>()
-            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
             .AddSingleton(_controlPlanStore)
             .AddSingleton(_bomStore)

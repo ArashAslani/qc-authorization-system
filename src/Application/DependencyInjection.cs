@@ -4,6 +4,7 @@ using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
+using qc_authorization.Application.Authorization.Services;
 using qc_authorization.Application.Workflow;
 using qc_authorization.Application.Common.Behaviours;
 using qc_authorization.Domain.Authorization.Evaluation;
@@ -27,7 +28,10 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>();
         builder.Services.AddScoped<IAccessEvaluator, AccessEvaluator>();
+        builder.Services.AddScoped<ICatalogGrantFilter, CatalogGrantFilter>();
         builder.Services.AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>();
+        builder.Services.AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>();
+        builder.Services.AddScoped<RoleGroupGrantMaterializer>();
         builder.Services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
         builder.Services.AddScoped<WorkflowStepAuthorizer>();
 

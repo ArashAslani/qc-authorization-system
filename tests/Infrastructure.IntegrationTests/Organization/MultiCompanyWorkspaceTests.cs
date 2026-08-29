@@ -85,6 +85,7 @@ public class MultiCompanyWorkspaceTests
             new PositionAwareCandidateGrantResolver(
                 _context,
                 applicability,
+                new CatalogGrantFilter(_context),
                 new StaticCurrentUser(_userId, _personnel.Id, activeCompanyId: TestGuids.CompanyA)),
             engine);
     }
@@ -113,6 +114,7 @@ public class MultiCompanyWorkspaceTests
         var resolver = new PositionAwareCandidateGrantResolver(
             _context,
             new GrantApplicabilityService(new PositionHierarchyService()),
+            new CatalogGrantFilter(_context),
             new StaticCurrentUser(_userId, _personnel.Id, activeCompanyId: TestGuids.CompanyB));
 
         var evaluator = new AccessEvaluator(resolver, new AccessEvaluationEngine());
@@ -132,6 +134,7 @@ public class MultiCompanyWorkspaceTests
         var resolver = new PositionAwareCandidateGrantResolver(
             _context,
             new GrantApplicabilityService(new PositionHierarchyService()),
+            new CatalogGrantFilter(_context),
             new StaticCurrentUser(_userId, _personnel.Id, activeCompanyId: null));
 
         var evaluator = new AccessEvaluator(resolver, new AccessEvaluationEngine());

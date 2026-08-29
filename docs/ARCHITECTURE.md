@@ -146,6 +146,42 @@ a context; the engine evaluates it. The integration is the
   permission catalog data. `IdentityRoleClaim` is not used for business
   permissions. See ADR
   [0010 — Identity Role vs Qc Authorization Role separation](decisions/0010-identity-vs-qc-role-separation.md).
+- See ADR
+  [0011 — Personnel vs System User and RoleGroup assignment](decisions/0011-personnel-user-role-group.md).
+
+### Personnel vs system user
+
+`Personnel` and `ApplicationUser` are **independent** concepts with an
+optional link:
+
+| Case | Access path | Multi-company workspace |
+|---|---|---|
+| Personnel only (no login) | Position grants only when evaluated as position subject | N/A |
+| User only (external account) | User grants, Role, RoleGroup | Not available |
+| Linked Personnel + User | Union of user grants + position grants in active company | Available |
+
+Rules:
+
+- Register/login may create or use a user **without** `PersonnelId`.
+- `LinkPersonnelToIdentityUser` connects records later (bidirectional).
+- Workspace APIs (`/me/workspaces`, `/me/switch-company`) require linked Personnel.
+- External users are authorized only via `SubjectType.User` materialized grants.
+
+### RoleGroup
+
+`RoleGroup` bundles Roles for admin convenience. It has no direct link to
+`Permission`. Assigning a group to a User or Position **materializes** all
+permissions from member Roles into `Grant` rows (`SourceType.RoleGroup`).
+Revoking the assignment removes those grants. See ADR 0011 and ADR 0012.
+
+### Catalog status and Role→Position
+
+- `Role` and `RoleGroup` expose `CatalogStatus` (`Active` / `Inactive`).
+  Inactive sources cannot be assigned; `CatalogGrantFilter` excludes their
+  grants at evaluation time.
+- Roles may be assigned directly to Positions (`AssignAuthorizationRoleToPosition`),
+  materializing `SourceType.Role` grants on the position subject.
+- Admin update commands exist for Role, RoleGroup, and Position metadata/status.
 
 ## 10. Identifier strategy
 

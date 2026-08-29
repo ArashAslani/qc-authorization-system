@@ -41,20 +41,12 @@ public class IdentityAuthorizationIntegrationTests
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
 
-        var hierarchy = new PositionHierarchyService();
-        var applicability = new GrantApplicabilityService(hierarchy);
-
         _mediator = new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<AssignAuthorizationRoleToUserCommand>())
-            .AddSingleton(hierarchy)
-            .AddSingleton(applicability)
-            .AddSingleton(new AccessEvaluationEngine())
             .AddScoped<IApplicationDbContext>(_ => _context)
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
-            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
-            .AddScoped<IAccessEvaluator, AccessEvaluator>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
     }

@@ -18,6 +18,7 @@ using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Authorization.ValueObjects;
 using qc_authorization.Domain.Organization;
 using qc_authorization.Infrastructure.Data;
+using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,14 +44,8 @@ public class GrantAndDelegationQueryIntegrationTests
             .AddLogging()
             .AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(dbName))
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<GetGrantsQuery>())
-            .AddSingleton<PositionHierarchyService>()
-            .AddSingleton<GrantApplicabilityService>()
-            .AddSingleton<AccessEvaluationEngine>()
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
-            .AddScoped<IAccessEvaluator, AccessEvaluator>()
-            .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
-            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
             .BuildServiceProvider();
 

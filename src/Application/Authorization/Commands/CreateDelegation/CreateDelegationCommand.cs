@@ -24,15 +24,18 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
 {
     private readonly IApplicationDbContext _context;
     private readonly IDelegationSubsetPolicy _subsetPolicy;
+    private readonly IDelegationHierarchyPolicy _hierarchyPolicy;
     private readonly IAuthorizationAuditService _audit;
 
     public CreateDelegationCommandHandler(
         IApplicationDbContext context,
         IDelegationSubsetPolicy subsetPolicy,
+        IDelegationHierarchyPolicy hierarchyPolicy,
         IAuthorizationAuditService audit)
     {
         _context = context;
         _subsetPolicy = subsetPolicy;
+        _hierarchyPolicy = hierarchyPolicy;
         _audit = audit;
     }
 
@@ -60,6 +63,13 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
             request.PermissionId,
             request.ScopeKind,
             request.ScopeIdentifier,
+            request.ValidFrom,
+            cancellationToken);
+
+        await _hierarchyPolicy.EnsureDelegateeIsSubordinateAsync(
+            request.DelegatorUserId,
+            request.DelegateUserId,
+            request.PermissionId,
             request.ValidFrom,
             cancellationToken);
 

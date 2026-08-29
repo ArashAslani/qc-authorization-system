@@ -12,6 +12,7 @@ public class RoleGroupConfiguration : IEntityTypeConfiguration<RoleGroup>
         builder.HasKey(g => g.Id);
         builder.Property(g => g.Code).HasMaxLength(64).IsRequired();
         builder.Property(g => g.Name).HasMaxLength(200).IsRequired();
+        builder.Property(g => g.Status).HasConversion<int>();
         builder.HasIndex(g => g.Code).IsUnique();
         builder.HasMany(g => g.Members).WithOne(m => m.RoleGroup).HasForeignKey(m => m.RoleGroupId);
     }

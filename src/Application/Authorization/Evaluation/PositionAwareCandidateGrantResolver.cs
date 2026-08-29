@@ -16,15 +16,18 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
 {
     private readonly IApplicationDbContext _context;
     private readonly GrantApplicabilityService _applicability;
+    private readonly ICatalogGrantFilter _catalogFilter;
     private readonly ICurrentUser _currentUser;
 
     public PositionAwareCandidateGrantResolver(
         IApplicationDbContext context,
         GrantApplicabilityService applicability,
+        ICatalogGrantFilter catalogFilter,
         ICurrentUser currentUser)
     {
         _context = context;
         _applicability = applicability;
+        _catalogFilter = catalogFilter;
         _currentUser = currentUser;
     }
 
@@ -46,6 +49,8 @@ public sealed class PositionAwareCandidateGrantResolver : ICandidateGrantResolve
             .Where(g => g.PermissionId == permission.Id
                      && (g.Resource == null || g.Resource == request.Resource))
             .ToListAsync(cancellationToken);
+
+        allGrants = (await _catalogFilter.FilterActiveCatalogSourcesAsync(allGrants, cancellationToken)).ToList();
 
         var allPositions = await _context.Positions.AsNoTracking().ToListAsync(cancellationToken);
         var requestPositionIds = await ResolveRequestPositions(request, cancellationToken);

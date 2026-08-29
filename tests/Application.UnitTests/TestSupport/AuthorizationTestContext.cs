@@ -4,6 +4,7 @@ using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Authorization.Delegation;
 using qc_authorization.Application.Authorization.Evaluation;
+using qc_authorization.Application.Authorization.Services;
 using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Domain.Authorization.Evaluation;
@@ -33,8 +34,10 @@ internal static class AuthorizationTestContext
         var engine = new AccessEvaluationEngine();
         var currentUser = new StaticCurrentUser(activeCompanyId: companyId);
 
+        var catalogFilter = new CatalogGrantFilter(context);
+
         var evaluator = new AccessEvaluator(
-            new PositionAwareCandidateGrantResolver(context, applicability, currentUser),
+            new PositionAwareCandidateGrantResolver(context, applicability, catalogFilter, currentUser),
             engine);
 
         return (context, evaluator);
@@ -58,6 +61,9 @@ internal static class AuthorizationTestContext
             .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: companyId))
             .AddScoped<IApplicationDbContext>(_ => context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
+            .AddScoped<ICatalogGrantFilter, CatalogGrantFilter>()
+            .AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>()
+            .AddScoped<RoleGroupGrantMaterializer>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()

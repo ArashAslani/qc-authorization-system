@@ -1,3 +1,4 @@
+using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Exceptions;
 using qc_authorization.Domain.Common;
 
@@ -10,6 +11,7 @@ public class Role : BaseAuditableEntity, IAggregateRoot
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+    public CatalogStatus Status { get; private set; } = CatalogStatus.Active;
 
     public List<RolePermission> Permissions { get; private set; } = new();
 
@@ -32,4 +34,20 @@ public class Role : BaseAuditableEntity, IAggregateRoot
             Description = description,
         };
     }
+
+    public void Update(string name, string? description, CatalogStatus status)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new AuthorizationDomainException("Role name is required.");
+        }
+
+        Name = name.Trim();
+        Description = description?.Trim();
+        Status = status;
+    }
+
+    public void Activate() => Status = CatalogStatus.Active;
+
+    public void Deactivate() => Status = CatalogStatus.Inactive;
 }

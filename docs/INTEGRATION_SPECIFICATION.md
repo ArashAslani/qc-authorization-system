@@ -308,7 +308,9 @@ The Role remains a Grant Source. The Evaluation Engine determines the final auth
 
 ## 14. RoleGroup
 
-RoleGroups package related roles.
+RoleGroups package related roles so administrators assign a **bundle** instead of
+selecting roles one by one. RoleGroup has **no direct relationship with Permission**;
+permissions are defined on member Roles only.
 
 Example:
 ```
@@ -317,6 +319,52 @@ QUALITY_MANAGEMENT
 ├── QUALITY_ENGINEER
 └── QUALITY_AUDITOR
 ```
+
+RoleGroup is a **Grant Source** — not a separate evaluation engine.
+
+### Catalog status
+
+`Role` and `RoleGroup` carry `CatalogStatus` (`Active` / `Inactive`).
+Inactive catalog rows cannot be assigned; existing materialized grants from
+inactive sources are filtered out at evaluation time.
+
+### Catalog vs assignment
+
+| Operation | Purpose |
+|---|---|
+| Create RoleGroup / add Role to group | Catalog maintenance |
+| Assign RoleGroup to User | Materialize all permissions from all member Roles onto the user |
+| Assign RoleGroup to Position | Materialize onto the position (propagation rules apply at evaluation) |
+| Revoke RoleGroup from User/Position | Remove all grants with `SourceType.RoleGroup` and matching `SourceId` |
+| Update Role / RoleGroup / Position | Name, description, status |
+
+### Materialization flow
+
+```text
+RoleGroup
+  → RoleGroupMember (Roles)
+    → RolePermission (Permissions)
+      → Grant (SourceType.RoleGroup, SourceId = RoleGroupId)
+        → CatalogGrantFilter (active sources only)
+          → AccessEvaluationEngine
+```
+
+Re-assigning the same RoleGroup to the same subject replaces existing
+materialized grants (idempotent). Changing Role membership inside a group does
+**not** auto-update prior assignments — re-assign or revoke/re-assign.
+
+### Admin APIs
+
+- `PUT /api/access-definitions/roles/{id}`
+- `POST /api/access-definitions/roles/assign-position`
+- `POST /api/access-definitions/roles/revoke-position`
+- `PUT /api/access-definitions/role-groups/{id}`
+- `POST /api/access-definitions/role-groups/assign-user`
+- `POST /api/access-definitions/role-groups/revoke-user`
+- `POST /api/access-definitions/role-groups/assign-position`
+- `POST /api/access-definitions/role-groups/revoke-position`
+- `PUT /api/organization/positions/{id}`
+- `GET /api/organization/positions/{id}/authorization-summary`
 
 Do not duplicate authorization evaluation logic inside RoleGroup.
 

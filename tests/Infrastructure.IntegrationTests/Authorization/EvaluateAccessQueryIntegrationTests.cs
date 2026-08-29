@@ -46,19 +46,12 @@ public class EvaluateAccessQueryIntegrationTests
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
-        var hierarchy = new PositionHierarchyService();
-        var applicability = new GrantApplicabilityService(hierarchy);
-
         _mediator = new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<EvaluateAccessQuery>())
-            .AddSingleton(hierarchy)
-            .AddSingleton(applicability)
-            .AddSingleton(new AccessEvaluationEngine())
             .AddScoped<IApplicationDbContext>(_ => _context)
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
-            .AddScoped<IAccessEvaluator, AccessEvaluator>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
     }

@@ -14,6 +14,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(r => r.Code).HasMaxLength(100).IsRequired();
         builder.Property(r => r.Name).HasMaxLength(200).IsRequired();
         builder.Property(r => r.Description).HasMaxLength(500);
+        builder.Property(r => r.Status).HasConversion<int>();
 
         builder.HasIndex(r => r.Code).IsUnique();
     }

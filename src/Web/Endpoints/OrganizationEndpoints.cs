@@ -9,6 +9,8 @@ using qc_authorization.Application.Organization.Queries.GetPersonnelById;
 using qc_authorization.Application.Organization.Queries.GetPositionAssignments;
 using qc_authorization.Application.Organization.Queries.GetPositionById;
 using qc_authorization.Application.Organization.Queries.GetPositions;
+using qc_authorization.Application.Organization.Commands.UpdatePosition;
+using qc_authorization.Application.Organization.Queries.GetPositionAuthorizationSummary;
 using qc_authorization.Domain.Organization.Enums;
 using qc_authorization.Web.Infrastructure;
 using MediatR;
@@ -31,7 +33,9 @@ public class OrganizationEndpoints : IEndpointGroup
         // Positions
         group.MapGet(GetPositions, "positions");
         group.MapGet(GetPositionById, "positions/{id:guid}");
+        group.MapGet(GetPositionAuthorizationSummary, "positions/{id:guid}/authorization-summary");
         group.MapPost(CreatePosition, "positions");
+        group.MapPut(UpdatePosition, "positions/{id:guid}");
         group.MapPost(ReparentPosition, "positions/reparent");
 
         // Assignments
@@ -91,6 +95,18 @@ public class OrganizationEndpoints : IEndpointGroup
     {
         var result = await sender.Send(new GetPositionByIdQuery(id));
         return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetPositionAuthorizationSummary(Guid id, ISender sender)
+    {
+        var result = await sender.Send(new GetPositionAuthorizationSummaryQuery(id));
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> UpdatePosition(Guid id, UpdatePositionRequest request, ISender sender)
+    {
+        await sender.Send(new UpdatePositionCommand(id, request.Title, request.Description, request.Status));
+        return Results.NoContent();
     }
 
     private static async Task<IResult> CreatePosition(CreatePositionRequest request, ISender sender)
@@ -167,3 +183,5 @@ public record ReparentPositionRequest(Guid PositionId, Guid? NewParentPositionId
 public record LinkPersonnelRequest(Guid PersonnelId, Guid IdentityUserId);
 
 public record SetPrimaryAssignmentRequest(Guid PersonnelId, Guid AssignmentId);
+
+public record UpdatePositionRequest(string Title, string? Description, PositionStatus Status);

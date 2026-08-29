@@ -152,6 +152,8 @@ public class DelegationEvaluationTests
             .AddScoped<IApplicationDbContext>(_ => _context)
             .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
+            .AddScoped<ICatalogGrantFilter, CatalogGrantFilter>()
+            .AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()

@@ -1,4 +1,5 @@
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Organization.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,10 @@ public record PositionDto(
     string? Description,
     Guid? ParentPositionId,
     string? ParentPositionTitle,
-    PositionStatus Status);
+    PositionStatus Status,
+    int RelatedRoleCount,
+    int RelatedRoleGroupCount,
+    int AssigneeCount);
 
 public class GetPositionsQueryHandler : IRequestHandler<GetPositionsQuery, IReadOnlyList<PositionDto>>
 {
@@ -59,6 +63,21 @@ public class GetPositionsQueryHandler : IRequestHandler<GetPositionsQuery, IRead
             p.ParentPositionId.HasValue && allPositions.TryGetValue(p.ParentPositionId.Value, out var parent)
                 ? parent.Title
                 : null,
-            p.Status)).ToList();
+            p.Status,
+            _context.Grants
+                .Where(g => g.SubjectType == SubjectType.Position
+                         && g.SubjectId == p.Id
+                         && g.SourceType == SourceType.Role)
+                .Select(g => g.SourceId)
+                .Distinct()
+                .Count(),
+            _context.Grants
+                .Where(g => g.SubjectType == SubjectType.Position
+                         && g.SubjectId == p.Id
+                         && g.SourceType == SourceType.RoleGroup)
+                .Select(g => g.SourceId)
+                .Distinct()
+                .Count(),
+            _context.PositionAssignments.Count(a => a.PositionId == p.Id))).ToList();
     }
 }

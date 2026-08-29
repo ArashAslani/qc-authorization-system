@@ -96,15 +96,9 @@ public class AuthorizationAuditIntegrationTests
         return new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
-            .AddSingleton(hierarchy)
-            .AddSingleton(applicability)
-            .AddSingleton(engine)
             .AddScoped<IApplicationDbContext>(_ => _context)
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
-            .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
-            .AddScoped<IAccessEvaluator, AccessEvaluator>()
-            .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();
     }

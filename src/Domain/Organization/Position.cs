@@ -58,4 +58,16 @@ public class Position : BaseAuditableEntity, IAggregateRoot
         ParentPositionId = newParent?.Id;
         Parent = newParent;
     }
+
+    public void Update(string title, string? description, PositionStatus status)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new OrganizationDomainException("Position title is required.");
+        }
+
+        Title = title.Trim();
+        Description = description?.Trim();
+        Status = status;
+    }
 }
