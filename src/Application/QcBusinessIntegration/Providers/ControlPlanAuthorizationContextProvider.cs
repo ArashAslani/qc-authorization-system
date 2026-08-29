@@ -5,23 +5,23 @@ namespace qc_authorization.Application.QcBusinessIntegration.Providers;
 
 public interface IControlPlanStore
 {
-    Task<ControlPlan?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<ControlPlan?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task SaveAsync(ControlPlan controlPlan, CancellationToken cancellationToken = default);
 }
 
 public interface IBomStore
 {
-    Task<BOM?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<BOM?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task SaveAsync(BOM bom, CancellationToken cancellationToken = default);
 }
 
-public class ControlPlanAuthorizationContextProvider : IResourceAuthorizationContextProvider<int>
+public class ControlPlanAuthorizationContextProvider : IResourceAuthorizationContextProvider<Guid>
 {
     private readonly IControlPlanStore _store;
 
     public ControlPlanAuthorizationContextProvider(IControlPlanStore store) => _store = store;
 
-    public async Task<ResourceAuthorizationContext> GetContextAsync(int resourceKey, CancellationToken cancellationToken = default)
+    public async Task<ResourceAuthorizationContext> GetContextAsync(Guid resourceKey, CancellationToken cancellationToken = default)
     {
         var plan = await _store.FindByIdAsync(resourceKey, cancellationToken);
         if (plan is null)
@@ -37,13 +37,13 @@ public class ControlPlanAuthorizationContextProvider : IResourceAuthorizationCon
     }
 }
 
-public class BomAuthorizationContextProvider : IResourceAuthorizationContextProvider<int>
+public class BomAuthorizationContextProvider : IResourceAuthorizationContextProvider<Guid>
 {
     private readonly IBomStore _store;
 
     public BomAuthorizationContextProvider(IBomStore store) => _store = store;
 
-    public async Task<ResourceAuthorizationContext> GetContextAsync(int resourceKey, CancellationToken cancellationToken = default)
+    public async Task<ResourceAuthorizationContext> GetContextAsync(Guid resourceKey, CancellationToken cancellationToken = default)
     {
         var bom = await _store.FindByIdAsync(resourceKey, cancellationToken);
         if (bom is null)

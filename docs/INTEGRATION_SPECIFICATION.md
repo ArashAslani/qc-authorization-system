@@ -191,8 +191,10 @@ AccessRequest
 
 Example:
 - Resource = `BOM`
-- ResourceId = `500`
-- Context: `CompanyId = 10`
+- ResourceId = `500e8400-e29b-41d4-a716-446655440000`
+- Context: `CompanyId = aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
+
+All identifiers (company, resource, personnel, position, grant) use **Guid**. See `docs/ARCHITECTURE.md` §10.
 
 The exact context depends on the business resource.
 
@@ -541,9 +543,9 @@ Correct: `BOM.UPDATE + Scope`.
 
 A Decision Trace explains not only the permission requested, but also relevant context:
 - `Resource = CONTROL_PLAN`
-- `ResourceId = 500`
-- `CompanyId = 10`
-- `LaboratoryId = 7`
+- `ResourceId = 500e8400-e29b-41d4-a716-446655440000`
+- `CompanyId = aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`
+- `LaboratoryId = 11111111-1111-1111-1111-111111111101`
 - Candidate Grants, Applicable Grants, SourceType, SourceId, Priority, Scope Result, Validity Result, Final Decision, and Reason.
 
 Decision Trace and Audit remain separate:
@@ -721,3 +723,15 @@ It should **NOT** require:
 - Creating another authorization service
 - Duplicating propagation logic
 - Duplicating delegation logic
+
+---
+
+## 44. Multi-Company Workspace Panel
+
+When a user works inside a company panel (see `docs/ARCHITECTURE.md` §11):
+
+- JWT carries `active_company_id` (Guid).
+- Position-based grants are unioned **only within the active company**.
+- Business modules pass `CompanyId` via `IResourceAuthorizationContextProvider`; the engine matches `ScopeKind.Company` grants against that context.
+- Switching company reissues JWT and excludes positions from the previous company — no cross-company permission bleed.
+- Holding-level unbounded grants (e.g. holding manager) still apply across companies when scope is `Unbounded`.

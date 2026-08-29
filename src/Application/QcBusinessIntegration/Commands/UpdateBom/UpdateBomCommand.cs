@@ -8,7 +8,7 @@ using MediatR;
 
 namespace qc_authorization.Application.QcBusinessIntegration.Commands.UpdateBom;
 
-public record UpdateBomCommand(int BomId, string NewDescription, string NewRevision, Guid UserId) : IRequest<bool>;
+public record UpdateBomCommand(Guid BomId, string NewDescription, string NewRevision, Guid UserId) : IRequest<bool>;
 
 public class UpdateBomCommandHandler : IRequestHandler<UpdateBomCommand, bool>
 {

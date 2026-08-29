@@ -8,7 +8,7 @@ using MediatR;
 
 namespace qc_authorization.Application.QcBusinessIntegration.Commands.UpdateControlPlan;
 
-public record UpdateControlPlanCommand(int ControlPlanId, string NewTitle, Guid UserId) : IRequest<bool>;
+public record UpdateControlPlanCommand(Guid ControlPlanId, string NewTitle, Guid UserId) : IRequest<bool>;
 
 public class UpdateControlPlanCommandHandler : IRequestHandler<UpdateControlPlanCommand, bool>
 {

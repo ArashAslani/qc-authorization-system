@@ -28,7 +28,7 @@ public class Position : BaseAuditableEntity, IAggregateRoot
     {
         if (companyId == Guid.Empty)
         {
-            throw new OrganizationDomainException("CompanyId must be a positive identifier.");
+            throw new OrganizationDomainException("CompanyId must be a valid identifier.");
         }
 
         if (string.IsNullOrWhiteSpace(code))

@@ -8,7 +8,7 @@ using MediatR;
 
 namespace qc_authorization.Application.QcBusinessIntegration.Commands.ApproveControlPlan;
 
-public record ApproveControlPlanCommand(int ControlPlanId, Guid UserId) : IRequest<bool>;
+public record ApproveControlPlanCommand(Guid ControlPlanId, Guid UserId) : IRequest<bool>;
 
 public class ApproveControlPlanCommandHandler : IRequestHandler<ApproveControlPlanCommand, bool>
 {

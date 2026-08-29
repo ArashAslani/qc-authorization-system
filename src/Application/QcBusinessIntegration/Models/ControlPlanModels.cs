@@ -9,14 +9,14 @@ public enum ControlPlanStatus
 
 public class ControlPlan
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public int CompanyId { get; set; }
-    public int LaboratoryId { get; set; }
+    public Guid CompanyId { get; set; }
+    public Guid LaboratoryId { get; set; }
     public ControlPlanStatus Status { get; private set; } = ControlPlanStatus.Draft;
 
-    public static ControlPlan Create(int id, string code, string title, int companyId, int laboratoryId, ControlPlanStatus status = ControlPlanStatus.Draft) =>
+    public static ControlPlan Create(Guid id, string code, string title, Guid companyId, Guid laboratoryId, ControlPlanStatus status = ControlPlanStatus.Draft) =>
         new()
         {
             Id = id,
@@ -60,13 +60,13 @@ public class ControlPlan
 
 public class BOM
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public int CompanyId { get; set; }
+    public Guid CompanyId { get; set; }
     public string Revision { get; set; } = "1.0";
     public string Description { get; set; } = string.Empty;
 
-    public static BOM Create(int id, string code, int companyId, string revision, string description) =>
+    public static BOM Create(Guid id, string code, Guid companyId, string revision, string description) =>
         new()
         {
             Id = id,
@@ -85,12 +85,12 @@ public class BOM
 
 public class Laboratory
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int CompanyId { get; set; }
+    public Guid CompanyId { get; set; }
 
-    public static Laboratory Create(int id, string code, string name, int companyId) =>
+    public static Laboratory Create(Guid id, string code, string name, Guid companyId) =>
         new()
         {
             Id = id,
@@ -102,12 +102,12 @@ public class Laboratory
 
 public class Workstation
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int LaboratoryId { get; set; }
+    public Guid LaboratoryId { get; set; }
 
-    public static Workstation Create(int id, string code, string name, int laboratoryId) =>
+    public static Workstation Create(Guid id, string code, string name, Guid laboratoryId) =>
         new()
         {
             Id = id,

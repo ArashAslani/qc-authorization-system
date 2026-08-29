@@ -7,10 +7,10 @@ namespace qc_authorization.Application.Common.Interfaces;
 public sealed record ResourceAuthorizationContext(
     string Resource,
     string? ResourceId = null,
-    int? HoldingId = null,
-    int? CompanyId = null,
-    int? LaboratoryId = null,
-    int? WorkstationId = null,
+    Guid? HoldingId = null,
+    Guid? CompanyId = null,
+    Guid? LaboratoryId = null,
+    Guid? WorkstationId = null,
     string? CustomScope = null)
 {
     public IReadOnlyDictionary<string, object> ToContextDictionary()

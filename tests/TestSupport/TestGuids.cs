@@ -27,4 +27,14 @@ public static class TestGuids
 
     public static readonly Guid Position200 = Guid.Parse("02000200-0000-0000-0000-000000000200");
     public static readonly Guid Subject50 = Guid.Parse("00000050-0000-0000-0000-000000000050");
+
+    public static readonly Guid Laboratory1 = Guid.Parse("11111111-1111-1111-1111-111111111101");
+    public static readonly Guid Laboratory2 = Guid.Parse("11111111-1111-1111-1111-111111111102");
+
+    public static readonly Guid ControlPlan101 = Guid.Parse("c0000101-0000-0000-0000-000000000101");
+    public static readonly Guid ControlPlan201 = Guid.Parse("c0000201-0000-0000-0000-000000000201");
+    public static readonly Guid ControlPlan301 = Guid.Parse("c0000301-0000-0000-0000-000000000301");
+    public static readonly Guid ControlPlan302 = Guid.Parse("c0000302-0000-0000-0000-000000000302");
+    public static readonly Guid ControlPlan401 = Guid.Parse("c0000401-0000-0000-0000-000000000401");
+    public static readonly Guid Bom501 = Guid.Parse("b0000501-0000-0000-0000-000000000501");
 }
