@@ -4,8 +4,8 @@ public class AssignPersonnelToPositionCommandValidator : AbstractValidator<Assig
 {
     public AssignPersonnelToPositionCommandValidator()
     {
-        RuleFor(x => x.PersonnelId).GreaterThan(0);
-        RuleFor(x => x.PositionId).GreaterThan(0);
+        RuleFor(x => x.PersonnelId).NotEqual(Guid.Empty);
+        RuleFor(x => x.PositionId).NotEqual(Guid.Empty);
 
         RuleFor(x => x.ValidTo)
             .Must((cmd, validTo) => validTo is null || validTo >= cmd.ValidFrom)

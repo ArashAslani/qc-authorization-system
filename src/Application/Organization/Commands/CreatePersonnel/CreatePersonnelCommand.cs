@@ -13,9 +13,9 @@ public record CreatePersonnelCommand(
     string? PhoneNumber = null,
     PersonnelGender Gender = PersonnelGender.Unknown,
     PersonnelStatus Status = PersonnelStatus.Active,
-    Guid? IdentityUserId = null) : IRequest<int>;
+    Guid? IdentityUserId = null) : IRequest<Guid>;
 
-public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelCommand, int>
+public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly IPersonnelIdentityBridge _personnelIdentityBridge;
@@ -28,7 +28,7 @@ public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelComm
         _personnelIdentityBridge = personnelIdentityBridge;
     }
 
-    public async Task<int> Handle(CreatePersonnelCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreatePersonnelCommand request, CancellationToken cancellationToken)
     {
         var personnel = Personnel.Create(
             request.NationalId,

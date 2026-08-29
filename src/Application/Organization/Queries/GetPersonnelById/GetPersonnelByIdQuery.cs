@@ -7,10 +7,10 @@ using NotFoundException = qc_authorization.Application.Common.Exceptions.NotFoun
 
 namespace qc_authorization.Application.Organization.Queries.GetPersonnelById;
 
-public record GetPersonnelByIdQuery(int Id) : IRequest<PersonnelDetailsDto>;
+public record GetPersonnelByIdQuery(Guid Id) : IRequest<PersonnelDetailsDto>;
 
 public record PersonnelDetailsDto(
-    int Id,
+    Guid Id,
     string NationalId,
     string FirstName,
     string LastName,
@@ -22,8 +22,8 @@ public record PersonnelDetailsDto(
     IReadOnlyList<PersonnelAssignmentDto> Assignments);
 
 public record PersonnelAssignmentDto(
-    int Id,
-    int PositionId,
+    Guid Id,
+    Guid PositionId,
     string PositionCode,
     string PositionTitle,
     DateTimeOffset ValidFrom,

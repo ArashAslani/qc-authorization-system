@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Organization.Commands.ReparentPosition;
 
-public record ReparentPositionCommand(int PositionId, int? NewParentPositionId) : IRequest;
+public record ReparentPositionCommand(Guid PositionId, Guid? NewParentPositionId) : IRequest;
 
 public class ReparentPositionCommandHandler : IRequestHandler<ReparentPositionCommand>
 {
@@ -26,7 +26,7 @@ public class ReparentPositionCommandHandler : IRequestHandler<ReparentPositionCo
             ?? throw new InvalidOperationException($"Position {request.PositionId} not found.");
 
         Position? newParent = null;
-        if (request.NewParentPositionId is int parentId)
+        if (request.NewParentPositionId is Guid parentId)
         {
             newParent = all.FirstOrDefault(p => p.Id == parentId)
                 ?? throw new InvalidOperationException($"Parent position {parentId} not found.");

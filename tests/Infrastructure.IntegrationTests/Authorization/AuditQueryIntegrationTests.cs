@@ -10,6 +10,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class AuditQueryIntegrationTests
 {
@@ -45,9 +47,9 @@ public class AuditQueryIntegrationTests
     public async Task Can_Query_Audit_Entries_With_Pagination()
     {
         _context.AuthorizationAuditEntries.AddRange(
-            AuthorizationAuditEntry.Create("GrantCreated", 10, "{\"grantId\": 1}"),
-            AuthorizationAuditEntry.Create("GrantRevoked", 10, "{\"grantId\": 1}"),
-            AuthorizationAuditEntry.Create("RoleAssigned", 20, "{\"roleId\": 2}"));
+            AuthorizationAuditEntry.Create("GrantCreated", TestGuids.CompanyA, "{\"grantId\": 1}"),
+            AuthorizationAuditEntry.Create("GrantRevoked", TestGuids.CompanyA, "{\"grantId\": 1}"),
+            AuthorizationAuditEntry.Create("RoleAssigned", TestGuids.CompanyB, "{\"roleId\": 2}"));
         await _context.SaveChangesAsync();
 
         var result = await _mediator.Send(new GetAuthorizationAuditEntriesQuery(PageNumber: 1, PageSize: 10));
@@ -56,6 +58,6 @@ public class AuditQueryIntegrationTests
 
         var filtered = await _mediator.Send(new GetAuthorizationAuditEntriesQuery(EventType: "RoleAssigned"));
         filtered.TotalCount.ShouldBe(1);
-        filtered.Items[0].ActorUserId.ShouldBe(20);
+        filtered.Items[0].ActorUserId.ShouldBe(TestGuids.CompanyB);
     }
 }

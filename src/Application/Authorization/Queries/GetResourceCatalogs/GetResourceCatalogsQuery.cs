@@ -6,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Queries.GetResourceCatalogs
 
 public record GetResourceCatalogsQuery(string? SearchTerm = null) : IRequest<IReadOnlyList<ResourceCatalogDto>>;
 
-public record ResourceCatalogDto(int Id, string Code, string Name, string? Description);
+public record ResourceCatalogDto(Guid Id, string Code, string Name, string? Description);
 
 public class GetResourceCatalogsQueryHandler : IRequestHandler<GetResourceCatalogsQuery, IReadOnlyList<ResourceCatalogDto>>
 {

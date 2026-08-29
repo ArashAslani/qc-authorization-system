@@ -40,6 +40,6 @@ public class RoleGroup : BaseAuditableEntity, IAggregateRoot
             throw new AuthorizationDomainException($"Role {role.Code} is already in group {Code}.");
         }
 
-        Members.Add(new RoleGroupMember { RoleGroup = this, Role = role, RoleId = role.Id });
+        Members.Add(new RoleGroupMember { RoleGroup = this, RoleGroupId = Id, Role = role, RoleId = role.Id });
     }
 }

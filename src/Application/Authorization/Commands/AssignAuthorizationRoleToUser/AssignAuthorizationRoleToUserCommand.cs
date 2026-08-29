@@ -10,7 +10,7 @@ namespace qc_authorization.Application.Authorization.Commands.AssignAuthorizatio
 
 public record AssignAuthorizationRoleToUserCommand(
     Guid UserId,
-    int RoleId,
+    Guid RoleId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo = null) : IRequest;
 

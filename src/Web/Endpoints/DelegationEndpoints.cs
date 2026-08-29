@@ -16,15 +16,15 @@ public class DelegationEndpoints : IEndpointGroup
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet(GetDelegations);
-        group.MapGet(GetDelegationById, "{id:int}");
+        group.MapGet(GetDelegationById, "{id:guid}");
         group.MapPost(CreateDelegation);
-        group.MapPost(RevokeDelegation, "{id:int}/revoke");
+        group.MapPost(RevokeDelegation, "{id:guid}/revoke");
     }
 
     private static async Task<IResult> GetDelegations(
         [FromQuery] Guid? delegatorUserId,
         [FromQuery] Guid? delegateUserId,
-        [FromQuery] int? permissionId,
+        [FromQuery] Guid? permissionId,
         [FromQuery] bool? activeOnly,
         ISender sender)
     {
@@ -37,7 +37,7 @@ public class DelegationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetDelegationById(int id, ISender sender)
+    private static async Task<IResult> GetDelegationById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetDelegationByIdQuery(id));
         return Results.Ok(result);
@@ -59,7 +59,7 @@ public class DelegationEndpoints : IEndpointGroup
         return Results.Created($"/api/delegations/{id}", new { id });
     }
 
-    private static async Task<IResult> RevokeDelegation(int id, ISender sender)
+    private static async Task<IResult> RevokeDelegation(Guid id, ISender sender)
     {
         await sender.Send(new RevokeDelegationCommand(id));
         return Results.NoContent();
@@ -69,10 +69,10 @@ public class DelegationEndpoints : IEndpointGroup
 public record CreateDelegationRequest(
     Guid DelegatorUserId,
     Guid DelegateUserId,
-    int PermissionId,
+    Guid PermissionId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
     ScopeKind ScopeKind = ScopeKind.Unbounded,
     string? ScopeIdentifier = null,
     bool Delegable = true,
-    int? ParentDelegationId = null);
+    Guid? ParentDelegationId = null);

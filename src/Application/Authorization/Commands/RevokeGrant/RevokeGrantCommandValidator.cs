@@ -4,11 +4,11 @@ public class RevokeGrantCommandValidator : AbstractValidator<RevokeGrantCommand>
 {
     public RevokeGrantCommandValidator()
     {
-        RuleFor(x => x.GrantId).GreaterThan(0);
+        RuleFor(x => x.GrantId).NotEqual(Guid.Empty);
 
         When(x => x.ActorUserId.HasValue, () =>
         {
-            RuleFor(x => x.ActorUserId!.Value).GreaterThan(0);
+            RuleFor(x => x.ActorUserId!.Value).NotEqual(Guid.Empty);
         });
     }
 }

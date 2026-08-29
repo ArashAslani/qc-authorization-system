@@ -1,5 +1,7 @@
 namespace qc_authorization.Application.UnitTests.TestSupport;
 
+using qc_authorization.Tests.TestSupport;
+
 internal static class TestUsers
 {
     public static readonly Guid UserA = Guid.Parse("11111111-1111-1111-1111-111111111101");

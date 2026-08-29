@@ -10,9 +10,9 @@ public record CreatePermissionCommand(
     string ResourceName,
     string ActionCode,
     string ActionName,
-    string? Description = null) : IRequest<int>;
+    string? Description = null) : IRequest<Guid>;
 
-public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCommand, int>
+public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
 
@@ -21,14 +21,14 @@ public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCo
         _context = context;
     }
 
-    public async Task<int> Handle(CreatePermissionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreatePermissionCommand request, CancellationToken cancellationToken)
     {
         var resourceCode = request.ResourceCode.ToUpperInvariant();
         var resource = await _context.ResourceCatalogs
             .FirstOrDefaultAsync(r => r.Code == resourceCode, cancellationToken)
             ?? ResourceCatalog.Create(request.ResourceCode, request.ResourceName);
 
-        if (resource.Id == 0)
+        if (resource.Id == Guid.Empty)
         {
             _context.ResourceCatalogs.Add(resource);
             await _context.SaveChangesAsync(cancellationToken);
@@ -39,7 +39,7 @@ public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCo
             .FirstOrDefaultAsync(a => a.Code == actionCode, cancellationToken)
             ?? ActionCatalog.Create(request.ActionCode, request.ActionName);
 
-        if (action.Id == 0)
+        if (action.Id == Guid.Empty)
         {
             _context.ActionCatalogs.Add(action);
             await _context.SaveChangesAsync(cancellationToken);

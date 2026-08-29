@@ -7,6 +7,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Identity;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class JwtTokenServiceTests
 {
@@ -26,14 +28,16 @@ public class JwtTokenServiceTests
             Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Email = "user@test.local",
             UserName = "user@test.local",
-            PersonnelId = 42,
+            PersonnelId = TestGuids.Personnel1,
         };
 
-        var token = service.GenerateToken(user);
+        var token = service.GenerateToken(user, activeCompanyId: TestGuids.CompanyA, nationalId: "0012345678");
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
 
         jwt.Claims.Single(c => c.Type == ClaimTypes.NameIdentifier).Value
             .ShouldBe(user.Id.ToString());
-        jwt.Claims.Single(c => c.Type == "personnel_id").Value.ShouldBe("42");
+        jwt.Claims.Single(c => c.Type == "personnel_id").Value.ShouldBe(TestGuids.Personnel1.ToString());
+        jwt.Claims.Single(c => c.Type == "active_company_id").Value.ShouldBe(TestGuids.CompanyA.ToString());
+        jwt.Claims.Single(c => c.Type == "national_id").Value.ShouldBe("0012345678");
     }
 }

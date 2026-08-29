@@ -20,6 +20,8 @@ using Shouldly;
 
 namespace qc_authorization.Application.UnitTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class DelegationEvaluationTests
 {
@@ -129,7 +131,7 @@ public class DelegationEvaluationTests
             userId,
             _perm.Id,
             SourceType.User,
-            0,
+            Guid.Empty,
             effect,
             T0.AddDays(-30),
             null,
@@ -148,6 +150,7 @@ public class DelegationEvaluationTests
             .AddSingleton(applicability)
             .AddSingleton(engine)
             .AddScoped<IApplicationDbContext>(_ => _context)
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()

@@ -4,7 +4,7 @@ public class AddRoleToGroupCommandValidator : AbstractValidator<AddRoleToGroupCo
 {
     public AddRoleToGroupCommandValidator()
     {
-        RuleFor(x => x.RoleGroupId).GreaterThan(0);
-        RuleFor(x => x.RoleId).GreaterThan(0);
+        RuleFor(x => x.RoleGroupId).NotEqual(Guid.Empty);
+        RuleFor(x => x.RoleId).NotEqual(Guid.Empty);
     }
 }

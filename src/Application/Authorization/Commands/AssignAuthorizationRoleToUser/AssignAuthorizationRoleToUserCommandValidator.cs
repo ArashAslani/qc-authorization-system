@@ -5,7 +5,7 @@ public class AssignAuthorizationRoleToUserCommandValidator : AbstractValidator<A
     public AssignAuthorizationRoleToUserCommandValidator()
     {
         RuleFor(x => x.UserId).NotEmpty();
-        RuleFor(x => x.RoleId).GreaterThan(0);
+        RuleFor(x => x.RoleId).NotEqual(Guid.Empty);
 
         RuleFor(x => x.ValidTo)
             .Must((cmd, validTo) => validTo is null || validTo >= cmd.ValidFrom)

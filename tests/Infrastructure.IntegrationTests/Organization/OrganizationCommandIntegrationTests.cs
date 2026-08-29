@@ -16,6 +16,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class OrganizationCommandIntegrationTests
 {
@@ -91,7 +93,7 @@ public class OrganizationCommandIntegrationTests
     {
         var personnelId = await _mediator.Send(new CreatePersonnelCommand(
             "1234567890", "Ali", "Ahmadi", "PC-001"));
-        var positionId = await _mediator.Send(new CreatePositionCommand(1, "ENG", "Engineer", null, null));
+        var positionId = await _mediator.Send(new CreatePositionCommand(TestGuids.CompanyA, "ENG", "Engineer", null, null));
         var from = DateTimeOffset.UtcNow.AddDays(-1);
 
         var assignmentId = await _mediator.Send(new AssignPersonnelToPositionCommand(

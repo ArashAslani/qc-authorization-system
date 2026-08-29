@@ -8,14 +8,14 @@ namespace qc_authorization.Application.Authorization.Queries.GetDelegations;
 public record GetDelegationsQuery(
     Guid? DelegatorUserId = null,
     Guid? DelegateUserId = null,
-    int? PermissionId = null,
+    Guid? PermissionId = null,
     bool? ActiveOnly = null) : IRequest<IReadOnlyList<DelegationDto>>;
 
 public record DelegationDto(
-    int Id,
+    Guid Id,
     Guid DelegatorUserId,
     Guid DelegateUserId,
-    int PermissionId,
+    Guid PermissionId,
     string PermissionCode,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,

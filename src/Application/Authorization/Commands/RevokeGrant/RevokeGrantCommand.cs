@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.RevokeGrant;
 
-public record RevokeGrantCommand(int GrantId, int? ActorUserId = null) : IRequest;
+public record RevokeGrantCommand(Guid GrantId, Guid? ActorUserId = null) : IRequest;
 
 public class RevokeGrantCommandHandler : IRequestHandler<RevokeGrantCommand>
 {

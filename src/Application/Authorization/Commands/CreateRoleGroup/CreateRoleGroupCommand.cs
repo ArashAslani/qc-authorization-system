@@ -4,9 +4,9 @@ using MediatR;
 
 namespace qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
 
-public record CreateRoleGroupCommand(string Code, string Name, string? Description = null) : IRequest<int>;
+public record CreateRoleGroupCommand(string Code, string Name, string? Description = null) : IRequest<Guid>;
 
-public class CreateRoleGroupCommandHandler : IRequestHandler<CreateRoleGroupCommand, int>
+public class CreateRoleGroupCommandHandler : IRequestHandler<CreateRoleGroupCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
 
@@ -15,7 +15,7 @@ public class CreateRoleGroupCommandHandler : IRequestHandler<CreateRoleGroupComm
         _context = context;
     }
 
-    public async Task<int> Handle(CreateRoleGroupCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateRoleGroupCommand request, CancellationToken cancellationToken)
     {
         var group = RoleGroup.Create(request.Code, request.Name, request.Description);
         _context.RoleGroups.Add(group);

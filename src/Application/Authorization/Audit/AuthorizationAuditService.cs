@@ -5,7 +5,7 @@ namespace qc_authorization.Application.Authorization.Audit;
 
 public interface IAuthorizationAuditService
 {
-    Task RecordAsync(string eventType, int? actorUserId, string payload, CancellationToken cancellationToken = default);
+    Task RecordAsync(string eventType, Guid? actorUserId, string payload, CancellationToken cancellationToken = default);
 }
 
 public sealed class AuthorizationAuditService : IAuthorizationAuditService
@@ -17,7 +17,7 @@ public sealed class AuthorizationAuditService : IAuthorizationAuditService
         _context = context;
     }
 
-    public Task RecordAsync(string eventType, int? actorUserId, string payload, CancellationToken cancellationToken = default)
+    public Task RecordAsync(string eventType, Guid? actorUserId, string payload, CancellationToken cancellationToken = default)
     {
         _context.AuthorizationAuditEntries.Add(AuthorizationAuditEntry.Create(eventType, actorUserId, payload));
         return Task.CompletedTask;

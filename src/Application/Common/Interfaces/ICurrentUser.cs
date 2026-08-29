@@ -6,5 +6,11 @@ public interface ICurrentUser
 
     bool IsAuthenticated { get; }
 
-    int? PersonnelId { get; }
+    Guid? PersonnelId { get; }
+
+    /// <summary>
+    /// Active company workspace selected by the user (from JWT claim).
+  /// Position-based grants are resolved only within this company.
+    /// </summary>
+    Guid? ActiveCompanyId { get; }
 }

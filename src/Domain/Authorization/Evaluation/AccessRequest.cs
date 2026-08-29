@@ -8,7 +8,7 @@ namespace qc_authorization.Domain.Authorization.Evaluation;
 /// </summary>
 public sealed record AccessRequest(
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? UserId,
     string Action,
     string Resource,
@@ -30,5 +30,5 @@ public sealed record AccessRequest(
         string? resourceId,
         DateTimeOffset when,
         IReadOnlyDictionary<string, object>? context = null) =>
-        new(SubjectType.User, 0, userId, action, resource, resourceId, when, context);
+        new(SubjectType.User, Guid.Empty, userId, action, resource, resourceId, when, context);
 }

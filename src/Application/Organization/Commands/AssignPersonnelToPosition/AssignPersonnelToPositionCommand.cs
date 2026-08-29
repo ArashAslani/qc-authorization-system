@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
 
 public record AssignPersonnelToPositionCommand(
-    int PersonnelId,
-    int PositionId,
+    Guid PersonnelId,
+    Guid PositionId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo = null) : IRequest<int>;
+    DateTimeOffset? ValidTo = null) : IRequest<Guid>;
 
-public class AssignPersonnelToPositionCommandHandler : IRequestHandler<AssignPersonnelToPositionCommand, int>
+public class AssignPersonnelToPositionCommandHandler : IRequestHandler<AssignPersonnelToPositionCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
 
@@ -20,7 +20,7 @@ public class AssignPersonnelToPositionCommandHandler : IRequestHandler<AssignPer
         _context = context;
     }
 
-    public async Task<int> Handle(AssignPersonnelToPositionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(AssignPersonnelToPositionCommand request, CancellationToken cancellationToken)
     {
         _ = await _context.Personnel
             .AsNoTracking()

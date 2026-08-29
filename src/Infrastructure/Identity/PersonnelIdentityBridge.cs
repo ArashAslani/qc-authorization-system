@@ -21,7 +21,7 @@ public sealed class PersonnelIdentityBridge : IPersonnelIdentityBridge
         _userManager = userManager;
     }
 
-    public async Task LinkAsync(int personnelId, Guid identityUserId, CancellationToken cancellationToken = default)
+    public async Task LinkAsync(Guid personnelId, Guid identityUserId, CancellationToken cancellationToken = default)
     {
         var personnel = await _context.Personnel
             .SingleOrDefaultAsync(p => p.Id == personnelId, cancellationToken)

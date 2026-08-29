@@ -34,19 +34,19 @@ public class AccessDefinitionEndpoints : IEndpointGroup
 
         // Permissions
         group.MapGet(GetPermissions, "permissions");
-        group.MapGet(GetPermissionById, "permissions/{id:int}");
+        group.MapGet(GetPermissionById, "permissions/{id:guid}");
         group.MapPost(CreatePermission, "permissions");
 
         // Roles
         group.MapGet(GetRoles, "roles");
-        group.MapGet(GetRoleById, "roles/{id:int}");
+        group.MapGet(GetRoleById, "roles/{id:guid}");
         group.MapPost(CreateRole, "roles");
         group.MapPost(AssignPermissionToRole, "roles/assign-permission");
         group.MapPost(RemovePermissionFromRole, "roles/remove-permission");
 
         // Role Groups
         group.MapGet(GetRoleGroups, "role-groups");
-        group.MapGet(GetRoleGroupById, "role-groups/{id:int}");
+        group.MapGet(GetRoleGroupById, "role-groups/{id:guid}");
         group.MapPost(CreateRoleGroup, "role-groups");
         group.MapPost(AddRoleToGroup, "role-groups/add-role");
         group.MapPost(RemoveRoleFromGroup, "role-groups/remove-role");
@@ -79,7 +79,7 @@ public class AccessDefinitionEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetPermissionById(int id, ISender sender)
+    private static async Task<IResult> GetPermissionById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetPermissionByIdQuery(id));
         return Results.Ok(result);
@@ -103,7 +103,7 @@ public class AccessDefinitionEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetRoleById(int id, ISender sender)
+    private static async Task<IResult> GetRoleById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetRoleByIdQuery(id));
         return Results.Ok(result);
@@ -133,7 +133,7 @@ public class AccessDefinitionEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetRoleGroupById(int id, ISender sender)
+    private static async Task<IResult> GetRoleGroupById(Guid id, ISender sender)
     {
         var result = await sender.Send(new GetRoleGroupByIdQuery(id));
         return Results.Ok(result);
@@ -186,20 +186,20 @@ public record CreatePermissionRequest(
 
 public record CreateRoleRequest(string Code, string Name, string? Description = null);
 
-public record AssignPermissionToRoleRequest(int RoleId, int PermissionId);
+public record AssignPermissionToRoleRequest(Guid RoleId, Guid PermissionId);
 
-public record RemovePermissionFromRoleRequest(int RoleId, int PermissionId);
+public record RemovePermissionFromRoleRequest(Guid RoleId, Guid PermissionId);
 
 public record CreateRoleGroupRequest(string Code, string Name, string? Description = null);
 
-public record AddRoleToGroupRequest(int RoleGroupId, int RoleId);
+public record AddRoleToGroupRequest(Guid RoleGroupId, Guid RoleId);
 
-public record RemoveRoleFromGroupRequest(int RoleGroupId, int RoleId);
+public record RemoveRoleFromGroupRequest(Guid RoleGroupId, Guid RoleId);
 
 public record AssignRoleToUserRequest(
     Guid UserId,
-    int RoleId,
+    Guid RoleId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo = null);
 
-public record RevokeRoleFromUserRequest(Guid UserId, int RoleId);
+public record RevokeRoleFromUserRequest(Guid UserId, Guid RoleId);

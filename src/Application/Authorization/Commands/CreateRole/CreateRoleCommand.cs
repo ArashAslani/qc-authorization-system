@@ -4,9 +4,9 @@ using MediatR;
 
 namespace qc_authorization.Application.Authorization.Commands.CreateRole;
 
-public record CreateRoleCommand(string Code, string Name, string? Description = null) : IRequest<int>;
+public record CreateRoleCommand(string Code, string Name, string? Description = null) : IRequest<Guid>;
 
-public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, int>
+public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
 
@@ -15,7 +15,7 @@ public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, int>
         _context = context;
     }
 
-    public async Task<int> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
         var role = Role.Create(request.Code, request.Name, request.Description);
         _context.AuthorizationRoles.Add(role);

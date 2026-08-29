@@ -7,10 +7,10 @@ public class Permission : BaseAuditableEntity, IAggregateRoot
 {
     private Permission() { }
 
-    public int? ResourceCatalogId { get; private set; }
+    public Guid? ResourceCatalogId { get; private set; }
     public ResourceCatalog? ResourceCatalog { get; private set; }
 
-    public int? ActionCatalogId { get; private set; }
+    public Guid? ActionCatalogId { get; private set; }
     public ActionCatalog? ActionCatalog { get; private set; }
 
     public string Code { get; private set; } = string.Empty;
@@ -24,9 +24,9 @@ public class Permission : BaseAuditableEntity, IAggregateRoot
         return new Permission
         {
             ResourceCatalog = resource,
-            ResourceCatalogId = resource.Id > 0 ? resource.Id : null,
+            ResourceCatalogId = resource.Id != Guid.Empty ? resource.Id : null,
             ActionCatalog = action,
-            ActionCatalogId = action.Id > 0 ? action.Id : null,
+            ActionCatalogId = action.Id != Guid.Empty ? action.Id : null,
             Code = code,
             Resource = resource.Code,
             Action = action.Code,

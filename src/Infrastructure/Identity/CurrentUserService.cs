@@ -25,12 +25,21 @@ public sealed class CurrentUserService : ICurrentUser
     public bool IsAuthenticated =>
         _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
 
-    public int? PersonnelId
+    public Guid? PersonnelId
     {
         get
         {
             var value = _httpContextAccessor.HttpContext?.User?.FindFirstValue("personnel_id");
-            return int.TryParse(value, out var id) ? id : null;
+            return Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
+
+    public Guid? ActiveCompanyId
+    {
+        get
+        {
+            var value = _httpContextAccessor.HttpContext?.User?.FindFirstValue("active_company_id");
+            return Guid.TryParse(value, out var id) ? id : null;
         }
     }
 }

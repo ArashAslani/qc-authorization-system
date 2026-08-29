@@ -8,7 +8,7 @@ namespace qc_authorization.Domain.Authorization.Evaluation;
 public sealed record DecisionTrace(
     string TraceId,
     SubjectType Subject,
-    int SubjectId,
+    Guid SubjectId,
     string RequestedPermission,
     string Resource,
     string? ResourceId,
@@ -24,7 +24,7 @@ public sealed record DecisionTrace(
     public static DecisionTrace Empty() => new(
         Guid.NewGuid().ToString("N"),
         SubjectType.User,
-        0,
+        Guid.Empty,
         string.Empty,
         string.Empty,
         null,
@@ -39,9 +39,9 @@ public sealed record DecisionTrace(
 }
 
 public sealed record RejectedGrant(
-    int GrantId,
+    Guid GrantId,
     SourceType SourceType,
-    int SourceId,
+    Guid SourceId,
     string Reason)
 {
     public static RejectedGrant For(Grant g, string reason) =>
@@ -49,9 +49,9 @@ public sealed record RejectedGrant(
 }
 
 public sealed record ConflictResolutionEntry(
-    int GrantId,
+    Guid GrantId,
     SourceType SourceType,
-    int SourceId,
+    Guid SourceId,
     int Priority,
     Effect Effect,
     bool Won);

@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Common.Mappings;
-using qc_authorization.Application.Authorization.Commands.CreateGrant;
 using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Domain.Authorization;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Domain.Authorization.Evaluation;
@@ -18,6 +17,8 @@ using NUnit.Framework;
 using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+
+using qc_authorization.Tests.TestSupport;
 
 [TestFixture]
 public class EvaluateAccessQueryIntegrationTests
@@ -41,7 +42,7 @@ public class EvaluateAccessQueryIntegrationTests
         _context.Permissions.Add(perm);
         await _context.SaveChangesAsync();
         _context.Grants.Add(Grant.CreateForUser(
-            TestUsers.UserE, perm.Id, SourceType.User, 0, Effect.Allow, T0.AddDays(-1), null,
+            TestUsers.UserE, perm.Id, SourceType.User, Guid.Empty, Effect.Allow, T0.AddDays(-1), null,
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
@@ -55,6 +56,7 @@ public class EvaluateAccessQueryIntegrationTests
             .AddSingleton(applicability)
             .AddSingleton(new AccessEvaluationEngine())
             .AddScoped<IApplicationDbContext>(_ => _context)
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .BuildServiceProvider()
@@ -72,7 +74,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Allow_With_Trace()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 0, TestUsers.UserE, "Read", "Personnel", null, T0));
+            SubjectType.User, Guid.Empty, TestUsers.UserE, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Allow");
         result.Trace.CandidateCount.ShouldBeGreaterThan(0);
@@ -82,7 +84,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Deny_For_Unknown_User()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 0, TestUsers.Unknown, "Read", "Personnel", null, T0));
+            SubjectType.User, Guid.Empty, TestUsers.Unknown, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Deny");
     }

@@ -16,7 +16,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
     public Guid DelegatorUserId { get; private set; }
     public Guid DelegateUserId { get; private set; }
 
-    public int PermissionId { get; private set; }
+    public Guid PermissionId { get; private set; }
     public Permission Permission { get; private set; } = null!;
 
     public ScopeKind ScopeKind { get; private set; } = ScopeKind.Unbounded;
@@ -34,7 +34,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
     public static Delegation Create(
         Guid delegatorUserId,
         Guid delegateUserId,
-        int permissionId,
+        Guid permissionId,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
         ScopeKind scopeKind = ScopeKind.Unbounded,
@@ -87,7 +87,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
             throw new AuthorizationDomainException("Cannot produce a grant from a revoked delegation.");
         }
 
-        if (Id <= 0)
+        if (Id == Guid.Empty)
         {
             throw new AuthorizationDomainException("Delegation must be persisted before producing a grant.");
         }

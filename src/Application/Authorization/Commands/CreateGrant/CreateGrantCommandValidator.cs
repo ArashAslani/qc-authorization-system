@@ -6,12 +6,12 @@ public class CreateGrantCommandValidator : AbstractValidator<CreateGrantCommand>
 {
     public CreateGrantCommandValidator()
     {
-        RuleFor(x => x.PermissionId).GreaterThan(0);
-        RuleFor(x => x.SourceId).GreaterThan(0);
+        RuleFor(x => x.PermissionId).NotEqual(Guid.Empty);
+        RuleFor(x => x.SourceId).NotEqual(Guid.Empty);
 
         When(x => x.SubjectType != SubjectType.User, () =>
         {
-            RuleFor(x => x.SubjectId).GreaterThan(0);
+            RuleFor(x => x.SubjectId).NotEqual(Guid.Empty);
         });
 
         When(x => x.SubjectType == SubjectType.User, () =>

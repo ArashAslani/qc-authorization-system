@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
 
-public record AssignPermissionToRoleCommand(int RoleId, int PermissionId) : IRequest;
+public record AssignPermissionToRoleCommand(Guid RoleId, Guid PermissionId) : IRequest;
 
 public class AssignPermissionToRoleCommandHandler : IRequestHandler<AssignPermissionToRoleCommand>
 {

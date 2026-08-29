@@ -6,16 +6,16 @@ using NotFoundException = qc_authorization.Application.Common.Exceptions.NotFoun
 
 namespace qc_authorization.Application.Authorization.Queries.GetRoleGroupById;
 
-public record GetRoleGroupByIdQuery(int Id) : IRequest<RoleGroupDetailsDto>;
+public record GetRoleGroupByIdQuery(Guid Id) : IRequest<RoleGroupDetailsDto>;
 
 public record RoleGroupDetailsDto(
-    int Id,
+    Guid Id,
     string Code,
     string Name,
     string? Description,
     IReadOnlyList<RoleGroupMemberItemDto> MemberRoles);
 
-public record RoleGroupMemberItemDto(int RoleId, string Code, string Name, string? Description);
+public record RoleGroupMemberItemDto(Guid RoleId, string Code, string Name, string? Description);
 
 public class GetRoleGroupByIdQueryHandler : IRequestHandler<GetRoleGroupByIdQuery, RoleGroupDetailsDto>
 {

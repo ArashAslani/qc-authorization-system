@@ -22,6 +22,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class AuthorizationAuditIntegrationTests
 {
@@ -57,24 +59,24 @@ public class AuthorizationAuditIntegrationTests
     public async Task Grant_Create_And_Revoke_Write_Audit_Entries()
     {
         var grantId = await _mediator.Send(new CreateGrantCommand(
-            SubjectType.User, 0, TestUsers.UserA, _perm.Id, null, null, ScopeKind.Unbounded, null,
-            Effect.Allow, SourceType.User, 0, T0, null, SourcePriority.IndividualOverride));
+            SubjectType.User, Guid.Empty, TestUsers.UserA, _perm.Id, null, null, ScopeKind.Unbounded, null,
+            Effect.Allow, SourceType.User, Guid.Empty, T0, null, SourcePriority.IndividualOverride));
 
-        await _mediator.Send(new RevokeGrantCommand(grantId, 10));
+        await _mediator.Send(new RevokeGrantCommand(grantId, TestGuids.CompanyA));
 
         var created = await _context.AuthorizationAuditEntries.Where(x => x.EventType == "GrantCreated").ToListAsync();
         var revoked = await _context.AuthorizationAuditEntries.Where(x => x.EventType == "GrantRevoked").ToListAsync();
 
         created.Count.ShouldBe(1);
         revoked.Count.ShouldBe(1);
-        revoked[0].ActorUserId.ShouldBe(10);
+        revoked[0].ActorUserId.ShouldBe(TestGuids.CompanyA);
     }
 
     [Test]
     public async Task Delegation_Create_And_Revoke_Write_Audit_Entries()
     {
         _context.Grants.Add(Grant.CreateForUser(
-            TestUsers.UserA, _perm.Id, SourceType.User, 0, Effect.Allow, T0.AddDays(-1), null,
+            TestUsers.UserA, _perm.Id, SourceType.User, Guid.Empty, Effect.Allow, T0.AddDays(-1), null,
             SourcePriority.IndividualOverride));
         await _context.SaveChangesAsync();
 
@@ -98,6 +100,7 @@ public class AuthorizationAuditIntegrationTests
             .AddSingleton(applicability)
             .AddSingleton(engine)
             .AddScoped<IApplicationDbContext>(_ => _context)
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()

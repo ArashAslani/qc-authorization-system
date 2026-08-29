@@ -10,21 +10,21 @@ namespace qc_authorization.Application.Authorization.Commands.CreateGrant;
 
 public record CreateGrantCommand(
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? SubjectUserId,
-    int PermissionId,
+    Guid PermissionId,
     string? Resource,
     string? ResourceId,
     ScopeKind ScopeKind,
     string? ScopeIdentifier,
     Effect Effect,
     SourceType SourceType,
-    int SourceId,
+    Guid SourceId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
-    int Priority) : IRequest<int>;
+    int Priority) : IRequest<Guid>;
 
-public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, int>
+public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly IAuthorizationAuditService _audit;
@@ -35,7 +35,7 @@ public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, int
         _audit = audit;
     }
 
-    public async Task<int> Handle(CreateGrantCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateGrantCommand request, CancellationToken cancellationToken)
     {
         _ = await _context.Permissions
             .AsNoTracking()

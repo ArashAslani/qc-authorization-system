@@ -5,6 +5,8 @@ using Shouldly;
 
 namespace qc_authorization.Domain.UnitTests.Organization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class PersonnelTests
 {

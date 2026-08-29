@@ -1,5 +1,7 @@
 namespace qc_authorization.Domain.UnitTests;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class SmokeTest
 {

@@ -6,5 +6,5 @@ namespace qc_authorization.Application.Common.Interfaces;
 /// </summary>
 public interface IPersonnelIdentityBridge
 {
-    Task LinkAsync(int personnelId, Guid identityUserId, CancellationToken cancellationToken = default);
+    Task LinkAsync(Guid personnelId, Guid identityUserId, CancellationToken cancellationToken = default);
 }

@@ -3,13 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using qc_authorization.Application.Common.Mappings;
 using qc_authorization.Application.Authorization.Audit;
 using qc_authorization.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
+using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization.Enums;
 using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
 using qc_authorization.Application.Authorization.Commands.CreatePermission;
 using qc_authorization.Application.Authorization.Commands.CreateRole;
 using qc_authorization.Application.Authorization.Evaluation;
 using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
-using qc_authorization.Application.Common.Interfaces;
 using qc_authorization.Domain.Authorization.Evaluation;
 using qc_authorization.Domain.Authorization.Services;
 using qc_authorization.Domain.Organization;
@@ -20,6 +20,8 @@ using NUnit.Framework;
 using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+
+using qc_authorization.Tests.TestSupport;
 
 [TestFixture]
 public class IdentityAuthorizationIntegrationTests
@@ -49,6 +51,7 @@ public class IdentityAuthorizationIntegrationTests
             .AddSingleton(applicability)
             .AddSingleton(new AccessEvaluationEngine())
             .AddScoped<IApplicationDbContext>(_ => _context)
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
@@ -73,7 +76,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignAuthorizationRoleToUserCommand(TestUsers.UserA, roleId, T0));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 0, TestUsers.UserA, "Read", "Personnel", null, T0));
+            SubjectType.User, Guid.Empty, TestUsers.UserA, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Allow");
         result.Trace.ApplicableCount.ShouldBeGreaterThan(0);
@@ -88,7 +91,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignPermissionToRoleCommand(roleId, permissionId));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, 0, TestUsers.Unknown, "Read", "Personnel", null, T0));
+            SubjectType.User, Guid.Empty, TestUsers.Unknown, "Read", "Personnel", null, T0));
 
         result.Effect.ShouldBe("Deny");
     }

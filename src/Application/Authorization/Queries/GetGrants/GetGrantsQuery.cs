@@ -8,19 +8,19 @@ namespace qc_authorization.Application.Authorization.Queries.GetGrants;
 
 public record GetGrantsQuery(
     SubjectType? SubjectType = null,
-    int? SubjectId = null,
+    Guid? SubjectId = null,
     Guid? SubjectUserId = null,
-    int? PermissionId = null,
+    Guid? PermissionId = null,
     Effect? Effect = null,
     SourceType? SourceType = null,
     bool? ActiveOnly = null) : IRequest<IReadOnlyList<GrantDto>>;
 
 public record GrantDto(
-    int Id,
+    Guid Id,
     SubjectType SubjectType,
-    int SubjectId,
+    Guid SubjectId,
     Guid? SubjectUserId,
-    int PermissionId,
+    Guid PermissionId,
     string PermissionCode,
     string? Resource,
     string? ResourceId,
@@ -28,7 +28,7 @@ public record GrantDto(
     string? ScopeIdentifier,
     Effect Effect,
     SourceType SourceType,
-    int SourceId,
+    Guid SourceId,
     Guid? SourceUserId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,

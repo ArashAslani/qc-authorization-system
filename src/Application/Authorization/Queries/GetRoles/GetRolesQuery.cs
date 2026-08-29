@@ -6,7 +6,7 @@ namespace qc_authorization.Application.Authorization.Queries.GetRoles;
 
 public record GetRolesQuery(string? SearchTerm = null) : IRequest<IReadOnlyList<RoleDto>>;
 
-public record RoleDto(int Id, string Code, string Name, string? Description, int PermissionCount);
+public record RoleDto(Guid Id, string Code, string Name, string? Description, int PermissionCount);
 
 public class GetRolesQueryHandler : IRequestHandler<GetRolesQuery, IReadOnlyList<RoleDto>>
 {

@@ -26,6 +26,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class GrantAndDelegationQueryIntegrationTests
 {
@@ -44,6 +46,7 @@ public class GrantAndDelegationQueryIntegrationTests
             .AddSingleton<PositionHierarchyService>()
             .AddSingleton<GrantApplicabilityService>()
             .AddSingleton<AccessEvaluationEngine>()
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: TestGuids.CompanyA))
             .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
@@ -72,7 +75,7 @@ public class GrantAndDelegationQueryIntegrationTests
 
         var grantId = await _mediator.Send(new CreateGrantCommand(
             SubjectType.User,
-            0,
+            Guid.Empty,
             userId,
             permId,
             "INSPECTION",
@@ -81,7 +84,7 @@ public class GrantAndDelegationQueryIntegrationTests
             null,
             Effect.Allow,
             SourceType.User,
-            0,
+            Guid.Empty,
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(10),
             100));
@@ -107,7 +110,7 @@ public class GrantAndDelegationQueryIntegrationTests
         // Seed delegator grant so subset policy passes
         await _mediator.Send(new CreateGrantCommand(
             SubjectType.User,
-            0,
+            Guid.Empty,
             delegator,
             permId,
             "TASK",
@@ -116,7 +119,7 @@ public class GrantAndDelegationQueryIntegrationTests
             null,
             Effect.Allow,
             SourceType.User,
-            0,
+            Guid.Empty,
             DateTimeOffset.UtcNow.AddDays(-5),
             DateTimeOffset.UtcNow.AddDays(30),
             100));
@@ -151,7 +154,7 @@ public class GrantAndDelegationQueryIntegrationTests
 
         await _mediator.Send(new CreateGrantCommand(
             SubjectType.User,
-            0,
+            Guid.Empty,
             userId,
             permId,
             "REPORT",
@@ -160,14 +163,14 @@ public class GrantAndDelegationQueryIntegrationTests
             null,
             Effect.Allow,
             SourceType.User,
-            0,
+            Guid.Empty,
             DateTimeOffset.UtcNow.AddDays(-1),
             null,
             100));
 
         var decision = await _mediator.Send(new EvaluateAccessForSubjectQuery(
             SubjectType.User,
-            0,
+            Guid.Empty,
             userId,
             "GENERATE",
             "REPORT",

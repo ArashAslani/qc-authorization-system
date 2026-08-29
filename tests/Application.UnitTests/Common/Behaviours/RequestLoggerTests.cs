@@ -6,6 +6,8 @@ using NUnit.Framework;
 
 namespace qc_authorization.Application.UnitTests.Common.Behaviours;
 
+using qc_authorization.Tests.TestSupport;
+
 public class RequestLoggerTests
 {
     private Mock<ILogger<RequestLoggerTests.TestRequest>> _logger = null!;

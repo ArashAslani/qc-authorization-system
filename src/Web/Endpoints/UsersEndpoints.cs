@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using qc_authorization.Application.Common.Interfaces;
+using qc_authorization.Application.Organization.Queries.GetPersonnelWorkspaces;
 using qc_authorization.Infrastructure.Data;
 using qc_authorization.Infrastructure.Identity;
 using qc_authorization.Web.Infrastructure;
+using MediatR;
 
 namespace qc_authorization.Web.Endpoints;
 
@@ -16,8 +18,10 @@ public class UsersEndpoints : IEndpointGroup
     {
         group.MapGet(GetUsers);
         group.MapGet(GetUserById, "{id:guid}");
+        group.MapGet(GetMyWorkspaces, "me/workspaces").RequireAuthorization();
         group.MapPost(Register, "register");
         group.MapPost(Login, "login");
+        group.MapPost(SwitchCompany, "me/switch-company").RequireAuthorization();
     }
 
     private static async Task<IResult> GetUsers(
@@ -98,11 +102,26 @@ public class UsersEndpoints : IEndpointGroup
         return Results.Ok(details);
     }
 
+    private static async Task<IResult> GetMyWorkspaces(
+        ICurrentUser currentUser,
+        ISender sender)
+    {
+        if (!currentUser.IsAuthenticated || currentUser.PersonnelId is not Guid personnelId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(personnelId));
+        return Results.Ok(workspaces);
+    }
+
     private static async Task<IResult> Register(
         RegisterRequest request,
         UserManager<ApplicationUser> userManager,
         IPersonnelIdentityBridge personnelIdentityBridge,
-        JwtTokenService jwtTokenService)
+        JwtTokenService jwtTokenService,
+        ApplicationDbContext context,
+        ISender sender)
     {
         var user = new ApplicationUser
         {
@@ -120,6 +139,7 @@ public class UsersEndpoints : IEndpointGroup
                 e => new[] { e.Description }));
         }
 
+        string? nationalId = null;
         if (request.PersonnelId.HasValue)
         {
             await personnelIdentityBridge.LinkAsync(
@@ -128,25 +148,127 @@ public class UsersEndpoints : IEndpointGroup
                 CancellationToken.None);
 
             user = (await userManager.FindByIdAsync(user.Id.ToString()))!;
+            nationalId = await context.Personnel
+                .AsNoTracking()
+                .Where(p => p.Id == request.PersonnelId.Value)
+                .Select(p => p.NationalId)
+                .SingleOrDefaultAsync();
         }
 
-        var token = jwtTokenService.GenerateToken(user);
-        return Results.Ok(new AuthResponse(token, user.Id, user.PersonnelId));
+        Guid? activeCompanyId = null;
+        PersonnelWorkspacesDto? workspaces = null;
+        if (user.PersonnelId.HasValue)
+        {
+            workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(user.PersonnelId.Value));
+            activeCompanyId = workspaces.DefaultCompanyId;
+        }
+
+        var token = jwtTokenService.GenerateToken(user, activeCompanyId, nationalId);
+        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId, workspaces));
     }
 
     private static async Task<IResult> Login(
         LoginRequest request,
         UserManager<ApplicationUser> userManager,
-        JwtTokenService jwtTokenService)
+        JwtTokenService jwtTokenService,
+        ApplicationDbContext context,
+        ISender sender)
     {
-        var user = await userManager.FindByEmailAsync(request.Email.Trim());
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        ApplicationUser? user = null;
+        string? nationalId = null;
+
+        if (!string.IsNullOrWhiteSpace(request.NationalId))
         {
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            nationalId = request.NationalId.Trim();
+            var personnel = await context.Personnel
+                .AsNoTracking()
+                .SingleOrDefaultAsync(p => p.NationalId == nationalId);
+
+            if (personnel?.IdentityUserId is Guid identityUserId)
+            {
+                user = await userManager.FindByIdAsync(identityUserId.ToString());
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            user = await userManager.FindByEmailAsync(request.Email.Trim());
+            if (user?.PersonnelId is Guid personnelId)
+            {
+                nationalId = await context.Personnel
+                    .AsNoTracking()
+                    .Where(p => p.Id == personnelId)
+                    .Select(p => p.NationalId)
+                    .SingleOrDefaultAsync();
+            }
         }
 
-        var token = jwtTokenService.GenerateToken(user);
-        return Results.Ok(new AuthResponse(token, user.Id, user.PersonnelId));
+        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        PersonnelWorkspacesDto? workspaces = null;
+        Guid? activeCompanyId = null;
+        if (user.PersonnelId.HasValue)
+        {
+            workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(user.PersonnelId.Value));
+            activeCompanyId = workspaces.DefaultCompanyId;
+        }
+
+        var token = jwtTokenService.GenerateToken(user, activeCompanyId, nationalId);
+        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId, workspaces));
+    }
+
+    private static async Task<IResult> SwitchCompany(
+        SwitchCompanyRequest request,
+        ICurrentUser currentUser,
+        UserManager<ApplicationUser> userManager,
+        JwtTokenService jwtTokenService,
+        ApplicationDbContext context,
+        ISender sender)
+    {
+        if (!currentUser.IsAuthenticated || currentUser.UserId is not Guid userId || currentUser.PersonnelId is not Guid personnelId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(personnelId));
+        var targetCompany = workspaces.Companies.SingleOrDefault(c => c.CompanyId == request.CompanyId);
+        if (targetCompany is null)
+        {
+            return Results.Forbid();
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new UnauthorizedAccessException("User not found.");
+
+        var nationalId = await context.Personnel
+            .AsNoTracking()
+            .Where(p => p.Id == personnelId)
+            .Select(p => p.NationalId)
+            .SingleOrDefaultAsync();
+
+        var token = jwtTokenService.GenerateToken(user, request.CompanyId, nationalId);
+        return Results.Ok(BuildAuthResponse(token, user, request.CompanyId, workspaces));
+    }
+
+    private static AuthResponse BuildAuthResponse(
+        string token,
+        ApplicationUser user,
+        Guid? activeCompanyId,
+        PersonnelWorkspacesDto? workspaces)
+    {
+        var activePositions = workspaces?.Companies
+            .FirstOrDefault(c => c.CompanyId == activeCompanyId)
+            ?.Positions ?? [];
+
+        return new AuthResponse(
+            token,
+            user.Id,
+            user.PersonnelId,
+            activeCompanyId,
+            workspaces?.Companies.Select(c => c.CompanyId).ToList() ?? [],
+            activePositions.Select(p => new ActivePositionDto(p.PositionId, p.PositionCode, p.PositionTitle, p.IsPrimary)).ToList());
     }
 }
 
@@ -155,7 +277,7 @@ public record UserSummaryDto(
     string? UserName,
     string? Email,
     bool EmailConfirmed,
-    int? PersonnelId,
+    Guid? PersonnelId,
     bool LockoutEnabled,
     DateTimeOffset? LockoutEnd);
 
@@ -164,7 +286,7 @@ public record UserDetailsDto(
     string? UserName,
     string? Email,
     bool EmailConfirmed,
-    int? PersonnelId,
+    Guid? PersonnelId,
     string? PersonnelName,
     string? PhoneNumber,
     bool PhoneNumberConfirmed,
@@ -172,8 +294,18 @@ public record UserDetailsDto(
     bool LockoutEnabled,
     DateTimeOffset? LockoutEnd);
 
-public record RegisterRequest(string Email, string Password, int? PersonnelId = null);
+public record RegisterRequest(string Email, string Password, Guid? PersonnelId = null);
 
-public record LoginRequest(string Email, string Password);
+public record LoginRequest(string Password, string? Email = null, string? NationalId = null);
 
-public record AuthResponse(string Token, Guid UserId, int? PersonnelId);
+public record SwitchCompanyRequest(Guid CompanyId);
+
+public record ActivePositionDto(Guid PositionId, string PositionCode, string PositionTitle, bool IsPrimary);
+
+public record AuthResponse(
+    string Token,
+    Guid UserId,
+    Guid? PersonnelId,
+    Guid? ActiveCompanyId,
+    IReadOnlyList<Guid> AvailableCompanies,
+    IReadOnlyList<ActivePositionDto> ActiveCompanyPositions);

@@ -27,6 +27,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class AccessDefinitionQueryIntegrationTests
 {

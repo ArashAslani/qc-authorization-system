@@ -11,7 +11,7 @@ public record GetPersonnelQuery(
     bool? HasIdentityUser = null) : IRequest<IReadOnlyList<PersonnelDto>>;
 
 public record PersonnelDto(
-    int Id,
+    Guid Id,
     string NationalId,
     string FirstName,
     string LastName,

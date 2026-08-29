@@ -14,6 +14,8 @@ using Shouldly;
 
 namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
 
+using qc_authorization.Tests.TestSupport;
+
 [TestFixture]
 public class CreateGrantCommandHandlerTests
 {
@@ -55,7 +57,7 @@ public class CreateGrantCommandHandlerTests
 
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.Role,
-            SubjectId: 50,
+            SubjectId: TestGuids.Subject50,
             SubjectUserId: null,
             PermissionId: permissionId,
             Resource: null,
@@ -64,7 +66,7 @@ public class CreateGrantCommandHandlerTests
             ScopeIdentifier: null,
             Effect.Allow,
             SourceType.Role,
-            SourceId: 50,
+            SourceId: TestGuids.Subject50,
             DateTimeOffset.UtcNow,
             ValidTo: null,
             Priority: SourcePriority.RoleOrRoleGroup));
@@ -72,9 +74,9 @@ public class CreateGrantCommandHandlerTests
         var g = await _context.Grants.SingleAsync(x => x.Id == id);
         g.Effect.ShouldBe(Effect.Allow);
         g.SourceType.ShouldBe(SourceType.Role);
-        g.SourceId.ShouldBe(50);
+        g.SourceId.ShouldBe(TestGuids.Subject50);
         g.SubjectType.ShouldBe(SubjectType.Role);
-        g.SubjectId.ShouldBe(50);
+        g.SubjectId.ShouldBe(TestGuids.Subject50);
         g.PermissionId.ShouldBe(permissionId);
         g.Priority.ShouldBe(SourcePriority.RoleOrRoleGroup);
     }
@@ -86,7 +88,7 @@ public class CreateGrantCommandHandlerTests
 
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.Position,
-            SubjectId: 200,
+            SubjectId: TestGuids.Subject50,
             SubjectUserId: null,
             PermissionId: permissionId,
             Resource: "Personnel",
@@ -95,7 +97,7 @@ public class CreateGrantCommandHandlerTests
             ScopeIdentifier: "C-1",
             Effect.Deny,
             SourceType.Position,
-            SourceId: 200,
+            SourceId: TestGuids.Subject50,
             DateTimeOffset.UtcNow,
             ValidTo: null,
             Priority: SourcePriority.PositionOverride));
@@ -116,7 +118,7 @@ public class CreateGrantCommandHandlerTests
 
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.User,
-            SubjectId: 0,
+            SubjectId: Guid.Empty,
             SubjectUserId: TestUsers.UserA,
             PermissionId: permissionId,
             Resource: null,
@@ -125,7 +127,7 @@ public class CreateGrantCommandHandlerTests
             ScopeIdentifier: null,
             Effect.Allow,
             SourceType.User,
-            SourceId: 0,
+            SourceId: Guid.Empty,
             from,
             to,
             Priority: SourcePriority.IndividualOverride));
@@ -143,7 +145,7 @@ public class CreateGrantCommandHandlerTests
 
         var id = await _mediator.Send(new CreateGrantCommand(
             SubjectType.RoleGroup,
-            SubjectId: 999,
+            SubjectId: TestGuids.Subject50,
             SubjectUserId: null,
             PermissionId: permissionId,
             Resource: null,
@@ -152,13 +154,13 @@ public class CreateGrantCommandHandlerTests
             ScopeIdentifier: null,
             Effect.Allow,
             SourceType.RoleGroup,
-            SourceId: 999,
+            SourceId: TestGuids.Subject50,
             DateTimeOffset.UtcNow,
             null,
             SourcePriority.RoleOrRoleGroup));
 
         var g = await _context.Grants.SingleAsync(x => x.Id == id);
         g.SourceType.ShouldBe(SourceType.RoleGroup);
-        g.SourceId.ShouldBe(999);
+        g.SourceId.ShouldBe(TestGuids.Subject50);
     }
 }

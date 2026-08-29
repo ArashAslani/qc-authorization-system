@@ -12,15 +12,15 @@ namespace qc_authorization.Application.Authorization.Commands.CreateDelegation;
 public record CreateDelegationCommand(
     Guid DelegatorUserId,
     Guid DelegateUserId,
-    int PermissionId,
+    Guid PermissionId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
     ScopeKind ScopeKind = ScopeKind.Unbounded,
     string? ScopeIdentifier = null,
     bool Delegable = true,
-    int? ParentDelegationId = null) : IRequest<int>;
+    Guid? ParentDelegationId = null) : IRequest<Guid>;
 
-public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCommand, int>
+public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly IDelegationSubsetPolicy _subsetPolicy;
@@ -36,9 +36,9 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
         _audit = audit;
     }
 
-    public async Task<int> Handle(CreateDelegationCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateDelegationCommand request, CancellationToken cancellationToken)
     {
-        if (request.ParentDelegationId is int parentId)
+        if (request.ParentDelegationId is Guid parentId)
         {
             var parent = await _context.Delegations
                 .FirstOrDefaultAsync(d => d.Id == parentId, cancellationToken)

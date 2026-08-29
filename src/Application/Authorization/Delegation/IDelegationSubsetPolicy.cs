@@ -7,7 +7,7 @@ public interface IDelegationSubsetPolicy
 {
     Task EnsureDelegatorCanDelegateAsync(
         Guid delegatorUserId,
-        int permissionId,
+        Guid permissionId,
         ScopeKind scopeKind,
         string? scopeIdentifier,
         DateTimeOffset when,

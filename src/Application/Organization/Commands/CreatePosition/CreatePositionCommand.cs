@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore;
 namespace qc_authorization.Application.Organization.Commands.CreatePosition;
 
 public record CreatePositionCommand(
-    int CompanyId,
+    Guid CompanyId,
     string Code,
     string Title,
     string? Description,
-    int? ParentPositionId) : IRequest<int>;
+    Guid? ParentPositionId) : IRequest<Guid>;
 
-public class CreatePositionCommandHandler : IRequestHandler<CreatePositionCommand, int>
+public class CreatePositionCommandHandler : IRequestHandler<CreatePositionCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
     private readonly PositionHierarchyService _hierarchy;
@@ -23,7 +23,7 @@ public class CreatePositionCommandHandler : IRequestHandler<CreatePositionComman
         _hierarchy = hierarchy;
     }
 
-    public async Task<int> Handle(CreatePositionCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreatePositionCommand request, CancellationToken cancellationToken)
     {
         var position = Position.Create(
             request.CompanyId,
@@ -32,7 +32,7 @@ public class CreatePositionCommandHandler : IRequestHandler<CreatePositionComman
             request.Description,
             request.ParentPositionId);
 
-        if (request.ParentPositionId is int parentId)
+        if (request.ParentPositionId is Guid parentId)
         {
             var allPositions = await _context.Positions.ToListAsync(cancellationToken);
             var parent = allPositions.FirstOrDefault(p => p.Id == parentId)

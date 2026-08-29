@@ -10,8 +10,9 @@ using qc_authorization.Infrastructure.Data;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Application.UnitTests.Authorization;
+using qc_authorization.Tests.TestSupport;
 
+namespace qc_authorization.Application.UnitTests.Authorization;
 [TestFixture]
 [NonParallelizable]
 public class PositionPropagationTests
@@ -32,10 +33,10 @@ public class PositionPropagationTests
         (_context, _evaluator) = AuthorizationTestContext.Create();
         await _context.Database.EnsureCreatedAsync();
 
-        _a = PositionWithId(1, "A", "A");
-        _b = PositionWithId(2, "B", "B", 1);
-        _c = PositionWithId(3, "C", "C", 2);
-        _d = PositionWithId(4, "D", "D", 1);
+        _a = PositionWithId(Guid.Parse("01000001-0000-0000-0000-000000000001"), "A", "A");
+        _b = PositionWithId(Guid.Parse("01000002-0000-0000-0000-000000000002"), "B", "B", _a.Id);
+        _c = PositionWithId(Guid.Parse("01000003-0000-0000-0000-000000000003"), "C", "C", _b.Id);
+        _d = PositionWithId(Guid.Parse("01000004-0000-0000-0000-000000000004"), "D", "D", _a.Id);
         _context.Positions.AddRange(_a, _b, _c, _d);
 
         _perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
@@ -178,7 +179,7 @@ public class PositionPropagationTests
     private Task<AccessDecision> EvaluateForUser(Guid userId) =>
         _evaluator.EvaluateAsync(AccessRequest.ForUser(userId, "Read", "Personnel", null, T0));
 
-    private void AssignUser(Guid identityUserId, int positionId)
+    private void AssignUser(Guid identityUserId, Guid positionId)
     {
         var personnel = EnsurePersonnel(identityUserId);
         _context.PositionAssignments.Add(PositionAssignment.Create(
@@ -204,9 +205,9 @@ public class PositionPropagationTests
         return personnel;
     }
 
-    private static Position PositionWithId(int id, string code, string title, int? parentId = null, int companyId = 1)
+    private static Position PositionWithId(Guid id, string code, string title, Guid? parentId = null, Guid? companyId = null)
     {
-        var position = Position.Create(companyId, code, title, parentPositionId: parentId);
+        var position = Position.Create(companyId ?? TestGuids.CompanyA, code, title, parentPositionId: parentId);
         position.Id = id;
         return position;
     }
@@ -216,7 +217,7 @@ public class PositionPropagationTests
             userId,
             _perm.Id,
             SourceType.User,
-            0,
+            Guid.Empty,
             effect,
             T0.AddDays(-1),
             null,
@@ -224,10 +225,10 @@ public class PositionPropagationTests
 
     private Grant NewGrant(
         SubjectType subjectType,
-        int subjectId,
+        Guid subjectId,
         Effect effect,
         SourceType sourceType,
-        int sourceId,
+        Guid sourceId,
         int priority,
         ScopeKind scopeKind = ScopeKind.Unbounded,
         string? scopeIdentifier = null,

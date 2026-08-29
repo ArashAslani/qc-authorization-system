@@ -21,12 +21,12 @@ public class PositionHierarchyService
 
         var byId = allPositions.ToDictionary(p => p.Id);
         var result = new List<Position>();
-        var current = position.ParentPositionId is int parentId ? byId.GetValueOrDefault(parentId) : null;
+        var current = position.ParentPositionId is Guid parentId ? byId.GetValueOrDefault(parentId) : null;
 
         for (var i = 0; i < allPositions.Count + 1 && current is not null; i++)
         {
             result.Add(current);
-            current = current.ParentPositionId is int pid ? byId.GetValueOrDefault(pid) : null;
+            current = current.ParentPositionId is Guid pid ? byId.GetValueOrDefault(pid) : null;
         }
 
         if (current is not null)
@@ -45,7 +45,7 @@ public class PositionHierarchyService
 
         var result = new List<Position>();
         var queue = new Queue<Position>(Children(position, allPositions));
-        var visited = new HashSet<int> { position.Id };
+        var visited = new HashSet<Guid> { position.Id };
 
         while (queue.Count > 0)
         {

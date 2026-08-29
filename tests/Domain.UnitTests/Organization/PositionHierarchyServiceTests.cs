@@ -1,5 +1,6 @@
 using qc_authorization.Domain.Organization;
 using qc_authorization.Domain.Organization.Exceptions;
+using qc_authorization.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
@@ -10,13 +11,16 @@ public class PositionHierarchyServiceTests
 {
     private PositionHierarchyService _service = null!;
 
+    private static readonly Guid Co1 = TestGuids.CompanyA;
+    private static readonly Guid Co2 = TestGuids.CompanyB;
+
     [SetUp]
     public void SetUp() => _service = new PositionHierarchyService();
 
     [Test]
     public void Create_Position_HasDefaults()
     {
-        var position = Position.Create(1, "ENG", "Engineer");
+        var position = Position.Create(Co1, "ENG", "Engineer");
         position.Code.ShouldBe("ENG");
         position.Title.ShouldBe("Engineer");
         position.ParentPositionId.ShouldBeNull();
@@ -26,9 +30,9 @@ public class PositionHierarchyServiceTests
     [Test]
     public void Assign_Parent_SetsParentPositionId()
     {
-        var parent = WithId(1, "ROOT", "Root");
-        var child = WithId(2, "CHILD", "Child", parent.Id);
-        child.ParentPositionId.ShouldBe(1);
+        var parent = WithId(TestGuids.PosA1, "ROOT", "Root");
+        var child = WithId(TestGuids.PosA2, "CHILD", "Child", parent.Id);
+        child.ParentPositionId.ShouldBe(parent.Id);
     }
 
     [Test]
@@ -83,8 +87,8 @@ public class PositionHierarchyServiceTests
     [Test]
     public void Cross_Company_Parent_Is_Rejected()
     {
-        var parent = WithId(10, "PARENT", "Parent", companyId: 2);
-        var child = WithId(11, "CHILD", "Child", companyId: 1);
+        var parent = WithId(Guid.Parse("c0000010-0000-0000-0000-000000000010"), "PARENT", "Parent", companyId: Co2);
+        var child = WithId(Guid.Parse("c0000011-0000-0000-0000-000000000011"), "CHILD", "Child", companyId: Co1);
         var all = new List<Position> { parent, child };
 
         Should.Throw<OrganizationDomainException>(() =>
@@ -94,9 +98,9 @@ public class PositionHierarchyServiceTests
     [Test]
     public void Valid_ReParenting_ToAnotherRoot_Is_Accepted()
     {
-        var root1 = WithId(1, "R1", "R1");
-        var root2 = WithId(2, "R2", "R2");
-        var node = WithId(3, "N", "N", root1.Id);
+        var root1 = WithId(Guid.Parse("0a000001-0000-0000-0000-000000000001"), "R1", "R1");
+        var root2 = WithId(Guid.Parse("0a000002-0000-0000-0000-000000000002"), "R2", "R2");
+        var node = WithId(Guid.Parse("0a000003-0000-0000-0000-000000000003"), "N", "N", root1.Id);
 
         var all = new List<Position> { root1, root2, node };
         Should.NotThrow(() => _service.EnsureValidParenting(node, root2, all));
@@ -112,38 +116,38 @@ public class PositionHierarchyServiceTests
     [Test]
     public void Detecting_Pre_Existing_Cycle_While_Walking_Ancestors_Throws()
     {
-        var a = WithId(1, "A", "A");
-        var b = WithId(2, "B", "B", 1);
-        SetParentPositionId(a, 2);
+        var a = WithId(Guid.Parse("0c000001-0000-0000-0000-000000000001"), "A", "A");
+        var b = WithId(Guid.Parse("0c000002-0000-0000-0000-000000000002"), "B", "B", a.Id);
+        SetParentPositionId(a, b.Id);
         Should.Throw<HierarchyCycleException>(() => _service.Ancestors(b, new[] { a, b }));
     }
 
     [Test]
     public void Detecting_Pre_Existing_Cycle_While_Walking_Descendants_Throws()
     {
-        var a = WithId(1, "A", "A");
-        var b = WithId(2, "B", "B", 1);
-        SetParentPositionId(a, 2);
+        var a = WithId(Guid.Parse("0c000003-0000-0000-0000-000000000003"), "A", "A");
+        var b = WithId(Guid.Parse("0c000004-0000-0000-0000-000000000004"), "B", "B", a.Id);
+        SetParentPositionId(a, b.Id);
         Should.Throw<HierarchyCycleException>(() => _service.Descendants(a, new[] { a, b }));
     }
 
-    private static Position WithId(int id, string code, string title, int? parentId = null, int companyId = 1)
+    private static Position WithId(Guid id, string code, string title, Guid? parentId = null, Guid? companyId = null)
     {
-        var position = Position.Create(companyId, code, title, parentPositionId: parentId);
+        var position = Position.Create(companyId ?? Co1, code, title, parentPositionId: parentId);
         position.Id = id;
         return position;
     }
 
-    private static void SetParentPositionId(Position position, int? parentId) =>
+    private static void SetParentPositionId(Position position, Guid? parentId) =>
         typeof(Position).GetProperty(nameof(Position.ParentPositionId))!
             .SetValue(position, parentId);
 
     private static (List<Position> all, Position a, Position b, Position c, Position d) BuildSample()
     {
-        var a = WithId(1, "A", "A");
-        var b = WithId(2, "B", "B", 1);
-        var c = WithId(3, "C", "C", 1);
-        var d = WithId(4, "D", "D", 2);
+        var a = WithId(Guid.Parse("01000001-0000-0000-0000-000000000001"), "A", "A");
+        var b = WithId(Guid.Parse("01000002-0000-0000-0000-000000000002"), "B", "B", a.Id);
+        var c = WithId(Guid.Parse("01000003-0000-0000-0000-000000000003"), "C", "C", a.Id);
+        var d = WithId(Guid.Parse("01000004-0000-0000-0000-000000000004"), "D", "D", b.Id);
         return (new List<Position> { a, b, c, d }, a, b, c, d);
     }
 }

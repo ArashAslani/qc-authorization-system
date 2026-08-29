@@ -16,7 +16,7 @@ public class AuditEndpoints : IEndpointGroup
 
     private static async Task<IResult> GetAuditEntries(
         [FromQuery] string? eventType,
-        [FromQuery] int? actorUserId,
+        [FromQuery] Guid? actorUserId,
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
         [FromQuery] int? pageNumber,
