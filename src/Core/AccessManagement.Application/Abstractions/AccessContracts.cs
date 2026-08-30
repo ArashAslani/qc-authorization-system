@@ -17,7 +17,14 @@ public interface IAccessEvaluator
 
 public sealed record AccessibleScopeResult(
     bool IsUnrestricted,
-    IReadOnlyList<Guid> ScopeRootUnitIds);
+    IReadOnlyList<Guid> ScopeRootUnitIds,
+    IReadOnlyList<Guid> DeniedScopeUnitIds)
+{
+    public AccessibleScopeResult(bool isUnrestricted, IReadOnlyList<Guid> scopeRootUnitIds)
+        : this(isUnrestricted, scopeRootUnitIds, Array.Empty<Guid>())
+    {
+    }
+}
 
 public interface IGrantResolver
 {

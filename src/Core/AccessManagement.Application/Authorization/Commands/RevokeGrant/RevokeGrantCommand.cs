@@ -24,7 +24,7 @@ public class RevokeGrantCommandHandler : IRequestHandler<RevokeGrantCommand>
             .FirstOrDefaultAsync(g => g.Id == request.GrantId, cancellationToken)
             ?? throw new InvalidOperationException($"Grant {request.GrantId} not found.");
 
-        _context.Grants.Remove(grant);
+        grant.Deactivate(DateTimeOffset.UtcNow);
         await _audit.RecordAsync(
             "GrantRevoked",
             request.ActorUserId,

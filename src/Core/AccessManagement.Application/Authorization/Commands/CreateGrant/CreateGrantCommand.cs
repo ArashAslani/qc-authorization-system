@@ -2,6 +2,7 @@ using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.ValueObjects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,7 +50,7 @@ public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, Gui
                 request.Effect,
                 request.ValidFrom,
                 request.ValidTo,
-                request.Priority,
+                SourcePriority.For(request.SourceType),
                 resource: request.Resource,
                 resourceId: request.ResourceId,
                 scopeUnitId: request.ScopeUnitId)
@@ -62,7 +63,7 @@ public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, Gui
                 request.Effect,
                 request.ValidFrom,
                 request.ValidTo,
-                request.Priority,
+                SourcePriority.For(request.SourceType),
                 request.Resource,
                 request.ResourceId,
                 request.ScopeUnitId,

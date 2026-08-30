@@ -1,3 +1,5 @@
+using AccessManagement.Domain.Authorization.Enums;
+
 namespace AccessManagement.Domain.Authorization.ValueObjects;
 
 /// <summary>
@@ -23,4 +25,14 @@ public static class SourcePriority
     public const int PositionOverride = 80;
     public const int Delegation = 60;
     public const int RoleOrRoleGroup = 40;
+
+    public static int For(SourceType sourceType) => sourceType switch
+    {
+        SourceType.User => IndividualOverride,
+        SourceType.Position => PositionOverride,
+        SourceType.Delegation => Delegation,
+        SourceType.Role => RoleOrRoleGroup,
+        SourceType.RoleGroup => RoleOrRoleGroup,
+        _ => RoleOrRoleGroup,
+    };
 }
