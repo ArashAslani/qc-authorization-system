@@ -1,12 +1,14 @@
-using AccessManagement.Application.Authorization.Commands.CreateGrant;
-using AccessManagement.Application.Authorization.Commands.RevokeGrant;
+using AccessManagement.Application.Authorization.Commands.GrantAccess;
+using AccessManagement.Application.Authorization.Commands.RevokeAccess;
 using AccessManagement.Application.Authorization.Queries.EvaluateAccess;
 using AccessManagement.Application.Authorization.Queries.EvaluateAccessForSubject;
+using AccessManagement.Application.Authorization.Queries.GetAccessibleScopes;
 using AccessManagement.Application.Authorization.Queries.GetGrantById;
+using AccessManagement.Application.Authorization.Queries.GetGrantTargets;
 using AccessManagement.Application.Authorization.Queries.GetGrants;
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
-using AccessManagement.Domain.Authorization.ValueObjects;
 using AccessManagement.WebApi.Infrastructure;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +21,14 @@ public class AuthorizationEndpoints : IEndpointGroup
 
     public static void Map(RouteGroupBuilder group)
     {
-        // Grants
         group.MapGet(GetGrants, "grants");
         group.MapGet(GetGrantById, "grants/{id:guid}");
-        group.MapPost(CreateGrant, "grants");
-        group.MapPost(RevokeGrant, "grants/{id:guid}/revoke");
+        group.MapPost(GrantAccess, "access-grants");
+        group.MapPost(RevokeAccess, "access-grants/revoke");
+        group.MapGet(GetGrantTargets, "access-targets");
 
-        // Evaluation
         group.MapPost(EvaluateAccess, "evaluate");
+        group.MapPost(GetAccessibleScopes, "accessible-scopes");
         group.MapPost(SimulateEvaluation, "simulate-evaluation");
     }
 
@@ -58,30 +60,80 @@ public class AuthorizationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> CreateGrant(CreateGrantRequest request, ISender sender)
+    private static async Task<IResult> GrantAccess(
+        GrantAccessRequest request,
+        ISender sender,
+        ICurrentUser currentUser)
     {
-        var id = await sender.Send(new CreateGrantCommand(
-            request.SubjectType,
-            request.SubjectId,
-            request.SubjectUserId,
+        if (currentUser.UserId is not Guid actorUserId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var companyId = request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId;
+        if (companyId is not Guid actorCompanyUnitId)
+        {
+            return Results.BadRequest(new { message = "ActorCompanyUnitId or an active company workspace is required." });
+        }
+
+        var id = await sender.Send(new GrantAccessCommand(
+            actorUserId,
+            actorCompanyUnitId,
+            request.TargetKind,
+            request.TargetId,
             request.PermissionId,
-            request.Resource,
-            request.ResourceId,
             request.ScopeUnitId,
-            request.Effect,
-            request.SourceType,
-            request.SourceId,
             request.ValidFrom,
-            request.ValidTo,
-            request.Priority));
+            request.ValidTo));
 
         return Results.Created($"/api/authorization/grants/{id}", new { id });
     }
 
-    private static async Task<IResult> RevokeGrant(Guid id, ISender sender)
+    private static async Task<IResult> RevokeAccess(
+        RevokeAccessRequest request,
+        ISender sender,
+        ICurrentUser currentUser)
     {
-        await sender.Send(new RevokeGrantCommand(id));
+        if (currentUser.UserId is not Guid actorUserId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var companyId = request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId;
+        if (companyId is not Guid actorCompanyUnitId)
+        {
+            return Results.BadRequest(new { message = "ActorCompanyUnitId or an active company workspace is required." });
+        }
+
+        await sender.Send(new RevokeAccessCommand(
+            actorUserId,
+            actorCompanyUnitId,
+            request.TargetKind,
+            request.TargetId,
+            request.PermissionId,
+            request.ScopeUnitId));
+
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> GetGrantTargets(
+        [FromQuery] Guid? companyUnitId,
+        ISender sender,
+        ICurrentUser currentUser)
+    {
+        if (currentUser.UserId is not Guid actorUserId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var companyId = companyUnitId ?? currentUser.ActiveCompanyId;
+        if (companyId is not Guid actorCompanyUnitId)
+        {
+            return Results.BadRequest(new { message = "companyUnitId or an active company workspace is required." });
+        }
+
+        var result = await sender.Send(new GetGrantTargetsQuery(actorUserId, actorCompanyUnitId));
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> EvaluateAccess(
@@ -89,68 +141,97 @@ public class AuthorizationEndpoints : IEndpointGroup
         ISender sender,
         ICurrentUser currentUser)
     {
-        if (!currentUser.IsAuthenticated || currentUser.UserId is null)
+        if (currentUser.UserId is not Guid userId)
         {
             return Results.Unauthorized();
         }
 
-        var query = new EvaluateAccessQuery(
-            SubjectType.User,
-            Guid.Empty,
-            currentUser.UserId,
-            request.Action,
-            request.Resource,
-            request.ResourceId,
-            request.When);
+        var result = await sender.Send(new EvaluateAccessQuery(
+            userId,
+            request.PermissionCode,
+            request.ActivePositionId,
+            request.ResourceScopeUnitId,
+            request.When));
 
-        var result = await sender.Send(query);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetAccessibleScopes(
+        AccessibleScopesRequest request,
+        ISender sender,
+        ICurrentUser currentUser)
+    {
+        if (currentUser.UserId is not Guid userId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await sender.Send(new GetAccessibleScopesQuery(
+            userId,
+            request.ActivePositionId,
+            request.PermissionCode,
+            request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId));
+
         return Results.Ok(result);
     }
 
     private static async Task<IResult> SimulateEvaluation(
         SimulateEvaluationRequest request,
-        ISender sender)
+        ISender sender,
+        ICurrentUser currentUser,
+        IActorAccessService actorAccess)
     {
-        var query = new EvaluateAccessForSubjectQuery(
-            request.SubjectType,
-            request.SubjectId,
-            request.UserId,
-            request.Action,
-            request.Resource,
-            request.ResourceId,
-            request.When);
+        if (currentUser.UserId is not Guid actorUserId)
+        {
+            return Results.Unauthorized();
+        }
 
-        var result = await sender.Send(query);
+        if (!await actorAccess.IsUserAdminAsync(actorUserId, currentUser.ActiveCompanyId))
+        {
+            return Results.Forbid();
+        }
+
+        var result = await sender.Send(new EvaluateAccessForSubjectQuery(
+            request.UserId,
+            request.PermissionCode,
+            request.ActivePositionId,
+            request.ResourceScopeUnitId,
+            request.When));
+
         return Results.Ok(result);
     }
 }
 
-public record CreateGrantRequest(
-    SubjectType SubjectType,
-    Guid SubjectId,
-    Guid? SubjectUserId,
+public record GrantAccessRequest(
+    AccessGrantTargetKind TargetKind,
+    Guid TargetId,
     Guid PermissionId,
-    string? Resource,
-    string? ResourceId,
     Guid? ScopeUnitId,
-    Effect Effect,
-    SourceType SourceType,
-    Guid SourceId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
-    int Priority);
+    Guid? ActorCompanyUnitId = null);
+
+public record RevokeAccessRequest(
+    AccessGrantTargetKind TargetKind,
+    Guid TargetId,
+    Guid PermissionId,
+    Guid? ScopeUnitId,
+    Guid? ActorCompanyUnitId = null);
 
 public record EvaluateAccessRequest(
-    string Action,
-    string Resource,
-    string? ResourceId,
-    DateTimeOffset When);
+    string PermissionCode,
+    Guid? ActivePositionId = null,
+    Guid? ResourceScopeUnitId = null,
+    DateTimeOffset? When = null);
+
+public record AccessibleScopesRequest(
+    string PermissionCode,
+    Guid? ActivePositionId = null,
+    Guid? ActorCompanyUnitId = null);
 
 public record SimulateEvaluationRequest(
-    SubjectType SubjectType,
-    Guid SubjectId,
-    Guid? UserId,
-    string Action,
-    string Resource,
-    string? ResourceId,
-    DateTimeOffset When);
+    Guid UserId,
+    string PermissionCode,
+    Guid? ActivePositionId = null,
+    Guid? ResourceScopeUnitId = null,
+    DateTimeOffset? When = null);

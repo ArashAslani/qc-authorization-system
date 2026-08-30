@@ -53,6 +53,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<RoleGroupGrantMaterializer>();
         builder.Services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
         builder.Services.AddScoped<CompanyWorkspaceService>();
+        builder.Services.AddScoped<IActorAccessService, ActorAccessService>();
+        builder.Services.AddScoped<LineManagerTargetPolicy>();
         builder.Services.AddScoped<IAccessPluginSeeder, CoreAccessSeeder>();
         builder.Services.AddScoped<WorkflowStepAuthorizer>();
 

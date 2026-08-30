@@ -1,9 +1,9 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Enums;
-using AccessManagement.Domain.Authorization.Evaluation;
 using AccessManagement.Domain.Authorization.Exceptions;
 using AccessManagement.Domain.Authorization.ValueObjects;
 using AccessManagement.Domain.Organization;
@@ -24,28 +24,28 @@ public sealed record GrantAccessCommand(
     AccessGrantTargetKind TargetKind,
     Guid TargetId,
     Guid PermissionId,
-    Guid ScopeUnitId,
+    Guid? ScopeUnitId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo) : IRequest<Guid>;
 
 public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessCommand, Guid>
 {
     private readonly IApplicationDbContext _db;
-    private readonly IAccessEvaluator _evaluator;
-    private readonly IPositionHierarchyQuery _hierarchy;
+    private readonly IActorAccessService _actorAccess;
+    private readonly LineManagerTargetPolicy _targets;
     private readonly IOrganizationalUnitHierarchy _units;
     private readonly IAuthorizationAuditService _audit;
 
     public GrantAccessCommandHandler(
         IApplicationDbContext db,
-        IAccessEvaluator evaluator,
-        IPositionHierarchyQuery hierarchy,
+        IActorAccessService actorAccess,
+        LineManagerTargetPolicy targets,
         IOrganizationalUnitHierarchy units,
         IAuthorizationAuditService audit)
     {
         _db = db;
-        _evaluator = evaluator;
-        _hierarchy = hierarchy;
+        _actorAccess = actorAccess;
+        _targets = targets;
         _units = units;
         _audit = audit;
     }
@@ -55,19 +55,21 @@ public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessComma
         var permission = await _db.Permissions.FirstOrDefaultAsync(p => p.Id == cmd.PermissionId, ct)
             ?? throw new InvalidOperationException($"Permission {cmd.PermissionId} not found.");
 
-        var actorPersonnel = await _db.Personnel
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.IdentityUserId == cmd.ActorUserId, ct);
-
-        var isAdmin = actorPersonnel is { IsSystemUser: true }
-            || await HasAdministerAll(cmd, ct);
+        var isAdmin = await _actorAccess.IsUserAdminAsync(cmd.ActorUserId, cmd.ActorCompanyUnitId, ct);
+        if (!isAdmin && cmd.ScopeUnitId is null)
+        {
+            throw new AuthorizationDomainException("ScopeUnitId is required.");
+        }
 
         if (!isAdmin)
         {
-            await EnsureLineManagerMayGrant(cmd, permission, actorPersonnel, ct);
+            await EnsureLineManagerMayGrant(cmd, permission, ct);
         }
 
-        await EnsureModuleScope(permission, cmd.ScopeUnitId, isAdmin, ct);
+        if (cmd.ScopeUnitId is Guid scopeUnitId)
+        {
+            await EnsureModuleScope(permission, scopeUnitId, isAdmin, ct);
+        }
 
         var (subjectType, subjectId, subjectUserId, sourceType, priority) = cmd.TargetKind switch
         {
@@ -115,99 +117,42 @@ public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessComma
         return grant.Id;
     }
 
-    private async Task<bool> HasAdministerAll(GrantAccessCommand cmd, CancellationToken ct)
+    private async Task EnsureLineManagerMayGrant(GrantAccessCommand cmd, Permission permission, CancellationToken ct)
     {
-        var decision = await _evaluator.EvaluateAsync(
-            new AccessRequest(cmd.ActorUserId, null, CoreAccessPermissions.AdministerAll, cmd.ActorCompanyUnitId, DateTimeOffset.UtcNow),
-            ct);
-        return decision.Allowed;
-    }
-
-    private async Task EnsureLineManagerMayGrant(
-        GrantAccessCommand cmd,
-        Permission permission,
-        Personnel? actorPersonnel,
-        CancellationToken ct)
-    {
-        var grantPerm = await _evaluator.EvaluateAsync(
-            new AccessRequest(cmd.ActorUserId, null, CoreAccessPermissions.Grant, cmd.ScopeUnitId, DateTimeOffset.UtcNow),
-            ct);
-        if (!grantPerm.Allowed)
+        var scopeUnitId = cmd.ScopeUnitId!.Value;
+        if (!await _actorAccess.HasPermissionAsync(cmd.ActorUserId, cmd.ActorCompanyUnitId, CoreAccessPermissions.Grant, scopeUnitId, ct))
         {
             throw new AuthorizationDomainException("Actor is not allowed to grant access.");
         }
 
-        var actorPositions = await _db.PositionAssignments
-            .AsNoTracking()
-            .Include(a => a.Position)
-            .Where(a => a.Personnel.IdentityUserId == cmd.ActorUserId
-                     && a.Position.CompanyUnitId == cmd.ActorCompanyUnitId
-                     && a.ValidTo == null)
-            .Select(a => a.PositionId)
-            .ToListAsync(ct);
+        var actorPositions = await _targets.GetActorPositionIdsAsync(cmd.ActorUserId, cmd.ActorCompanyUnitId, ct);
+        var subordinateIds = await _targets.GetSubordinatePositionIdsAsync(actorPositions, ct);
+        await _targets.EnsureTargetIsSubordinateAsync(
+            cmd.TargetKind, cmd.TargetId, cmd.ActorCompanyUnitId, actorPositions, subordinateIds, ct);
 
-        if (actorPositions.Count == 0)
-        {
-            throw new AuthorizationDomainException("Actor has no active position in the current company.");
-        }
-
-        var subordinatePositionIds = new HashSet<Guid>();
-        foreach (var positionId in actorPositions)
-        {
-            foreach (var descendant in await _hierarchy.GetDescendantsAsync(positionId, ct))
-            {
-                subordinatePositionIds.Add(descendant);
-            }
-        }
-
-        if (cmd.TargetKind == AccessGrantTargetKind.Position)
-        {
-            if (!subordinatePositionIds.Contains(cmd.TargetId) || actorPositions.Contains(cmd.TargetId))
-            {
-                throw new AuthorizationDomainException("Target position is not a subordinate in the current company.");
-            }
-
-            var target = await _db.Positions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == cmd.TargetId, ct)
-                ?? throw new AuthorizationDomainException("Target position not found.");
-            if (target.CompanyUnitId != cmd.ActorCompanyUnitId)
-            {
-                throw new AuthorizationDomainException("Target position is in another company.");
-            }
-        }
-        else
-        {
-            var assigned = await _db.PositionAssignments
-                .AsNoTracking()
-                .Include(a => a.Position)
-                .AnyAsync(a => a.Personnel.IdentityUserId == cmd.TargetId
-                            && a.ValidTo == null
-                            && subordinatePositionIds.Contains(a.PositionId), ct);
-            if (!assigned)
-            {
-                throw new AuthorizationDomainException("Target user is not assigned to a subordinate position.");
-            }
-        }
-
-        var contentAllowed = await _evaluator.EvaluateAsync(
-            new AccessRequest(cmd.ActorUserId, actorPositions[0], permission.Code, cmd.ScopeUnitId, DateTimeOffset.UtcNow),
-            ct);
-        if (!contentAllowed.Allowed)
+        if (!await _actorAccess.HasPermissionAsync(cmd.ActorUserId, cmd.ActorCompanyUnitId, permission.Code, scopeUnitId, ct))
         {
             throw new AuthorizationDomainException("Cannot grant a permission the actor does not hold.");
         }
 
-        var scopes = await _evaluator.GetAccessibleScopesAsync(cmd.ActorUserId, actorPositions[0], permission.Code, ct);
+        var scopes = await _actorAccess.GetAccessibleRootsAsync(cmd.ActorUserId, cmd.ActorCompanyUnitId, permission.Code, ct);
         if (scopes.IsUnrestricted)
         {
+            if (scopes.DeniedScopeUnitIds.Contains(scopeUnitId)
+                || await IsUnderAnyAsync(scopeUnitId, scopes.DeniedScopeUnitIds, ct))
+            {
+                throw new AuthorizationDomainException("Requested scope is denied in the actor's effective access.");
+            }
+
             return;
         }
 
-        var inSubset = scopes.ScopeRootUnitIds.Contains(cmd.ScopeUnitId);
+        var inSubset = scopes.ScopeRootUnitIds.Contains(scopeUnitId);
         if (!inSubset)
         {
             foreach (var root in scopes.ScopeRootUnitIds)
             {
-                if (await _units.IsDescendantOfAsync(cmd.ScopeUnitId, root, ct))
+                if (await _units.IsDescendantOfAsync(scopeUnitId, root, ct))
                 {
                     inSubset = true;
                     break;
@@ -215,14 +160,34 @@ public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessComma
             }
         }
 
-        if (!inSubset)
+        if (!inSubset
+            || scopes.DeniedScopeUnitIds.Contains(scopeUnitId)
+            || await IsUnderAnyAsync(scopeUnitId, scopes.DeniedScopeUnitIds, ct))
         {
             throw new AuthorizationDomainException("Requested scope is wider than the actor's effective access.");
         }
     }
 
+    private async Task<bool> IsUnderAnyAsync(Guid unitId, IReadOnlyList<Guid> ancestors, CancellationToken ct)
+    {
+        foreach (var ancestor in ancestors)
+        {
+            if (await _units.IsDescendantOfAsync(unitId, ancestor, ct))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private async Task EnsureModuleScope(Permission permission, Guid scopeUnitId, bool isAdmin, CancellationToken ct)
     {
+        if (isAdmin)
+        {
+            return;
+        }
+
         var config = await _db.ModuleScopeConfigs.AsNoTracking()
             .FirstOrDefaultAsync(c => c.ResourceCode == permission.Resource, ct);
         if (config is null)
@@ -238,9 +203,9 @@ public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessComma
 
         var units = await _db.OrganizationalUnits.AsNoTracking().ToListAsync(ct);
         var scopeUnit = units.First(u => u.Id == scopeUnitId);
-        var allowed = isAdmin
-            || scopeUnit.UnitType == config.MaxScopeUnitType
-            || OrganizationalUnitHierarchy.Ancestors(scopeUnit, units).Any(a => a.UnitType == config.MaxScopeUnitType);
+        var deeperThanMax = OrganizationalUnitHierarchy.Ancestors(scopeUnit, units)
+            .Any(a => a.UnitType == config.MaxScopeUnitType);
+        var allowed = scopeUnit.UnitType == config.MaxScopeUnitType || !deeperThanMax;
 
         if (!allowed)
         {

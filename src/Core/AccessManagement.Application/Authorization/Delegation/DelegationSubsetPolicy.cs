@@ -1,7 +1,6 @@
 using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
-using AccessManagement.Domain.Authorization.Enums;
-using AccessManagement.Domain.Authorization.Evaluation;
 using AccessManagement.Domain.Authorization.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,13 +8,18 @@ namespace AccessManagement.Application.Authorization.Delegation;
 
 public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
 {
-    private readonly IAccessEvaluator _evaluator;
+    private readonly IActorAccessService _actorAccess;
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public DelegationSubsetPolicy(IAccessEvaluator evaluator, IApplicationDbContext context)
+    public DelegationSubsetPolicy(
+        IActorAccessService actorAccess,
+        IApplicationDbContext context,
+        ICurrentUser currentUser)
     {
-        _evaluator = evaluator;
+        _actorAccess = actorAccess;
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task EnsureDelegatorCanDelegateAsync(
@@ -30,14 +34,13 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
             .FirstOrDefaultAsync(p => p.Id == permissionId, cancellationToken)
             ?? throw new InvalidOperationException($"Permission {permissionId} not found.");
 
-        var request = AccessRequest.ForUser(
+        var allowed = await _actorAccess.HasPermissionAsync(
             delegatorUserId,
+            _currentUser.ActiveCompanyId,
             permission.Code,
-            resourceScopeUnitId: scopeUnitId,
-            when: when);
-
-        var decision = await _evaluator.EvaluateAsync(request, cancellationToken);
-        if (decision.Effect != Effect.Allow)
+            scopeUnitId,
+            cancellationToken);
+        if (!allowed)
         {
             throw new AuthorizationDomainException(
                 "Delegator does not have effective access required to delegate this permission.");

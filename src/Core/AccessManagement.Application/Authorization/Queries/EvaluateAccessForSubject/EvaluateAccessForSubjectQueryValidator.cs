@@ -4,18 +4,7 @@ public class EvaluateAccessForSubjectQueryValidator : AbstractValidator<Evaluate
 {
     public EvaluateAccessForSubjectQueryValidator()
     {
-        RuleFor(x => x.Action).NotEmpty();
-        RuleFor(x => x.Resource).NotEmpty();
-        RuleFor(x => x.When).NotEmpty();
-
-        When(x => x.SubjectType == Domain.Authorization.Enums.SubjectType.User, () =>
-        {
-            RuleFor(x => x.UserId).NotNull().NotEmpty();
-        });
-
-        When(x => x.SubjectType != Domain.Authorization.Enums.SubjectType.User, () =>
-        {
-            RuleFor(x => x.SubjectId).NotEqual(Guid.Empty);
-        });
+        RuleFor(x => x.UserId).NotEqual(Guid.Empty);
+        RuleFor(x => x.PermissionCode).NotEmpty();
     }
 }
