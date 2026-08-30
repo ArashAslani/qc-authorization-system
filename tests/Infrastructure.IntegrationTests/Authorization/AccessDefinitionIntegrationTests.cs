@@ -5,6 +5,7 @@ using AccessManagement.Application.Authorization.Commands.CreateRole;
 using AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
 using AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
 using AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization;
 using AccessManagement.Infrastructure.Data;
@@ -35,6 +36,7 @@ public class AccessDefinitionIntegrationTests
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreatePermissionCommand>())
             .AddSingleton<PositionHierarchyService>()
+            .AddScoped<RoleGrantRematerializer>()
             .AddScoped<IApplicationDbContext>(_ => _context)
             .BuildServiceProvider()
             .GetRequiredService<IMediator>();

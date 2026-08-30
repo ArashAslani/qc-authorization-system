@@ -1,6 +1,7 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 
 namespace AccessManagement.Application.Authorization.Commands.AssignRoleGroupToUser;
@@ -9,7 +10,8 @@ public record AssignRoleGroupToUserCommand(
     Guid UserId,
     Guid RoleGroupId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo = null) : IRequest;
+    DateTimeOffset? ValidTo = null,
+    Guid? ScopeUnitId = null) : IRequest, IRequireUserAdmin;
 
 public class AssignRoleGroupToUserCommandHandler : IRequestHandler<AssignRoleGroupToUserCommand>
 {
@@ -34,6 +36,7 @@ public class AssignRoleGroupToUserCommandHandler : IRequestHandler<AssignRoleGro
             request.RoleGroupId,
             request.ValidFrom,
             request.ValidTo,
+            request.ScopeUnitId,
             cancellationToken);
 
         await _audit.RecordAsync(

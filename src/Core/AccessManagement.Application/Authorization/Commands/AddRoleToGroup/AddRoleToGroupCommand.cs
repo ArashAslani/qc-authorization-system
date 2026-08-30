@@ -1,20 +1,24 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Exceptions;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
 
-public record AddRoleToGroupCommand(Guid RoleGroupId, Guid RoleId) : IRequest;
+public record AddRoleToGroupCommand(Guid RoleGroupId, Guid RoleId) : IRequest, IRequireUserAdmin;
 
 public class AddRoleToGroupCommandHandler : IRequestHandler<AddRoleToGroupCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly RoleGrantRematerializer _rematerializer;
 
-    public AddRoleToGroupCommandHandler(IApplicationDbContext context)
+    public AddRoleToGroupCommandHandler(IApplicationDbContext context, RoleGrantRematerializer rematerializer)
     {
         _context = context;
+        _rematerializer = rematerializer;
     }
 
     public async Task Handle(AddRoleToGroupCommand request, CancellationToken cancellationToken)
@@ -47,6 +51,8 @@ public class AddRoleToGroupCommandHandler : IRequestHandler<AddRoleToGroupComman
             RoleId = request.RoleId,
         });
 
+        await _context.SaveChangesAsync(cancellationToken);
+        await _rematerializer.RematerializeRoleGroupAsync(request.RoleGroupId, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

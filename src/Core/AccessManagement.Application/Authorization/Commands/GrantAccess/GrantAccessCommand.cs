@@ -192,7 +192,8 @@ public sealed class GrantAccessCommandHandler : IRequestHandler<GrantAccessComma
             .FirstOrDefaultAsync(c => c.ResourceCode == permission.Resource, ct);
         if (config is null)
         {
-            return;
+            throw new AuthorizationDomainException(
+                $"ModuleScopeConfig is required for non-admin writes of {permission.Resource}.");
         }
 
         var unitType = await _units.GetUnitTypeAsync(scopeUnitId, ct);

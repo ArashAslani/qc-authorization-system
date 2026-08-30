@@ -38,6 +38,27 @@ public static class IdentityDependencyInjection
         var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
             ?? new JwtOptions();
 
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey))
+        {
+            if (builder.Environment.IsDevelopment())
+            {
+                jwtKey = "qc-authorization-dev-signing-key-min-32-chars";
+            }
+            else
+            {
+                throw new InvalidOperationException("Jwt:Key must be configured via Jwt__Key or Jwt:Key.");
+            }
+        }
+
+        builder.Services.PostConfigure<JwtOptions>(options =>
+        {
+            if (string.IsNullOrWhiteSpace(options.Key))
+            {
+                options.Key = jwtKey;
+            }
+        });
+
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -50,7 +71,8 @@ public static class IdentityDependencyInjection
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtOptions.Issuer,
                     ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
                     ClockSkew = TimeSpan.FromMinutes(1),
                 };
             });

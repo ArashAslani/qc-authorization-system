@@ -19,6 +19,7 @@ using AccessManagement.Application.Authorization.Queries.GetUserRoles;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization;
 using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,6 +46,8 @@ public class AccessDefinitionQueryIntegrationTests
             .AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(dbName))
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<GetPermissionsQuery>())
             .AddSingleton<PositionHierarchyService>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
             .BuildServiceProvider();

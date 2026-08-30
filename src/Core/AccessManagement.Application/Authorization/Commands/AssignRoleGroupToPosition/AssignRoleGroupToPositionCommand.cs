@@ -1,6 +1,7 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,8 @@ public record AssignRoleGroupToPositionCommand(
     Guid PositionId,
     Guid RoleGroupId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo = null) : IRequest;
+    DateTimeOffset? ValidTo = null,
+    Guid? ScopeUnitId = null) : IRequest, IRequireUserAdmin;
 
 public class AssignRoleGroupToPositionCommandHandler : IRequestHandler<AssignRoleGroupToPositionCommand>
 {
@@ -40,6 +42,7 @@ public class AssignRoleGroupToPositionCommandHandler : IRequestHandler<AssignRol
             request.RoleGroupId,
             request.ValidFrom,
             request.ValidTo,
+            request.ScopeUnitId,
             cancellationToken);
 
         await _audit.RecordAsync(

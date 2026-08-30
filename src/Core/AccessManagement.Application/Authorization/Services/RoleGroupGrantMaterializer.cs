@@ -10,10 +10,12 @@ namespace AccessManagement.Application.Authorization.Services;
 public sealed class RoleGroupGrantMaterializer
 {
     private readonly IApplicationDbContext _context;
+    private readonly RoleGrantRematerializer _rematerializer;
 
-    public RoleGroupGrantMaterializer(IApplicationDbContext context)
+    public RoleGroupGrantMaterializer(IApplicationDbContext context, RoleGrantRematerializer rematerializer)
     {
         _context = context;
+        _rematerializer = rematerializer;
     }
 
     public async Task<int> MaterializeForUserAsync(
@@ -21,6 +23,7 @@ public sealed class RoleGroupGrantMaterializer
         Guid roleGroupId,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
+        Guid? scopeUnitId,
         CancellationToken cancellationToken)
     {
         var roleGroup = await _context.RoleGroups
@@ -33,17 +36,18 @@ public sealed class RoleGroupGrantMaterializer
             throw new AuthorizationDomainException($"RoleGroup {roleGroup.Code} is inactive.");
         }
 
-        var permissionIds = await CollectPermissionIdsFromMemberRolesAsync(roleGroupId, roleGroup.Code, cancellationToken);
-
+        var permissionIds = await CollectOrThrowAsync(roleGroup.Code, roleGroupId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
         var existingGrants = await _context.Grants
             .Where(g => g.SubjectUserId == userId
                      && g.SourceType == SourceType.RoleGroup
-                     && g.SourceId == roleGroupId)
+                     && g.SourceId == roleGroupId
+                     && (g.ValidTo == null || g.ValidTo > now))
             .ToListAsync(cancellationToken);
 
-        if (existingGrants.Count > 0)
+        foreach (var grant in existingGrants)
         {
-            _context.Grants.RemoveRange(existingGrants);
+            grant.Deactivate(now);
         }
 
         foreach (var permissionId in permissionIds)
@@ -56,7 +60,8 @@ public sealed class RoleGroupGrantMaterializer
                 Effect.Allow,
                 validFrom,
                 validTo,
-                SourcePriority.RoleOrRoleGroup));
+                SourcePriority.RoleOrRoleGroup,
+                scopeUnitId: scopeUnitId));
         }
 
         return permissionIds.Count;
@@ -67,6 +72,7 @@ public sealed class RoleGroupGrantMaterializer
         Guid roleGroupId,
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
+        Guid? scopeUnitId,
         CancellationToken cancellationToken)
     {
         var roleGroup = await _context.RoleGroups
@@ -79,18 +85,19 @@ public sealed class RoleGroupGrantMaterializer
             throw new AuthorizationDomainException($"RoleGroup {roleGroup.Code} is inactive.");
         }
 
-        var permissionIds = await CollectPermissionIdsFromMemberRolesAsync(roleGroupId, roleGroup.Code, cancellationToken);
-
+        var permissionIds = await CollectOrThrowAsync(roleGroup.Code, roleGroupId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
         var existingGrants = await _context.Grants
             .Where(g => g.SubjectType == SubjectType.Position
                      && g.SubjectId == positionId
                      && g.SourceType == SourceType.RoleGroup
-                     && g.SourceId == roleGroupId)
+                     && g.SourceId == roleGroupId
+                     && (g.ValidTo == null || g.ValidTo > now))
             .ToListAsync(cancellationToken);
 
-        if (existingGrants.Count > 0)
+        foreach (var grant in existingGrants)
         {
-            _context.Grants.RemoveRange(existingGrants);
+            grant.Deactivate(now);
         }
 
         foreach (var permissionId in permissionIds)
@@ -104,34 +111,24 @@ public sealed class RoleGroupGrantMaterializer
                 Effect.Allow,
                 validFrom,
                 validTo,
-                SourcePriority.RoleOrRoleGroup));
+                SourcePriority.RoleOrRoleGroup,
+                scopeUnitId: scopeUnitId));
         }
 
         return permissionIds.Count;
     }
 
-    private async Task<HashSet<Guid>> CollectPermissionIdsFromMemberRolesAsync(
-        Guid roleGroupId,
+    private async Task<IReadOnlyCollection<Guid>> CollectOrThrowAsync(
         string roleGroupCode,
+        Guid roleGroupId,
         CancellationToken cancellationToken)
     {
-        var roleIds = await _context.RoleGroupMembers
-            .AsNoTracking()
-            .Where(m => m.RoleGroupId == roleGroupId)
-            .Select(m => m.RoleId)
-            .ToListAsync(cancellationToken);
-
-        if (roleIds.Count == 0)
+        var permissionIds = await _rematerializer.CollectPermissionIdsForRoleGroupAsync(roleGroupId, cancellationToken);
+        if (permissionIds.Count == 0)
         {
             throw new InvalidOperationException($"RoleGroup {roleGroupCode} has no member roles.");
         }
 
-        var rolePermissionIds = await _context.RolePermissions
-            .AsNoTracking()
-            .Where(rp => roleIds.Contains(rp.RoleId))
-            .Select(rp => rp.PermissionId)
-            .ToListAsync(cancellationToken);
-
-        return rolePermissionIds.ToHashSet();
+        return permissionIds;
     }
 }

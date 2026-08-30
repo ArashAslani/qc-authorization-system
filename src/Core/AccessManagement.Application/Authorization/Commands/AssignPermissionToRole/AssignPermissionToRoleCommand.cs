@@ -1,19 +1,25 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
 
-public record AssignPermissionToRoleCommand(Guid RoleId, Guid PermissionId) : IRequest;
+public record AssignPermissionToRoleCommand(Guid RoleId, Guid PermissionId) : IRequest, IRequireUserAdmin;
 
 public class AssignPermissionToRoleCommandHandler : IRequestHandler<AssignPermissionToRoleCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly RoleGrantRematerializer _rematerializer;
 
-    public AssignPermissionToRoleCommandHandler(IApplicationDbContext context)
+    public AssignPermissionToRoleCommandHandler(
+        IApplicationDbContext context,
+        RoleGrantRematerializer rematerializer)
     {
         _context = context;
+        _rematerializer = rematerializer;
     }
 
     public async Task Handle(AssignPermissionToRoleCommand request, CancellationToken cancellationToken)
@@ -34,6 +40,8 @@ public class AssignPermissionToRoleCommandHandler : IRequestHandler<AssignPermis
             PermissionId = request.PermissionId,
         });
 
+        await _context.SaveChangesAsync(cancellationToken);
+        await _rematerializer.RematerializeRoleAndContainingGroupsAsync(request.RoleId, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Commands.EvaluateAccessBatch;
 using AccessManagement.Application.Authorization.Commands.GrantAccess;
 using AccessManagement.Application.Authorization.Commands.RevokeAccess;
 using AccessManagement.Application.Authorization.Queries.EvaluateAccess;
@@ -28,6 +29,7 @@ public class AuthorizationEndpoints : IEndpointGroup
         group.MapGet(GetGrantTargets, "access-targets");
 
         group.MapPost(EvaluateAccess, "evaluate");
+        group.MapPost(EvaluateAccessBatch, "evaluate-batch");
         group.MapPost(GetAccessibleScopes, "accessible-scopes");
         group.MapPost(SimulateEvaluation, "simulate-evaluation");
     }
@@ -70,10 +72,9 @@ public class AuthorizationEndpoints : IEndpointGroup
             return Results.Unauthorized();
         }
 
-        var companyId = request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId;
-        if (companyId is not Guid actorCompanyUnitId)
+        if (currentUser.ActiveCompanyId is not Guid actorCompanyUnitId)
         {
-            return Results.BadRequest(new { message = "ActorCompanyUnitId or an active company workspace is required." });
+            return Results.BadRequest(new { message = "An active company workspace is required." });
         }
 
         var id = await sender.Send(new GrantAccessCommand(
@@ -99,10 +100,9 @@ public class AuthorizationEndpoints : IEndpointGroup
             return Results.Unauthorized();
         }
 
-        var companyId = request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId;
-        if (companyId is not Guid actorCompanyUnitId)
+        if (currentUser.ActiveCompanyId is not Guid actorCompanyUnitId)
         {
-            return Results.BadRequest(new { message = "ActorCompanyUnitId or an active company workspace is required." });
+            return Results.BadRequest(new { message = "An active company workspace is required." });
         }
 
         await sender.Send(new RevokeAccessCommand(
@@ -117,7 +117,6 @@ public class AuthorizationEndpoints : IEndpointGroup
     }
 
     private static async Task<IResult> GetGrantTargets(
-        [FromQuery] Guid? companyUnitId,
         ISender sender,
         ICurrentUser currentUser)
     {
@@ -126,10 +125,10 @@ public class AuthorizationEndpoints : IEndpointGroup
             return Results.Unauthorized();
         }
 
-        var companyId = companyUnitId ?? currentUser.ActiveCompanyId;
+        var companyId = currentUser.ActiveCompanyId;
         if (companyId is not Guid actorCompanyUnitId)
         {
-            return Results.BadRequest(new { message = "companyUnitId or an active company workspace is required." });
+            return Results.BadRequest(new { message = "An active company workspace is required." });
         }
 
         var result = await sender.Send(new GetGrantTargetsQuery(actorUserId, actorCompanyUnitId));
@@ -156,6 +155,14 @@ public class AuthorizationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
+    private static async Task<IResult> EvaluateAccessBatch(
+        EvaluateAccessBatchRequest request,
+        ISender sender)
+    {
+        var result = await sender.Send(new EvaluateAccessBatchCommand(request.Rows));
+        return Results.Ok(result);
+    }
+
     private static async Task<IResult> GetAccessibleScopes(
         AccessibleScopesRequest request,
         ISender sender,
@@ -170,7 +177,7 @@ public class AuthorizationEndpoints : IEndpointGroup
             userId,
             request.ActivePositionId,
             request.PermissionCode,
-            request.ActorCompanyUnitId ?? currentUser.ActiveCompanyId));
+            currentUser.ActiveCompanyId));
 
         return Results.Ok(result);
     }
@@ -208,15 +215,13 @@ public record GrantAccessRequest(
     Guid PermissionId,
     Guid? ScopeUnitId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo,
-    Guid? ActorCompanyUnitId = null);
+    DateTimeOffset? ValidTo);
 
 public record RevokeAccessRequest(
     AccessGrantTargetKind TargetKind,
     Guid TargetId,
     Guid PermissionId,
-    Guid? ScopeUnitId,
-    Guid? ActorCompanyUnitId = null);
+    Guid? ScopeUnitId);
 
 public record EvaluateAccessRequest(
     string PermissionCode,
@@ -226,8 +231,7 @@ public record EvaluateAccessRequest(
 
 public record AccessibleScopesRequest(
     string PermissionCode,
-    Guid? ActivePositionId = null,
-    Guid? ActorCompanyUnitId = null);
+    Guid? ActivePositionId = null);
 
 public record SimulateEvaluationRequest(
     Guid UserId,
@@ -235,3 +239,5 @@ public record SimulateEvaluationRequest(
     Guid? ActivePositionId = null,
     Guid? ResourceScopeUnitId = null,
     DateTimeOffset? When = null);
+
+public record EvaluateAccessBatchRequest(IReadOnlyList<EvaluateAccessBatchItem> Rows);
