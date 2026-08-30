@@ -1,4 +1,3 @@
-using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Exceptions;
@@ -10,16 +9,13 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
 {
     private readonly IActorAccessService _actorAccess;
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUser _currentUser;
 
     public DelegationSubsetPolicy(
         IActorAccessService actorAccess,
-        IApplicationDbContext context,
-        ICurrentUser currentUser)
+        IApplicationDbContext context)
     {
         _actorAccess = actorAccess;
         _context = context;
-        _currentUser = currentUser;
     }
 
     public async Task EnsureDelegatorCanDelegateAsync(
@@ -27,8 +23,10 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
         Guid permissionId,
         Guid? scopeUnitId,
         DateTimeOffset when,
+        Guid? delegatorCompanyUnitId = null,
         CancellationToken cancellationToken = default)
     {
+        _ = when;
         var permission = await _context.Permissions
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == permissionId, cancellationToken)
@@ -36,7 +34,7 @@ public sealed class DelegationSubsetPolicy : IDelegationSubsetPolicy
 
         var allowed = await _actorAccess.HasPermissionAsync(
             delegatorUserId,
-            _currentUser.ActiveCompanyId,
+            delegatorCompanyUnitId,
             permission.Code,
             scopeUnitId,
             cancellationToken);

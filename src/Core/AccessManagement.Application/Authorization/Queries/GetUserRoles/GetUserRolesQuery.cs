@@ -1,3 +1,5 @@
+using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
 using MediatR;
@@ -19,11 +21,27 @@ public record UserAssignedRoleDto(
 public class GetUserRolesQueryHandler : IRequestHandler<GetUserRolesQuery, IReadOnlyList<UserAssignedRoleDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
+    private readonly ICurrentUser _currentUser;
 
-    public GetUserRolesQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetUserRolesQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility,
+        ICurrentUser currentUser)
+    {
+        _context = context;
+        _visibility = visibility;
+        _currentUser = currentUser;
+    }
 
     public async Task<IReadOnlyList<UserAssignedRoleDto>> Handle(GetUserRolesQuery request, CancellationToken cancellationToken)
     {
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin && _currentUser.UserId != request.UserId && !vis.UserIds.Contains(request.UserId))
+        {
+            throw new ForbiddenAccessException();
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         var userRoleGrants = await _context.Grants

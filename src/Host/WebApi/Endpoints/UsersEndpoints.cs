@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Application.Organization.Queries.GetPersonnelWorkspaces;
 using AccessManagement.Infrastructure.Data;
@@ -27,9 +28,17 @@ public class UsersEndpoints : IEndpointGroup
     private static async Task<IResult> GetUsers(
         [FromQuery] string? searchTerm,
         [FromQuery] bool? hasPersonnel,
-        ApplicationDbContext context)
+        ApplicationDbContext context,
+        ICompanyVisibilityService visibility)
     {
+        var vis = await visibility.ResolveAsync();
         var query = context.Users.AsNoTracking().AsQueryable();
+
+        if (!vis.IsAdmin)
+        {
+            var userIds = vis.UserIds.ToList();
+            query = query.Where(u => userIds.Contains(u.Id));
+        }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -63,8 +72,15 @@ public class UsersEndpoints : IEndpointGroup
 
     private static async Task<IResult> GetUserById(
         Guid id,
-        ApplicationDbContext context)
+        ApplicationDbContext context,
+        ICurrentUser currentUser,
+        ICompanyVisibilityService visibility)
     {
+        var vis = await visibility.ResolveAsync();
+        if (!vis.IsAdmin && currentUser.UserId != id && !vis.UserIds.Contains(id))
+        {
+            return Results.NotFound(new { message = $"User with ID '{id}' was not found." });
+        }
         var user = await context.Users
             .AsNoTracking()
             .SingleOrDefaultAsync(u => u.Id == id);
@@ -126,10 +142,7 @@ public class UsersEndpoints : IEndpointGroup
     private static async Task<IResult> Register(
         RegisterRequest request,
         UserManager<ApplicationUser> userManager,
-        IPersonnelIdentityBridge personnelIdentityBridge,
-        JwtTokenService jwtTokenService,
-        ApplicationDbContext context,
-        ISender sender)
+        JwtTokenService jwtTokenService)
     {
         var user = new ApplicationUser
         {
@@ -147,32 +160,8 @@ public class UsersEndpoints : IEndpointGroup
                 e => new[] { e.Description }));
         }
 
-        string? nationalId = null;
-        if (request.PersonnelId.HasValue)
-        {
-            await personnelIdentityBridge.LinkAsync(
-                request.PersonnelId.Value,
-                user.Id,
-                CancellationToken.None);
-
-            user = (await userManager.FindByIdAsync(user.Id.ToString()))!;
-            nationalId = await context.Personnel
-                .AsNoTracking()
-                .Where(p => p.Id == request.PersonnelId.Value)
-                .Select(p => p.NationalId)
-                .SingleOrDefaultAsync();
-        }
-
-        Guid? activeCompanyId = null;
-        PersonnelWorkspacesDto? workspaces = null;
-        if (user.PersonnelId.HasValue)
-        {
-            workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(user.PersonnelId.Value));
-            activeCompanyId = workspaces.DefaultCompanyId;
-        }
-
-        var token = jwtTokenService.GenerateToken(user, activeCompanyId, nationalId);
-        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId, workspaces));
+        var token = jwtTokenService.GenerateToken(user, activeCompanyId: null, nationalId: null);
+        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId: null, workspaces: null));
     }
 
     private static async Task<IResult> Login(
@@ -310,7 +299,7 @@ public record UserDetailsDto(
     bool LockoutEnabled,
     DateTimeOffset? LockoutEnd);
 
-public record RegisterRequest(string Email, string Password, Guid? PersonnelId = null);
+public record RegisterRequest(string Email, string Password);
 
 public record LoginRequest(string Password, string? Email = null, string? NationalId = null);
 

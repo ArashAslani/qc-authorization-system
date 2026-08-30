@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
@@ -41,8 +42,13 @@ public record GrantConstraintItemDto(
 public class GetGrantByIdQueryHandler : IRequestHandler<GetGrantByIdQuery, GrantDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetGrantByIdQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetGrantByIdQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    {
+        _context = context;
+        _visibility = visibility;
+    }
 
     public async Task<GrantDetailsDto> Handle(GetGrantByIdQuery request, CancellationToken cancellationToken)
     {
@@ -56,6 +62,19 @@ public class GetGrantByIdQueryHandler : IRequestHandler<GetGrantByIdQuery, Grant
         if (grant is null)
         {
             throw new NotFoundException(nameof(Domain.Authorization.Grant), request.Id);
+        }
+
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin)
+        {
+            var visible =
+                (grant.SubjectType == SubjectType.Position && vis.PositionIds.Contains(grant.SubjectId))
+                || (grant.SubjectUserId is Guid userId && vis.UserIds.Contains(userId))
+                || (grant.ScopeUnitId is Guid scope && vis.UnitIds.Contains(scope));
+            if (!visible)
+            {
+                throw new NotFoundException(nameof(Domain.Authorization.Grant), request.Id);
+            }
         }
 
         var constraints = grant.Constraints

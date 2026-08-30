@@ -17,15 +17,18 @@ public sealed class GrantResolver : IGrantResolver, ICandidateGrantResolver
     private readonly IApplicationDbContext _context;
     private readonly GrantApplicabilityService _applicability;
     private readonly ICatalogGrantFilter _catalogFilter;
+    private readonly IPositionHierarchyQuery _positions;
 
     public GrantResolver(
         IApplicationDbContext context,
         GrantApplicabilityService applicability,
-        ICatalogGrantFilter catalogFilter)
+        ICatalogGrantFilter catalogFilter,
+        IPositionHierarchyQuery positions)
     {
         _context = context;
         _applicability = applicability;
         _catalogFilter = catalogFilter;
+        _positions = positions;
     }
 
     public Task<IReadOnlyList<Grant>> ResolveAsync(AccessRequest request, CancellationToken cancellationToken) =>
@@ -42,17 +45,32 @@ public sealed class GrantResolver : IGrantResolver, ICandidateGrantResolver
             return Array.Empty<Grant>();
         }
 
-        var allGrants = await _context.Grants
+        var grantQuery = _context.Grants
             .AsNoTracking()
             .Include(g => g.Constraints)
-            .Where(g => g.PermissionId == permission.Id)
-            .ToListAsync(ct);
+            .Where(g => g.PermissionId == permission.Id);
+
+        if (request.ActivePositionId is Guid pid)
+        {
+            var descendantIds = await _positions.GetDescendantsAsync(pid, ct);
+            var positionIds = descendantIds.Append(pid).ToList();
+            grantQuery = grantQuery.Where(g =>
+                (g.SubjectType == SubjectType.User && g.SubjectUserId == request.SubjectUserId)
+                || (g.SubjectType == SubjectType.Position && positionIds.Contains(g.SubjectId)));
+        }
+        else
+        {
+            grantQuery = grantQuery.Where(g =>
+                g.SubjectType == SubjectType.User && g.SubjectUserId == request.SubjectUserId);
+        }
+
+        var allGrants = await grantQuery.ToListAsync(ct);
 
         allGrants = (await _catalogFilter.FilterActiveCatalogSourcesAsync(allGrants, ct)).ToList();
 
         var allPositions = await _context.Positions.AsNoTracking().ToListAsync(ct);
-        var requestPositionIds = request.ActivePositionId is Guid pid
-            ? new HashSet<Guid> { pid }
+        var requestPositionIds = request.ActivePositionId is Guid requestPid
+            ? new HashSet<Guid> { requestPid }
             : new HashSet<Guid>();
 
         var result = new List<Grant>();

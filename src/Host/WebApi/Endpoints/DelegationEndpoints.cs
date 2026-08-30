@@ -2,7 +2,7 @@ using AccessManagement.Application.Authorization.Commands.CreateDelegation;
 using AccessManagement.Application.Authorization.Commands.RevokeDelegation;
 using AccessManagement.Application.Authorization.Queries.GetDelegationById;
 using AccessManagement.Application.Authorization.Queries.GetDelegations;
-using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.WebApi.Infrastructure;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -43,30 +43,46 @@ public class DelegationEndpoints : IEndpointGroup
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> CreateDelegation(CreateDelegationRequest request, ISender sender)
+    private static async Task<IResult> CreateDelegation(
+        CreateDelegationRequest request,
+        ISender sender,
+        ICurrentUser currentUser)
     {
+        if (currentUser.UserId is not Guid delegatorUserId)
+        {
+            return Results.Unauthorized();
+        }
+
         var id = await sender.Send(new CreateDelegationCommand(
-            request.DelegatorUserId,
+            delegatorUserId,
             request.DelegateUserId,
             request.PermissionId,
             request.ValidFrom,
             request.ValidTo,
             request.ScopeUnitId,
             request.Delegable,
-            request.ParentDelegationId));
+            request.ParentDelegationId,
+            currentUser.ActiveCompanyId));
 
         return Results.Created($"/api/delegations/{id}", new { id });
     }
 
-    private static async Task<IResult> RevokeDelegation(Guid id, ISender sender)
+    private static async Task<IResult> RevokeDelegation(
+        Guid id,
+        ISender sender,
+        ICurrentUser currentUser)
     {
-        await sender.Send(new RevokeDelegationCommand(id));
+        if (currentUser.UserId is not Guid actorUserId)
+        {
+            return Results.Unauthorized();
+        }
+
+        await sender.Send(new RevokeDelegationCommand(id, actorUserId));
         return Results.NoContent();
     }
 }
 
 public record CreateDelegationRequest(
-    Guid DelegatorUserId,
     Guid DelegateUserId,
     Guid PermissionId,
     DateTimeOffset ValidFrom,

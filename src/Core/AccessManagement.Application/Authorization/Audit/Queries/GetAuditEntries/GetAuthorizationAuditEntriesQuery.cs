@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,11 +29,20 @@ public record AuditEntryDto(
 public class GetAuthorizationAuditEntriesQueryHandler : IRequestHandler<GetAuthorizationAuditEntriesQuery, PaginatedAuditEntriesDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetAuthorizationAuditEntriesQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetAuthorizationAuditEntriesQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility)
+    {
+        _context = context;
+        _visibility = visibility;
+    }
 
     public async Task<PaginatedAuditEntriesDto> Handle(GetAuthorizationAuditEntriesQuery request, CancellationToken cancellationToken)
     {
+        await _visibility.EnsureAuditReaderAsync(cancellationToken);
+
         var query = _context.AuthorizationAuditEntries.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.EventType))

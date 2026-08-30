@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization.Enums;
@@ -28,8 +29,13 @@ public record PositionAssigneeDto(Guid AssignmentId, Guid PersonnelId, string Fu
 public class GetPositionByIdQueryHandler : IRequestHandler<GetPositionByIdQuery, PositionDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetPositionByIdQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetPositionByIdQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    {
+        _context = context;
+        _visibility = visibility;
+    }
 
     public async Task<PositionDetailsDto> Handle(GetPositionByIdQuery request, CancellationToken cancellationToken)
     {
@@ -38,6 +44,12 @@ public class GetPositionByIdQueryHandler : IRequestHandler<GetPositionByIdQuery,
             .SingleOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
 
         if (position is null)
+        {
+            throw new NotFoundException(nameof(Domain.Organization.Position), request.Id);
+        }
+
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin && !vis.PositionIds.Contains(position.Id))
         {
             throw new NotFoundException(nameof(Domain.Organization.Position), request.Id);
         }

@@ -1,6 +1,7 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ public record UpdateRoleGroupCommand(
     Guid Id,
     string Name,
     string? Description,
-    CatalogStatus Status) : IRequest;
+    CatalogStatus Status) : IRequest, IRequireUserAdmin;
 
 public class UpdateRoleGroupCommandHandler : IRequestHandler<UpdateRoleGroupCommand>
 {

@@ -1,6 +1,7 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization.Enums;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ public record UpdatePositionCommand(
     Guid Id,
     string Title,
     string? Description,
-    PositionStatus Status) : IRequest;
+    PositionStatus Status) : IRequest, IRequireUserAdmin;
 
 public class UpdatePositionCommandHandler : IRequestHandler<UpdatePositionCommand>
 {

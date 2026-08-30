@@ -1,6 +1,7 @@
 using AccessManagement.Application.Organization.Commands.AssignPersonnelToPosition;
 using AccessManagement.Application.Organization.Commands.CreatePersonnel;
 using AccessManagement.Application.Organization.Commands.CreatePosition;
+using AccessManagement.Application.Organization.Commands.EndPositionAssignment;
 using AccessManagement.Application.Organization.Commands.LinkPersonnelToIdentityUser;
 using AccessManagement.Application.Organization.Commands.ReparentPosition;
 using AccessManagement.Application.Organization.Commands.SetPrimaryPositionAssignment;
@@ -41,6 +42,7 @@ public class OrganizationEndpoints : IEndpointGroup
         // Assignments
         group.MapGet(GetPositionAssignments, "assignments");
         group.MapPost(AssignPersonnel, "assignments");
+        group.MapPost(EndAssignment, "assignments/{id:guid}/end");
         group.MapPost(SetPrimaryAssignment, "assignments/set-primary");
     }
 
@@ -148,6 +150,12 @@ public class OrganizationEndpoints : IEndpointGroup
         return Results.Created($"/api/organization/assignments/{id}", new { id });
     }
 
+    private static async Task<IResult> EndAssignment(Guid id, EndAssignmentRequest? request, ISender sender)
+    {
+        await sender.Send(new EndPositionAssignmentCommand(id, request?.EndedAt));
+        return Results.NoContent();
+    }
+
     private static async Task<IResult> SetPrimaryAssignment(SetPrimaryAssignmentRequest request, ISender sender)
     {
         await sender.Send(new SetPrimaryPositionAssignmentCommand(request.PersonnelId, request.AssignmentId));
@@ -181,6 +189,8 @@ public record AssignPersonnelRequest(
 public record ReparentPositionRequest(Guid PositionId, Guid? NewParentPositionId);
 
 public record LinkPersonnelRequest(Guid PersonnelId, Guid IdentityUserId);
+
+public record EndAssignmentRequest(DateTimeOffset? EndedAt = null);
 
 public record SetPrimaryAssignmentRequest(Guid PersonnelId, Guid AssignmentId);
 

@@ -51,9 +51,11 @@ public static class DependencyInjection
         builder.Services.AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>();
         builder.Services.AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>();
         builder.Services.AddScoped<RoleGroupGrantMaterializer>();
+        builder.Services.AddScoped<RoleGrantRematerializer>();
         builder.Services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
         builder.Services.AddScoped<CompanyWorkspaceService>();
         builder.Services.AddScoped<IActorAccessService, ActorAccessService>();
+        builder.Services.AddScoped<ICompanyVisibilityService, CompanyVisibilityService>();
         builder.Services.AddScoped<LineManagerTargetPolicy>();
         builder.Services.AddScoped<IAccessPluginSeeder, CoreAccessSeeder>();
         builder.Services.AddScoped<WorkflowStepAuthorizer>();
@@ -64,6 +66,7 @@ public static class DependencyInjection
             cfg.AddOpenRequestPreProcessor(typeof(LoggingBehaviour<>));
             cfg.AddOpenBehavior(typeof(UnhandledExceptionBehaviour<,>));
             cfg.AddOpenBehavior(typeof(AuthorizationBehaviour<,>));
+            cfg.AddOpenBehavior(typeof(RequireUserAdminBehaviour<,>));
             cfg.AddOpenBehavior(typeof(ValidationBehaviour<,>));
             cfg.AddOpenBehavior(typeof(PerformanceBehaviour<,>));
         });

@@ -1,10 +1,11 @@
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 
 namespace AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
 
-public record CreateRoleGroupCommand(string Code, string Name, string? Description = null) : IRequest<Guid>;
+public record CreateRoleGroupCommand(string Code, string Name, string? Description = null) : IRequest<Guid>, IRequireUserAdmin;
 
 public class CreateRoleGroupCommandHandler : IRequestHandler<CreateRoleGroupCommand, Guid>
 {

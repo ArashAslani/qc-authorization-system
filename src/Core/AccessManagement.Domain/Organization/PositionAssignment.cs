@@ -55,4 +55,14 @@ public class PositionAssignment : BaseAuditableEntity, IAggregateRoot
     public void MarkAsPrimary() => IsPrimary = true;
 
     public void ClearPrimary() => IsPrimary = false;
+
+    public void End(DateTimeOffset atUtc)
+    {
+        if (ValidTo is { } existing && existing <= atUtc)
+        {
+            return;
+        }
+
+        ValidTo = atUtc;
+    }
 }

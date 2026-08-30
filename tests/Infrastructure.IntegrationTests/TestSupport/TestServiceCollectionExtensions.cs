@@ -36,8 +36,10 @@ public static class TestServiceCollectionExtensions
         services.AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>();
         services.AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>();
         services.AddScoped<RoleGroupGrantMaterializer>();
+        services.AddScoped<RoleGrantRematerializer>();
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
         services.AddScoped<IActorAccessService, ActorAccessService>();
+        services.AddScoped<ICompanyVisibilityService, CompanyVisibilityService>();
         services.AddScoped<LineManagerTargetPolicy>();
         services.AddScoped<CompanyWorkspaceService>();
         services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();

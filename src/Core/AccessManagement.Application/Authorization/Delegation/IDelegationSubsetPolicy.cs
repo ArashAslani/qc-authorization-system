@@ -7,5 +7,6 @@ public interface IDelegationSubsetPolicy
         Guid permissionId,
         Guid? scopeUnitId,
         DateTimeOffset when,
+        Guid? delegatorCompanyUnitId = null,
         CancellationToken cancellationToken = default);
 }

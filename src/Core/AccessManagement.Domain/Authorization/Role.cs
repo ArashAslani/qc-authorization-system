@@ -13,9 +13,14 @@ public class Role : BaseAuditableEntity, IAggregateRoot
     public string? Description { get; private set; }
     public CatalogStatus Status { get; private set; } = CatalogStatus.Active;
 
+    /// <summary>
+    /// Optional parent in the role catalog. Flattened at materialize time (not by the engine).
+    /// </summary>
+    public Guid? ParentRoleId { get; private set; }
+
     public List<RolePermission> Permissions { get; private set; } = new();
 
-    public static Role Create(string code, string name, string? description = null)
+    public static Role Create(string code, string name, string? description = null, Guid? parentRoleId = null)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -32,6 +37,7 @@ public class Role : BaseAuditableEntity, IAggregateRoot
             Code = code.Trim().ToUpperInvariant(),
             Name = name.Trim(),
             Description = description,
+            ParentRoleId = parentRoleId,
         };
     }
 

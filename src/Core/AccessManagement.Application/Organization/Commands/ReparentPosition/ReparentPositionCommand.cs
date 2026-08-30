@@ -1,11 +1,12 @@
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Organization.Commands.ReparentPosition;
 
-public record ReparentPositionCommand(Guid PositionId, Guid? NewParentPositionId) : IRequest;
+public record ReparentPositionCommand(Guid PositionId, Guid? NewParentPositionId) : IRequest, IRequireUserAdmin;
 
 public class ReparentPositionCommandHandler : IRequestHandler<ReparentPositionCommand>
 {

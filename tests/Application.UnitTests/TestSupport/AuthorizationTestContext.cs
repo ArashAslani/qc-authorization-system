@@ -6,6 +6,7 @@ using AccessManagement.Application.Authorization.Commands.CreateGrant;
 using AccessManagement.Application.Authorization.Delegation;
 using AccessManagement.Application.Authorization.Evaluation;
 using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Behaviours;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Application.Common.Mappings;
 using AccessManagement.Application.Organization;
@@ -33,7 +34,8 @@ internal static class AuthorizationTestContext
         var hierarchy = new PositionHierarchyService();
         var applicability = new GrantApplicabilityService(hierarchy);
         var catalogFilter = new CatalogGrantFilter(context);
-        var resolver = new GrantResolver(context, applicability, catalogFilter);
+        var positions = new PositionHierarchyQuery(context, hierarchy);
+        var resolver = new GrantResolver(context, applicability, catalogFilter, positions);
         var units = new OrganizationalUnitHierarchyService(context);
         var evaluator = new AccessEvaluator(resolver, new ScopeMatcher(units), new NullDecisionTraceWriter());
 
@@ -53,7 +55,10 @@ internal static class AuthorizationTestContext
         context.SaveChanges();
     }
 
-    public static IServiceProvider CreateMediatorServices(ApplicationDbContext context, Guid? activeCompanyId = null)
+    public static IServiceProvider CreateMediatorServices(
+        ApplicationDbContext context,
+        Guid? activeCompanyId = null,
+        Guid? userId = null)
     {
         var companyId = activeCompanyId ?? TestGuids.CompanyA;
         MappingConfig.RegisterMappings();
@@ -63,10 +68,14 @@ internal static class AuthorizationTestContext
 
         return new ServiceCollection()
             .AddLogging()
-            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
+            .AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>();
+                cfg.AddOpenBehavior(typeof(RequireUserAdminBehaviour<,>));
+            })
             .AddSingleton(hierarchy)
             .AddSingleton(applicability)
-            .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: companyId))
+            .AddSingleton<ICurrentUser>(new StaticCurrentUser(userId, null, companyId))
             .AddScoped<IApplicationDbContext>(_ => context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICatalogGrantFilter, CatalogGrantFilter>()
@@ -78,8 +87,10 @@ internal static class AuthorizationTestContext
             .AddScoped<IDecisionTraceWriter, NullDecisionTraceWriter>()
             .AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>()
             .AddScoped<RoleGroupGrantMaterializer>()
+            .AddScoped<RoleGrantRematerializer>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .AddScoped<IActorAccessService, ActorAccessService>()
+            .AddScoped<ICompanyVisibilityService, CompanyVisibilityService>()
             .AddScoped<LineManagerTargetPolicy>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
             .AddScoped<CompanyWorkspaceService>()

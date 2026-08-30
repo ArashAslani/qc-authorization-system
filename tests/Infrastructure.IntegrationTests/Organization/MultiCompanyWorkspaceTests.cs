@@ -62,7 +62,7 @@ public class MultiCompanyWorkspaceTests
         await _context.SaveChangesAsync();
 
         var hierarchy = new PositionHierarchyService();
-        var resolver = new GrantResolver(_context, new GrantApplicabilityService(hierarchy), new CatalogGrantFilter(_context));
+        var resolver = new GrantResolver(_context, new GrantApplicabilityService(hierarchy), new CatalogGrantFilter(_context), new PositionHierarchyQuery(_context, hierarchy));
         var evaluator = new AccessEvaluator(resolver, new ScopeMatcher(new OrganizationalUnitHierarchyService(_context)), new NullDecisionTraceWriter());
         _workspace = new CompanyWorkspaceService(evaluator, _context);
     }

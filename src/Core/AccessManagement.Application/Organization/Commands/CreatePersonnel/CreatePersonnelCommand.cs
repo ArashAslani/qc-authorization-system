@@ -1,6 +1,7 @@
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Organization;
 using AccessManagement.Domain.Organization.Enums;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 
 namespace AccessManagement.Application.Organization.Commands.CreatePersonnel;
@@ -13,7 +14,7 @@ public record CreatePersonnelCommand(
     string? PhoneNumber = null,
     PersonnelGender Gender = PersonnelGender.Unknown,
     PersonnelStatus Status = PersonnelStatus.Active,
-    Guid? IdentityUserId = null) : IRequest<Guid>;
+    Guid? IdentityUserId = null) : IRequest<Guid>, IRequireUserAdmin;
 
 public class CreatePersonnelCommandHandler : IRequestHandler<CreatePersonnelCommand, Guid>
 {

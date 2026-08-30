@@ -2,6 +2,7 @@ using AccessManagement.Application.Authorization.Audit.Queries.GetAuditEntries;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Audit;
 using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,8 @@ public class AuditQueryIntegrationTests
             .AddLogging()
             .AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(dbName))
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<GetAuthorizationAuditEntriesQuery>())
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
             .BuildServiceProvider();
 

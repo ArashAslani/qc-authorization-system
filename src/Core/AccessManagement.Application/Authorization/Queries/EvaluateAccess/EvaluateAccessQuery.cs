@@ -1,8 +1,10 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Application.Session;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Queries.EvaluateAccess;
 
@@ -24,17 +26,20 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
     private readonly IActorAccessService _actorAccess;
     private readonly ICurrentUser _currentUser;
     private readonly CompanyWorkspaceService _workspace;
+    private readonly IApplicationDbContext _db;
 
     public EvaluateAccessQueryHandler(
         IAccessEvaluator evaluator,
         IActorAccessService actorAccess,
         ICurrentUser currentUser,
-        CompanyWorkspaceService workspace)
+        CompanyWorkspaceService workspace,
+        IApplicationDbContext db)
     {
         _evaluator = evaluator;
         _actorAccess = actorAccess;
         _currentUser = currentUser;
         _workspace = workspace;
+        _db = db;
     }
 
     public async Task<AccessDecisionDto> Handle(EvaluateAccessQuery request, CancellationToken cancellationToken)
@@ -44,6 +49,7 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
 
         if (request.ActivePositionId is Guid positionId)
         {
+            await EnsurePositionAssignedToUserAsync(request.UserId, positionId, when, cancellationToken);
             decision = await _evaluator.EvaluateAsync(
                 new AccessManagement.Domain.Authorization.Evaluation.AccessRequest(
                     request.UserId,
@@ -72,6 +78,31 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
                 cancellationToken);
         }
 
+        await _db.SaveChangesAsync(cancellationToken);
         return new AccessDecisionDto(decision.Allowed, decision.Reason, decision.TraceId);
+    }
+
+    private async Task EnsurePositionAssignedToUserAsync(
+        Guid userId,
+        Guid positionId,
+        DateTimeOffset when,
+        CancellationToken cancellationToken)
+    {
+        var query = _db.PositionAssignments
+            .AsNoTracking()
+            .Where(a => a.PositionId == positionId
+                     && a.Personnel.IdentityUserId == userId
+                     && a.ValidFrom <= when
+                     && (a.ValidTo == null || when <= a.ValidTo));
+
+        if (_currentUser.ActiveCompanyId is Guid companyId)
+        {
+            query = query.Where(a => a.Position.CompanyUnitId == companyId);
+        }
+
+        if (!await query.AnyAsync(cancellationToken))
+        {
+            throw new ForbiddenAccessException("ActivePositionId is not assigned to the subject user.");
+        }
     }
 }

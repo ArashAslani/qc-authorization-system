@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Organization.Enums;
@@ -27,16 +28,28 @@ public record PositionDto(
 public class GetPositionsQueryHandler : IRequestHandler<GetPositionsQuery, IReadOnlyList<PositionDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetPositionsQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetPositionsQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    {
+        _context = context;
+        _visibility = visibility;
+    }
 
     public async Task<IReadOnlyList<PositionDto>> Handle(GetPositionsQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Positions.AsNoTracking().AsQueryable();
 
-        if (request.CompanyId.HasValue)
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        var companyId = request.CompanyId;
+        if (!vis.IsAdmin)
         {
-            query = query.Where(p => p.CompanyUnitId == request.CompanyId.Value);
+            companyId = vis.CompanyUnitId;
+        }
+
+        if (companyId.HasValue)
+        {
+            query = query.Where(p => p.CompanyUnitId == companyId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))

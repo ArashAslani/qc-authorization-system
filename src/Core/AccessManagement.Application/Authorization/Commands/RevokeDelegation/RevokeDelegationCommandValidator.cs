@@ -5,5 +5,6 @@ public class RevokeDelegationCommandValidator : AbstractValidator<RevokeDelegati
     public RevokeDelegationCommandValidator()
     {
         RuleFor(x => x.DelegationId).NotEqual(Guid.Empty);
+        RuleFor(x => x.ActorUserId).NotEqual(Guid.Empty);
     }
 }

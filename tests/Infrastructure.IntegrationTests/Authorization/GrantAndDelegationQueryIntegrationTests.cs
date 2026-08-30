@@ -133,7 +133,7 @@ public class GrantAndDelegationQueryIntegrationTests
         details.Id.ShouldBe(delId);
         details.IsRevoked.ShouldBeFalse();
 
-        await _mediator.Send(new RevokeDelegationCommand(delId));
+        await _mediator.Send(new RevokeDelegationCommand(delId, delegator));
         var updatedDetails = await _mediator.Send(new GetDelegationByIdQuery(delId));
         updatedDetails.IsRevoked.ShouldBeTrue();
         updatedDetails.IsActive.ShouldBeFalse();

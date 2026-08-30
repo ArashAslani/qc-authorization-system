@@ -1,5 +1,7 @@
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +12,7 @@ public record CreatePositionCommand(
     string Code,
     string Title,
     string? Description,
-    Guid? ParentPositionId) : IRequest<Guid>;
+    Guid? ParentPositionId) : IRequest<Guid>, IRequireUserAdmin;
 
 public class CreatePositionCommandHandler : IRequestHandler<CreatePositionCommand, Guid>
 {
@@ -25,6 +27,15 @@ public class CreatePositionCommandHandler : IRequestHandler<CreatePositionComman
 
     public async Task<Guid> Handle(CreatePositionCommand request, CancellationToken cancellationToken)
     {
+        var company = await _context.OrganizationalUnits
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.CompanyUnitId, cancellationToken)
+            ?? throw new InvalidOperationException($"Organizational unit {request.CompanyUnitId} was not found.");
+
+        if (company.UnitType != OrganizationalUnitTypes.Company)
+        {
+            throw new OrganizationDomainException("CreatePosition requires a Company organizational unit.");
+        }
         var position = Position.Create(
             request.CompanyUnitId,
             request.Code,

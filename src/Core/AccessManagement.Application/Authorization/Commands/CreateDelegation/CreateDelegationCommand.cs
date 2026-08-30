@@ -1,5 +1,7 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Authorization.Delegation;
+using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Exceptions;
@@ -17,7 +19,8 @@ public record CreateDelegationCommand(
     DateTimeOffset? ValidTo,
     Guid? ScopeUnitId = null,
     bool Delegable = true,
-    Guid? ParentDelegationId = null) : IRequest<Guid>;
+    Guid? ParentDelegationId = null,
+    Guid? DelegatorCompanyUnitId = null) : IRequest<Guid>;
 
 public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCommand, Guid>
 {
@@ -25,21 +28,37 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
     private readonly IDelegationSubsetPolicy _subsetPolicy;
     private readonly IDelegationHierarchyPolicy _hierarchyPolicy;
     private readonly IAuthorizationAuditService _audit;
+    private readonly ICurrentUser _currentUser;
+    private readonly IActorAccessService _actorAccess;
 
     public CreateDelegationCommandHandler(
         IApplicationDbContext context,
         IDelegationSubsetPolicy subsetPolicy,
         IDelegationHierarchyPolicy hierarchyPolicy,
-        IAuthorizationAuditService audit)
+        IAuthorizationAuditService audit,
+        ICurrentUser currentUser,
+        IActorAccessService actorAccess)
     {
         _context = context;
         _subsetPolicy = subsetPolicy;
         _hierarchyPolicy = hierarchyPolicy;
         _audit = audit;
+        _currentUser = currentUser;
+        _actorAccess = actorAccess;
     }
 
     public async Task<Guid> Handle(CreateDelegationCommand request, CancellationToken cancellationToken)
     {
+        if (_currentUser.UserId is Guid actorUserId && actorUserId != request.DelegatorUserId)
+        {
+            var isAdmin = await _actorAccess.IsUserAdminAsync(
+                actorUserId, request.DelegatorCompanyUnitId ?? _currentUser.ActiveCompanyId, cancellationToken);
+            if (!isAdmin)
+            {
+                throw new ForbiddenAccessException("DelegatorUserId must match the authenticated user.");
+            }
+        }
+
         if (request.ParentDelegationId is Guid parentId)
         {
             var parent = await _context.Delegations
@@ -62,6 +81,7 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
             request.PermissionId,
             request.ScopeUnitId,
             request.ValidFrom,
+            request.DelegatorCompanyUnitId,
             cancellationToken);
 
         await _hierarchyPolicy.EnsureDelegateeIsSubordinateAsync(
@@ -83,7 +103,7 @@ public class CreateDelegationCommandHandler : IRequestHandler<CreateDelegationCo
         _context.Delegations.Add(delegation);
         await _audit.RecordAsync(
             "DelegationCreated",
-            null,
+            request.DelegatorUserId,
             $"delegateUserId={request.DelegateUserId};permissionId={request.PermissionId}",
             cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);

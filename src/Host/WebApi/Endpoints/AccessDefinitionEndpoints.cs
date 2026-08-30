@@ -186,7 +186,7 @@ public class AccessDefinitionEndpoints : IEndpointGroup
     private static async Task<IResult> AssignRoleToUser(AssignRoleToUserRequest request, ISender sender)
     {
         await sender.Send(new AssignAuthorizationRoleToUserCommand(
-            request.UserId, request.RoleId, request.ValidFrom, request.ValidTo));
+            request.UserId, request.RoleId, request.ValidFrom, request.ValidTo, request.ScopeUnitId));
         return Results.NoContent();
     }
 
@@ -237,7 +237,7 @@ public class AccessDefinitionEndpoints : IEndpointGroup
     private static async Task<IResult> AssignRoleToPosition(AssignRoleToPositionRequest request, ISender sender)
     {
         await sender.Send(new AssignAuthorizationRoleToPositionCommand(
-            request.PositionId, request.RoleId, request.ValidFrom, request.ValidTo));
+            request.PositionId, request.RoleId, request.ValidFrom, request.ValidTo, request.ScopeUnitId));
         return Results.NoContent();
     }
 
@@ -271,7 +271,8 @@ public record AssignRoleToUserRequest(
     Guid UserId,
     Guid RoleId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo = null);
+    DateTimeOffset? ValidTo = null,
+    Guid? ScopeUnitId = null);
 
 public record RevokeRoleFromUserRequest(Guid UserId, Guid RoleId);
 
@@ -299,6 +300,7 @@ public record AssignRoleToPositionRequest(
     Guid PositionId,
     Guid RoleId,
     DateTimeOffset ValidFrom,
-    DateTimeOffset? ValidTo = null);
+    DateTimeOffset? ValidTo = null,
+    Guid? ScopeUnitId = null);
 
 public record RevokeRoleFromPositionRequest(Guid PositionId, Guid RoleId);

@@ -1,12 +1,13 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Commands.RevokeAuthorizationRoleFromUser;
 
-public record RevokeAuthorizationRoleFromUserCommand(Guid UserId, Guid RoleId) : IRequest;
+public record RevokeAuthorizationRoleFromUserCommand(Guid UserId, Guid RoleId) : IRequest, IRequireUserAdmin;
 
 public class RevokeAuthorizationRoleFromUserCommandHandler : IRequestHandler<RevokeAuthorizationRoleFromUserCommand>
 {

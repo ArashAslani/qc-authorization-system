@@ -10,6 +10,7 @@ using AccessManagement.Application.Organization.Queries.GetPositions;
 using AccessManagement.Domain.Organization;
 using AccessManagement.Domain.Organization.Enums;
 using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,8 @@ public class OrganizationQueryIntegrationTests
             .AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(dbName))
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<GetPersonnelQuery>())
             .AddSingleton<PositionHierarchyService>()
+            .AddTestCurrentUser()
+            .AddAuthorizationEvaluationServices()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
             .AddIdentityCore<AccessManagement.Infrastructure.Identity.ApplicationUser>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -45,6 +48,10 @@ public class OrganizationQueryIntegrationTests
 
         _context = _services.GetRequiredService<ApplicationDbContext>();
         await _context.Database.EnsureCreatedAsync();
+        var company = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "A");
+        company.Id = TestGuids.CompanyA;
+        _context.OrganizationalUnits.Add(company);
+        await _context.SaveChangesAsync();
         _mediator = _services.GetRequiredService<IMediator>();
     }
 

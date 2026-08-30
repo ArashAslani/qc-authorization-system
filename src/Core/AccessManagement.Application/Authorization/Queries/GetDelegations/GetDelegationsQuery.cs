@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.ValueObjects;
 using MediatR;
@@ -27,8 +28,18 @@ public record DelegationDto(
 public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, IReadOnlyList<DelegationDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
+    private readonly ICurrentUser _currentUser;
 
-    public GetDelegationsQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetDelegationsQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility,
+        ICurrentUser currentUser)
+    {
+        _context = context;
+        _visibility = visibility;
+        _currentUser = currentUser;
+    }
 
     public async Task<IReadOnlyList<DelegationDto>> Handle(GetDelegationsQuery request, CancellationToken cancellationToken)
     {
@@ -37,6 +48,17 @@ public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, I
             .AsNoTracking()
             .Include(d => d.Permission)
             .AsQueryable();
+
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin)
+        {
+            var self = _currentUser.UserId;
+            var userIds = vis.UserIds.ToList();
+            query = query.Where(d =>
+                (self != null && (d.DelegatorUserId == self || d.DelegateUserId == self))
+                || userIds.Contains(d.DelegatorUserId)
+                || userIds.Contains(d.DelegateUserId));
+        }
 
         if (request.DelegatorUserId.HasValue)
         {

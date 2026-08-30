@@ -1,9 +1,10 @@
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 
 namespace AccessManagement.Application.Organization.Commands.LinkPersonnelToIdentityUser;
 
-public record LinkPersonnelToIdentityUserCommand(Guid PersonnelId, Guid IdentityUserId) : IRequest;
+public record LinkPersonnelToIdentityUserCommand(Guid PersonnelId, Guid IdentityUserId) : IRequest, IRequireUserAdmin;
 
 public class LinkPersonnelToIdentityUserCommandHandler : IRequestHandler<LinkPersonnelToIdentityUserCommand>
 {

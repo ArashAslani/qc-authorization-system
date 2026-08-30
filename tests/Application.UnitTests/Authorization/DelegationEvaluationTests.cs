@@ -106,7 +106,7 @@ public class DelegationEvaluationTests
         var delegationId = await _mediator.Send(new CreateDelegationCommand(TestUsers.UserA, TestUsers.UserB, _perm.Id, T0, null));
         (await Evaluate(TestUsers.UserB)).Effect.ShouldBe(Effect.Allow);
 
-        await _mediator.Send(new RevokeDelegationCommand(delegationId));
+        await _mediator.Send(new RevokeDelegationCommand(delegationId, TestUsers.UserA));
         (await Evaluate(TestUsers.UserB)).Effect.ShouldBe(Effect.Deny);
     }
 

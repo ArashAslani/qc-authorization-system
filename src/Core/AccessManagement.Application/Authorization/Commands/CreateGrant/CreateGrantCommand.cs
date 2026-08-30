@@ -1,5 +1,6 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Authorization.ValueObjects;
@@ -21,7 +22,7 @@ public record CreateGrantCommand(
     Guid SourceId,
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
-    int Priority) : IRequest<Guid>;
+    int Priority) : IRequest<Guid>, IRequireUserAdmin;
 
 public class CreateGrantCommandHandler : IRequestHandler<CreateGrantCommand, Guid>
 {

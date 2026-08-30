@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
@@ -22,19 +23,25 @@ public class GetPositionAuthorizationSummaryQueryHandler
     : IRequestHandler<GetPositionAuthorizationSummaryQuery, PositionAuthorizationSummaryDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetPositionAuthorizationSummaryQueryHandler(IApplicationDbContext context)
+    public GetPositionAuthorizationSummaryQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility)
     {
         _context = context;
+        _visibility = visibility;
     }
 
     public async Task<PositionAuthorizationSummaryDto> Handle(
         GetPositionAuthorizationSummaryQuery request,
         CancellationToken cancellationToken)
     {
+        var vis = await _visibility.ResolveAsync(cancellationToken);
         var positionExists = await _context.Positions
             .AsNoTracking()
-            .AnyAsync(p => p.Id == request.PositionId, cancellationToken);
+            .AnyAsync(p => p.Id == request.PositionId
+                        && (vis.IsAdmin || vis.PositionIds.Contains(request.PositionId)), cancellationToken);
 
         if (!positionExists)
         {

@@ -82,7 +82,7 @@ public class AuthorizationAuditIntegrationTests
         await _context.SaveChangesAsync();
 
         var delegationId = await _mediator.Send(new CreateDelegationCommand(TestUsers.UserA, TestUsers.UserB, _perm.Id, T0, null));
-        await _mediator.Send(new RevokeDelegationCommand(delegationId));
+        await _mediator.Send(new RevokeDelegationCommand(delegationId, TestUsers.UserA));
 
         (await _context.AuthorizationAuditEntries.CountAsync(x => x.EventType == "DelegationCreated")).ShouldBe(1);
         (await _context.AuthorizationAuditEntries.CountAsync(x => x.EventType == "DelegationRevoked")).ShouldBe(1);

@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.ValueObjects;
@@ -27,8 +28,18 @@ public record DelegationDetailsDto(
 public class GetDelegationByIdQueryHandler : IRequestHandler<GetDelegationByIdQuery, DelegationDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
+    private readonly ICurrentUser _currentUser;
 
-    public GetDelegationByIdQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetDelegationByIdQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility,
+        ICurrentUser currentUser)
+    {
+        _context = context;
+        _visibility = visibility;
+        _currentUser = currentUser;
+    }
 
     public async Task<DelegationDetailsDto> Handle(GetDelegationByIdQuery request, CancellationToken cancellationToken)
     {
@@ -41,6 +52,19 @@ public class GetDelegationByIdQueryHandler : IRequestHandler<GetDelegationByIdQu
         if (delegation is null)
         {
             throw new NotFoundException(nameof(Domain.Authorization.Delegation), request.Id);
+        }
+
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin)
+        {
+            var self = _currentUser.UserId;
+            var visible = (self is Guid me && (delegation.DelegatorUserId == me || delegation.DelegateUserId == me))
+                          || vis.UserIds.Contains(delegation.DelegatorUserId)
+                          || vis.UserIds.Contains(delegation.DelegateUserId);
+            if (!visible)
+            {
+                throw new NotFoundException(nameof(Domain.Authorization.Delegation), request.Id);
+            }
         }
 
         return new DelegationDetailsDto(

@@ -1,5 +1,6 @@
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ public record CreatePermissionCommand(
     string ResourceName,
     string ActionCode,
     string ActionName,
-    string? Description = null) : IRequest<Guid>;
+    string? Description = null) : IRequest<Guid>, IRequireUserAdmin;
 
 public class CreatePermissionCommandHandler : IRequestHandler<CreatePermissionCommand, Guid>
 {

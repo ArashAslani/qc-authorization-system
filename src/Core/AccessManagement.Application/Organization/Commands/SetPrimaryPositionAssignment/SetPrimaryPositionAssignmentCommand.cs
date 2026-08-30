@@ -1,12 +1,13 @@
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using NotFoundException = AccessManagement.Application.Common.Exceptions.NotFoundException;
 
 namespace AccessManagement.Application.Organization.Commands.SetPrimaryPositionAssignment;
 
-public record SetPrimaryPositionAssignmentCommand(Guid PersonnelId, Guid AssignmentId) : IRequest;
+public record SetPrimaryPositionAssignmentCommand(Guid PersonnelId, Guid AssignmentId) : IRequest, IRequireUserAdmin;
 
 public class SetPrimaryPositionAssignmentCommandHandler : IRequestHandler<SetPrimaryPositionAssignmentCommand>
 {

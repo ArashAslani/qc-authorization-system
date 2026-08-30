@@ -16,6 +16,13 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(r => r.Description).HasMaxLength(500);
         builder.Property(r => r.Status).HasConversion<int>();
 
+        builder.Property(r => r.ParentRoleId);
+
         builder.HasIndex(r => r.Code).IsUnique();
+
+        builder.HasOne<Role>()
+            .WithMany()
+            .HasForeignKey(r => r.ParentRoleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

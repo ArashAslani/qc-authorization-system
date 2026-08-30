@@ -1,3 +1,4 @@
+using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Authorization.ValueObjects;
@@ -37,8 +38,13 @@ public record GrantDto(
 public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyList<GrantDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICompanyVisibilityService _visibility;
 
-    public GetGrantsQueryHandler(IApplicationDbContext context) => _context = context;
+    public GetGrantsQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    {
+        _context = context;
+        _visibility = visibility;
+    }
 
     public async Task<IReadOnlyList<GrantDto>> Handle(GetGrantsQuery request, CancellationToken cancellationToken)
     {
@@ -47,6 +53,23 @@ public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyLi
             .AsNoTracking()
             .Include(g => g.Permission)
             .AsQueryable();
+
+        var vis = await _visibility.ResolveAsync(cancellationToken);
+        if (!vis.IsAdmin)
+        {
+            var positionIds = vis.PositionIds.ToList();
+            var userIds = vis.UserIds.ToList();
+            var unitIds = vis.UnitIds.ToList();
+            query = query.Where(g =>
+                (g.SubjectType == SubjectType.Position && positionIds.Contains(g.SubjectId))
+                || (g.SubjectUserId != null && userIds.Contains(g.SubjectUserId.Value))
+                || (g.ScopeUnitId != null && unitIds.Contains(g.ScopeUnitId.Value)));
+            query = AccessibleScopeQuery.ApplyAccessibleScopes(
+                query,
+                unitIds,
+                Array.Empty<Guid>(),
+                isUnrestricted: false);
+        }
 
         if (request.SubjectType.HasValue)
         {
