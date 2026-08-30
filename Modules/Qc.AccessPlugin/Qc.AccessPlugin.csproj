@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qc.AccessPlugin</RootNamespace>
+    <AssemblyName>Qc.AccessPlugin</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Core\AccessManagement.Application\AccessManagement.Application.csproj" />
+  </ItemGroup>
+
+</Project>

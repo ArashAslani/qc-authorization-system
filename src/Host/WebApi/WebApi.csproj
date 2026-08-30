@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\AccessManagement.Application\AccessManagement.Application.csproj" />
     <ProjectReference Include="..\..\Core\AccessManagement.Infrastructure\AccessManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Modules\Qc.AccessPlugin\Qc.AccessPlugin.csproj" />
     <ProjectReference Include="..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 

@@ -12,6 +12,9 @@
     <Project Path="src/Core/AccessManagement.Application/AccessManagement.Application.csproj" />
     <Project Path="src/Core/AccessManagement.Infrastructure/AccessManagement.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="Modules/Qc.AccessPlugin/Qc.AccessPlugin.csproj" />
+  </Folder>
   <Folder Name="/src/Host/">
     <Project Path="src/Host/WebApi/WebApi.csproj" DefaultStartup="true" />
   </Folder>
@@ -23,6 +26,7 @@
     <Project Path="tests/Application.UnitTests/Application.UnitTests.csproj" />
     <Project Path="tests/Domain.UnitTests/Domain.UnitTests.csproj" />
     <Project Path="tests/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj" />
+    <Project Path="tests/Qc.AccessPlugin.Tests/Qc.AccessPlugin.Tests.csproj" />
     <Project Path="tests/ArchitectureTests/ArchitectureTests.csproj" />
   </Folder>
 </Solution>

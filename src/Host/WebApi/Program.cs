@@ -1,10 +1,12 @@
 using AccessManagement.Infrastructure.Data;
+using Qc.AccessPlugin;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
 builder.AddAccessManagementCore();
+builder.Services.AddQcAccessPlugin();
 builder.AddInfrastructureServices();
 builder.AddWebServices();
 
