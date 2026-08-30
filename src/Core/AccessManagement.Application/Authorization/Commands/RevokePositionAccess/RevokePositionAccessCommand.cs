@@ -1,6 +1,7 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Enums;
 using MediatR;
@@ -12,7 +13,7 @@ public sealed record RevokePositionAccessCommand(
     Guid PositionId,
     Guid PermissionId,
     Guid? ScopeUnitId,
-    Guid RevokedBy) : IRequest;
+    Guid RevokedBy) : IRequest, IRequireUserAdmin;
 
 public sealed class RevokePositionAccessHandler : IRequestHandler<RevokePositionAccessCommand>
 {

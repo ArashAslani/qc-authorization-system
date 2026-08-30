@@ -24,8 +24,8 @@ public static class QcPermissions
     {
         public const string Holding = OrganizationalUnitTypes.Holding;
         public const string Company = OrganizationalUnitTypes.Company;
-        public const string Workstation = OrganizationalUnitTypes.Workstation;
-        public const string WorkSite = OrganizationalUnitTypes.WorkSite;
-        public const string Shift = OrganizationalUnitTypes.Shift;
+        public const string Workstation = "Workstation";
+        public const string WorkSite = "WorkSite";
+        public const string Shift = "Shift";
     }
 }

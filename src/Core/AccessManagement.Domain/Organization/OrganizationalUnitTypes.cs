@@ -8,7 +8,4 @@ public static class OrganizationalUnitTypes
 {
     public const string Holding = "Holding";
     public const string Company = "Company";
-    public const string Workstation = "Workstation";
-    public const string WorkSite = "WorkSite";
-    public const string Shift = "Shift";
 }

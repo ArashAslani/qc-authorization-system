@@ -48,7 +48,7 @@ public class LineManagerGrantAccessTests
 
         _holding = OrganizationalUnit.Create(OrganizationalUnitTypes.Holding, "Holding");
         _db.OrganizationalUnits.Add(_holding);
-        _workstation = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "WS-A", TestGuids.CompanyA);
+        _workstation = OrganizationalUnit.Create("Workstation", "WS-A", TestGuids.CompanyA);
         _db.OrganizationalUnits.Add(_workstation);
 
         AuthorizationTestContext.SeedCompany(_db, TestGuids.CompanyB, "B");
@@ -59,6 +59,8 @@ public class LineManagerGrantAccessTests
         _revokePerm = Permission.Create(CoreAccessPermissions.Revoke, "ACCESS", "REVOKE");
         _adminAll = Permission.Create(CoreAccessPermissions.AdministerAll, "ACCESS", "ADMINISTER_ALL");
         _db.Permissions.AddRange(_shiftUpdate, _controlPlan, _grantPerm, _revokePerm, _adminAll);
+        _db.ModuleScopeConfigs.Add(ModuleScopeConfig.Create("SHIFT", "Workstation"));
+        _db.ModuleScopeConfigs.Add(ModuleScopeConfig.Create("CONTROLPLAN", "Company"));
 
         _bossPos = Position.Create(TestGuids.CompanyA, "BOSS", "Director");
         _managerPos = Position.Create(TestGuids.CompanyA, "MGR", "Manager", parentPositionId: _bossPos.Id);
@@ -140,6 +142,29 @@ public class LineManagerGrantAccessTests
     {
         await Should.ThrowAsync<AuthorizationDomainException>(() =>
             _mediator.Send(GrantCmd(AccessGrantTargetKind.Position, _childPos.Id, _shiftUpdate.Id, _holding.Id)));
+    }
+
+    [Test]
+    public async Task M6_Cannot_Grant_Deeper_Than_ModuleScope_Max()
+    {
+        GrantOnPosition(_managerPos.Id, _controlPlan.Id);
+        await _db.SaveChangesAsync();
+
+        var ex = await Should.ThrowAsync<AuthorizationDomainException>(() =>
+            _mediator.Send(GrantCmd(AccessGrantTargetKind.Position, _childPos.Id, _controlPlan.Id, _workstation.Id)));
+        ex.Message.ShouldContain("ModuleScopeConfig");
+    }
+
+    [Test]
+    public async Task M6_Cannot_Grant_Shift_Below_Workstation_Max()
+    {
+        var shift = OrganizationalUnit.Create("Shift", "SH-1", _workstation.Id);
+        _db.OrganizationalUnits.Add(shift);
+        await _db.SaveChangesAsync();
+
+        var ex = await Should.ThrowAsync<AuthorizationDomainException>(() =>
+            _mediator.Send(GrantCmd(AccessGrantTargetKind.Position, _childPos.Id, _shiftUpdate.Id, shift.Id)));
+        ex.Message.ShouldContain("ModuleScopeConfig");
     }
 
     [Test]

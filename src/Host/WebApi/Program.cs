@@ -15,6 +15,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     await app.InitialiseDatabaseAsync();
+    app.MapOpenApi();
 }
 else
 {
@@ -38,7 +39,6 @@ app.UseCors(policy =>
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapOpenApi();
 app.UseExceptionHandler(options => { });
 app.MapEndpoints(typeof(Program).Assembly);
 

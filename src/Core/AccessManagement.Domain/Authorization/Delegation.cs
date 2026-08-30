@@ -27,6 +27,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
     public bool Delegable { get; private set; } = true;
 
     public bool IsRevoked { get; private set; }
+    public DateTimeOffset? RevokedAt { get; private set; }
 
     public Validity Validity => new(ValidFrom, ValidTo);
 
@@ -71,6 +72,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
         }
 
         IsRevoked = true;
+        RevokedAt = DateTimeOffset.UtcNow;
     }
 
     public bool IsActiveAt(DateTimeOffset when) =>

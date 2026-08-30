@@ -16,5 +16,6 @@ public class AccessDecisionLogConfiguration : IEntityTypeConfiguration<AccessDec
         builder.Property(l => l.Reason).HasMaxLength(50).IsRequired();
         builder.HasIndex(l => l.RequestedByUserId);
         builder.HasIndex(l => l.CreatedAt);
+        builder.HasIndex(l => l.TraceId);
     }
 }

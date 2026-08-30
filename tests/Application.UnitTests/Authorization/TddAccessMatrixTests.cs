@@ -88,7 +88,7 @@ public class TddAccessMatrixTests
     public async Task Group4_Subtree_Scope_Matches_Descendant()
     {
         var company = await _db.OrganizationalUnits.FindAsync(TestGuids.CompanyA);
-        var station = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "WS-1", company!.Id);
+        var station = OrganizationalUnit.Create("Workstation", "WS-1", company!.Id);
         _db.OrganizationalUnits.Add(station);
         _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Allow, T0, null, SourcePriority.IndividualOverride, scopeUnitId: company.Id));
         await _db.SaveChangesAsync();
@@ -101,7 +101,7 @@ public class TddAccessMatrixTests
     public async Task Group4_Child_Scope_Does_Not_Match_Parent_Resource()
     {
         var company = await _db.OrganizationalUnits.FindAsync(TestGuids.CompanyA);
-        var station = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "WS-1", company!.Id);
+        var station = OrganizationalUnit.Create("Workstation", "WS-1", company!.Id);
         _db.OrganizationalUnits.Add(station);
         _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Allow, T0, null, SourcePriority.IndividualOverride, scopeUnitId: station.Id));
         await _db.SaveChangesAsync();
@@ -124,6 +124,30 @@ public class TddAccessMatrixTests
 
         var asDeputy = await _evaluator.EvaluateAsync(AccessRequest.ForUser(UserA, "RESOURCE.READ", deputy.Id, TestGuids.CompanyA, T0));
         asDeputy.Allowed.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Group5_Deputy_Scoped_Grant_Does_Not_Widen_To_Company()
+    {
+        var company = await _db.OrganizationalUnits.FindAsync(TestGuids.CompanyA);
+        var station = OrganizationalUnit.Create("Workstation", "WS-1", company!.Id);
+        _db.OrganizationalUnits.Add(station);
+        var deputy = Position.Create(TestGuids.CompanyA, "DEP", "Deputy");
+        var specialist = Position.Create(TestGuids.CompanyA, "SPC", "Specialist", parentPositionId: deputy.Id);
+        _db.Positions.AddRange(deputy, specialist);
+        _db.Grants.Add(Grant.Create(
+            SubjectType.Position, specialist.Id, _perm.Id, SourceType.Position, specialist.Id,
+            Effect.Allow, T0, null, SourcePriority.PositionOverride, scopeUnitId: station.Id));
+        await _db.SaveChangesAsync();
+
+        var atCompany = await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(UserA, "RESOURCE.READ", deputy.Id, TestGuids.CompanyA, T0));
+        atCompany.Allowed.ShouldBeFalse();
+        atCompany.Reason.ShouldBe(AccessDecisionReasons.OutOfScope);
+
+        var atStation = await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(UserA, "RESOURCE.READ", deputy.Id, station.Id, T0));
+        atStation.Allowed.ShouldBeTrue();
     }
 
     [Test]
@@ -168,6 +192,31 @@ public class TddAccessMatrixTests
     }
 
     [Test]
+    public async Task Group6_Individual_Grant_Survives_Position_Switch()
+    {
+        var pos1 = Position.Create(TestGuids.CompanyA, "P1", "P1");
+        var pos2 = Position.Create(TestGuids.CompanyA, "P2", "P2");
+        _db.Positions.AddRange(pos1, pos2);
+        _db.Grants.Add(Grant.CreateForUser(
+            UserA, _perm.Id, SourceType.User, UserA, Effect.Allow, T0, null,
+            SourcePriority.IndividualOverride, scopeUnitId: TestGuids.CompanyA));
+        await _db.SaveChangesAsync();
+
+        var onPos1 = await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(UserA, "RESOURCE.READ", pos1.Id, TestGuids.CompanyA, T0));
+        onPos1.Allowed.ShouldBeTrue();
+
+        var onPos2 = await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(UserA, "RESOURCE.READ", pos2.Id, TestGuids.CompanyA, T0));
+        onPos2.Allowed.ShouldBeTrue();
+
+        var occupant = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+        var occupantOnOld = await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(occupant, "RESOURCE.READ", pos1.Id, TestGuids.CompanyA, T0));
+        occupantOnOld.Allowed.ShouldBeFalse();
+    }
+
+    [Test]
     public async Task GetAccessibleScopes_Returns_Grant_Roots()
     {
         _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Allow, T0, null, SourcePriority.IndividualOverride, scopeUnitId: TestGuids.CompanyA));
@@ -195,7 +244,7 @@ public class TddAccessMatrixTests
     public async Task GetAccessibleScopes_Deny_Hole_Inside_Allow_Root()
     {
         var company = await _db.OrganizationalUnits.FindAsync(TestGuids.CompanyA);
-        var station = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "WS-1", company!.Id);
+        var station = OrganizationalUnit.Create("Workstation", "WS-1", company!.Id);
         _db.OrganizationalUnits.Add(station);
         _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.Role, Guid.NewGuid(), Effect.Allow, T0, null, SourcePriority.RoleOrRoleGroup, scopeUnitId: company.Id));
         _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Deny, T0, null, SourcePriority.IndividualOverride, scopeUnitId: station.Id));

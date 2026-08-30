@@ -28,8 +28,10 @@ public class RevokePositionAccessTests
         await _db.Database.EnsureCreatedAsync();
         _perm = Permission.Create("RESOURCE.READ", "RESOURCE", "READ");
         _db.Permissions.Add(_perm);
+        _db.Personnel.Add(Personnel.Create("100", "Ada", "Admin", "A1", identityUserId: TestUsers.UserA, isSystemUser: true));
         await _db.SaveChangesAsync();
-        _mediator = AuthorizationTestContext.CreateMediatorServices(_db).GetRequiredService<IMediator>();
+        _mediator = AuthorizationTestContext.CreateMediatorServices(_db, userId: TestUsers.UserA)
+            .GetRequiredService<IMediator>();
     }
 
     [TearDown]

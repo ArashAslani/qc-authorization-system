@@ -52,7 +52,7 @@ public class QcAccessScenarioTests
         _holding = OrganizationalUnit.Create(OrganizationalUnitTypes.Holding, "Holding");
         _companyA = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "Company A", _holding.Id);
         _companyB = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "Company B", _holding.Id);
-        _stationA = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "Station A", _companyA.Id);
+        _stationA = OrganizationalUnit.Create(QcPermissions.SuggestedUnitTypes.Workstation, "Station A", _companyA.Id);
         _db.OrganizationalUnits.AddRange(_holding, _companyA, _companyB, _stationA);
         await _db.SaveChangesAsync();
 
@@ -60,7 +60,7 @@ public class QcAccessScenarioTests
         _labRead = _db.Permissions.Single(p => p.Code == QcPermissions.LaboratoryRead);
 
         var hierarchy = new PositionHierarchyService();
-        var resolver = new GrantResolver(_db, new GrantApplicabilityService(hierarchy), new CatalogGrantFilter(_db));
+        var resolver = new GrantResolver(_db, new GrantApplicabilityService(hierarchy), new CatalogGrantFilter(_db), new PositionHierarchyQuery(_db, hierarchy));
         _evaluator = new AccessEvaluator(resolver, new ScopeMatcher(new OrganizationalUnitHierarchyService(_db)), new NullDecisionTraceWriter());
         _guard = new ControlPlanApprovalGuard(_evaluator);
     }
@@ -77,7 +77,7 @@ public class QcAccessScenarioTests
     {
         _db.Permissions.Count(p => p.PluginCode == QcPermissions.PluginCode).ShouldBe(6);
         _db.ModuleScopeConfigs.Single(c => c.ResourceCode == "LABORATORY").MaxScopeUnitType
-            .ShouldBe(OrganizationalUnitTypes.Workstation);
+            .ShouldBe(QcPermissions.SuggestedUnitTypes.Workstation);
         _db.ModuleScopeConfigs.Single(c => c.ResourceCode == "CONTROLPLAN").MaxScopeUnitType
             .ShouldBe(OrganizationalUnitTypes.Company);
     }
@@ -105,7 +105,7 @@ public class QcAccessScenarioTests
     [Test]
     public async Task CompanyA_Grant_Does_Not_Match_CompanyB_Workstation()
     {
-        var stationB = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "Station B", _companyB.Id);
+        var stationB = OrganizationalUnit.Create(QcPermissions.SuggestedUnitTypes.Workstation, "Station B", _companyB.Id);
         _db.OrganizationalUnits.Add(stationB);
         _db.Grants.Add(Grant.CreateForUser(UserA, _labRead.Id, SourceType.User, UserA, Effect.Allow, T0, null, SourcePriority.IndividualOverride, scopeUnitId: _companyA.Id));
         await _db.SaveChangesAsync();

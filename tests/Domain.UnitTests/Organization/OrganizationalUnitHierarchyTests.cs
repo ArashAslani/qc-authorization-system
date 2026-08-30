@@ -13,7 +13,7 @@ public class OrganizationalUnitHierarchyTests
     {
         var holding = OrganizationalUnit.Create(OrganizationalUnitTypes.Holding, "H");
         var company = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "C", holding.Id);
-        var station = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "W", company.Id);
+        var station = OrganizationalUnit.Create("Workstation", "W", company.Id);
         var all = new[] { holding, company, station };
 
         OrganizationalUnitHierarchy.Ancestors(station, all).Select(u => u.Id)
@@ -24,7 +24,7 @@ public class OrganizationalUnitHierarchyTests
     public void Cycle_On_Reparent_Is_Rejected()
     {
         var a = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "A");
-        var b = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "B", a.Id);
+        var b = OrganizationalUnit.Create("Workstation", "B", a.Id);
         var all = new[] { a, b };
 
         Should.Throw<HierarchyCycleException>(() => a.Reparent(b, all));

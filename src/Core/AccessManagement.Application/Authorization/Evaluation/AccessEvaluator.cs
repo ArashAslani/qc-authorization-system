@@ -1,5 +1,6 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Constraints;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Authorization.Evaluation;
 
@@ -26,7 +27,7 @@ public sealed class AccessEvaluator : IAccessEvaluator
         var candidates = await _grantResolver.FindCandidatesAsync(request, ct);
         var now = request.When;
         var valid = candidates.Where(g => g.Validity.IsActiveAt(now)).ToList();
-        var inScope = await FilterInScopeAsync(valid, request.ResourceScopeUnitId, ct);
+        var inScope = await FilterInScopeAsync(valid, request, ct);
         var traceId = Guid.NewGuid();
 
         if (inScope.Count == 0)
@@ -61,7 +62,7 @@ public sealed class AccessEvaluator : IAccessEvaluator
             return new AccessibleScopeResult(false, Array.Empty<Guid>(), Array.Empty<Guid>());
         }
 
-        var unrestrictedProbe = await FilterInScopeAsync(valid, Guid.NewGuid(), ct);
+        var unrestrictedProbe = await FilterInScopeAsync(valid, request with { ResourceScopeUnitId = Guid.NewGuid() }, ct);
         var isUnrestricted = unrestrictedProbe.Count > 0 && PickWinner(unrestrictedProbe).Effect == Effect.Allow;
 
         var scopeIds = valid
@@ -74,7 +75,7 @@ public sealed class AccessEvaluator : IAccessEvaluator
         var denied = new List<Guid>();
         foreach (var scopeId in scopeIds)
         {
-            var inScope = await FilterInScopeAsync(valid, scopeId, ct);
+            var inScope = await FilterInScopeAsync(valid, request with { ResourceScopeUnitId = scopeId }, ct);
             if (inScope.Count == 0)
             {
                 continue;
@@ -100,23 +101,30 @@ public sealed class AccessEvaluator : IAccessEvaluator
 
     private async Task<List<Grant>> FilterInScopeAsync(
         IReadOnlyList<Grant> valid,
-        Guid? resourceScopeUnitId,
+        AccessRequest request,
         CancellationToken ct)
     {
         var inScope = new List<Grant>();
         foreach (var grant in valid)
         {
-            if (await _scopeMatcher.MatchesAsync(grant.ScopeUnitId, resourceScopeUnitId, ct))
+            if (!await _scopeMatcher.MatchesAsync(grant.ScopeUnitId, request.ResourceScopeUnitId, ct))
             {
-                inScope.Add(grant);
+                continue;
             }
+
+            if (!GrantConstraintEvaluator.AllSatisfied(grant, request, out _))
+            {
+                continue;
+            }
+
+            inScope.Add(grant);
         }
 
         return inScope;
     }
 
     /// <summary>
-    /// Interim tie-break: Deny over Allow at equal priority. Not locked by TDD A2.
+    /// Product lock: Deny-wins at equal priority (TDD A2 left this unlocked; this codebase does not invert it).
     /// </summary>
     private static Grant PickWinner(IReadOnlyList<Grant> inScope) =>
         inScope

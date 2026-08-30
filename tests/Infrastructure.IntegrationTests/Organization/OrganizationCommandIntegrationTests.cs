@@ -54,6 +54,10 @@ public class OrganizationCommandIntegrationTests
 
         _context = _services.GetRequiredService<ApplicationDbContext>();
         await _context.Database.EnsureCreatedAsync();
+        var company = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "A");
+        company.Id = TestGuids.CompanyA;
+        _context.OrganizationalUnits.Add(company);
+        await _context.SaveChangesAsync();
         _mediator = _services.GetRequiredService<IMediator>();
         _userManager = _services.GetRequiredService<UserManager<ApplicationUser>>();
     }

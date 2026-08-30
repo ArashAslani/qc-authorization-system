@@ -19,5 +19,6 @@ public class DelegationConfiguration : IEntityTypeConfiguration<Delegation>
         builder.HasIndex(d => new { d.DelegateUserId, d.PermissionId });
         builder.HasIndex(d => d.DelegatorUserId);
         builder.HasIndex(d => d.ScopeUnitId);
+        builder.Property(d => d.RevokedAt);
     }
 }

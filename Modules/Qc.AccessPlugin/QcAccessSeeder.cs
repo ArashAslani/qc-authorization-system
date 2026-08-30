@@ -23,7 +23,7 @@ public sealed class QcAccessSeeder : IAccessPluginSeeder
         await EnsurePermission(db, QcPermissions.ControlPlanApprove, "CONTROLPLAN", "APPROVE");
         await EnsurePermission(db, QcPermissions.BomUpdate, "BOM", "UPDATE");
 
-        await EnsureScope(db, "LABORATORY", OrganizationalUnitTypes.Workstation);
+        await EnsureScope(db, "LABORATORY", QcPermissions.SuggestedUnitTypes.Workstation);
         await EnsureScope(db, "CONTROLPLAN", OrganizationalUnitTypes.Company);
         await EnsureScope(db, "BOM", OrganizationalUnitTypes.Company);
 

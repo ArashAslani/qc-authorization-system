@@ -102,4 +102,13 @@ public class LayeringTests
         Assert.That(refs.Any(r => r.StartsWith("Microsoft.EntityFrameworkCore")), Is.False,
             "Domain must not reference Microsoft.EntityFrameworkCore.*");
     }
+
+    [Test]
+    public void RegisterRequest_Must_Not_Accept_PersonnelId()
+    {
+        var ctor = typeof(WebApi.Endpoints.RegisterRequest).GetConstructors().Single();
+        var names = ctor.GetParameters().Select(p => p.Name).ToArray();
+        Assert.That(names, Is.EqualTo(new[] { "Email", "Password" }));
+        Assert.That(names, Does.Not.Contain("PersonnelId"));
+    }
 }

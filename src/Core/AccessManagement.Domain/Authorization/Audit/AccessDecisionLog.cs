@@ -17,4 +17,5 @@ public class AccessDecisionLog : BaseEntity
     public string Reason { get; set; } = string.Empty;
     public string CandidateGrantsJson { get; set; } = "[]";
     public DateTimeOffset CreatedAt { get; set; }
+    public Guid TraceId { get; set; }
 }

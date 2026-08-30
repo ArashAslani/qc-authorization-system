@@ -13,7 +13,7 @@ public sealed class DecisionTraceWriter : IDecisionTraceWriter
 
     public DecisionTraceWriter(IApplicationDbContext db) => _db = db;
 
-    public async Task<AccessDecision> WriteAsync(
+    public Task<AccessDecision> WriteAsync(
         AccessRequest request,
         IReadOnlyList<Grant> candidates,
         Grant? winner,
@@ -41,9 +41,9 @@ public sealed class DecisionTraceWriter : IDecisionTraceWriter
             Reason = decision.Reason,
             CandidateGrantsJson = JsonSerializer.Serialize(payload),
             CreatedAt = DateTimeOffset.UtcNow,
+            TraceId = decision.TraceId,
         });
 
-        await _db.SaveChangesAsync(ct);
-        return decision;
+        return Task.FromResult(decision);
     }
 }
