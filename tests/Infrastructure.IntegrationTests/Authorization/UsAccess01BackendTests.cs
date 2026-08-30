@@ -1,30 +1,31 @@
-using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
-using qc_authorization.Application.Authorization.Commands.AssignAuthorizationRoleToPosition;
-using qc_authorization.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
-using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
-using qc_authorization.Application.Authorization.Commands.AssignRoleGroupToUser;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.CreateRole;
-using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
-using qc_authorization.Application.Authorization.Commands.RevokeAuthorizationRoleFromPosition;
-using qc_authorization.Application.Authorization.Commands.UpdateRole;
-using qc_authorization.Application.Authorization.Commands.UpdateRoleGroup;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
+using AccessManagement.Application.Authorization.Commands.AssignAuthorizationRoleToPosition;
+using AccessManagement.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
+using AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
+using AccessManagement.Application.Authorization.Commands.AssignRoleGroupToUser;
+using AccessManagement.Application.Authorization.Commands.CreatePermission;
+using AccessManagement.Application.Authorization.Commands.CreateRole;
+using AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
+using AccessManagement.Application.Authorization.Commands.RevokeAuthorizationRoleFromPosition;
+using AccessManagement.Application.Authorization.Commands.UpdateRole;
+using AccessManagement.Application.Authorization.Commands.UpdateRoleGroup;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class UsAccess01BackendTests
@@ -92,8 +93,8 @@ public class UsAccess01BackendTests
         grants[0].SourceType.ShouldBe(SourceType.Role);
 
         var evaluator = _services.GetRequiredService<IAccessEvaluator>();
-        var decision = await evaluator.EvaluateAsync(new AccessRequest(
-            SubjectType.Position, position.Id, null, "Sign", "INSPECTION", null, T0));
+        var decision = await evaluator.EvaluateAsync(AccessRequest.ForUser(
+            Guid.Empty, "Sign", "INSPECTION", null, T0, position.Id));
 
         decision.Effect.ShouldBe(Effect.Allow);
     }
@@ -131,8 +132,8 @@ public class UsAccess01BackendTests
         await _mediator.Send(new UpdateRoleCommand(roleId, "Calibration Reader", null, CatalogStatus.Inactive));
 
         var evaluator = _services.GetRequiredService<IAccessEvaluator>();
-        var decision = await evaluator.EvaluateAsync(new AccessRequest(
-            SubjectType.User, Guid.Empty, userId, "Read", "CALIBRATION", null, T0));
+        var decision = await evaluator.EvaluateAsync(AccessRequest.ForUser(
+            userId, "Read", "CALIBRATION", null, T0));
 
         decision.Effect.ShouldBe(Effect.Deny);
     }
@@ -153,8 +154,8 @@ public class UsAccess01BackendTests
         await _mediator.Send(new UpdateRoleGroupCommand(groupId, "Sample Group", null, CatalogStatus.Inactive));
 
         var evaluator = _services.GetRequiredService<IAccessEvaluator>();
-        var decision = await evaluator.EvaluateAsync(new AccessRequest(
-            SubjectType.User, Guid.Empty, userId, "Read", "SAMPLING", null, T0));
+        var decision = await evaluator.EvaluateAsync(AccessRequest.ForUser(
+            userId, "Read", "SAMPLING", null, T0));
 
         decision.Effect.ShouldBe(Effect.Deny);
     }

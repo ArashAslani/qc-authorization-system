@@ -1,16 +1,16 @@
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.UnitTests.TestSupport;
-using qc_authorization.Application.Workflow;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.UnitTests.TestSupport;
+using AccessManagement.Application.Workflow;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Infrastructure.Data;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Application.UnitTests.Workflow;
+namespace AccessManagement.Application.UnitTests.Workflow;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class WorkflowStepAuthorizerTests
@@ -78,7 +78,6 @@ public class WorkflowStepAuthorizerTests
             new WorkflowStepRequirement("Personnel.Read", "Personnel", "r-1"),
             T0);
 
-        decision.Trace.ResourceId.ShouldBe("r-1");
-        decision.Trace.RequestedPermission.ShouldBe("Personnel.Read");
+        decision.Effect.ShouldBe(Effect.Allow);
     }
 }

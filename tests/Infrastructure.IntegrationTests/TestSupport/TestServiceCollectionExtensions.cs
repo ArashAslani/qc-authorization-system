@@ -1,15 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Delegation;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Authorization.Services;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.Services;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Delegation;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Organization;
+using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Tests.TestSupport;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+namespace AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 
 public static class TestServiceCollectionExtensions
 {
@@ -24,12 +25,16 @@ public static class TestServiceCollectionExtensions
     {
         services.AddSingleton<PositionHierarchyService>();
         services.AddSingleton<GrantApplicabilityService>();
-        services.AddSingleton<AccessEvaluationEngine>();
         services.AddScoped<ICatalogGrantFilter, CatalogGrantFilter>();
+        services.AddScoped<IOrganizationalUnitHierarchy, OrganizationalUnitHierarchyService>();
+        services.AddScoped<IPositionHierarchyQuery, PositionHierarchyQuery>();
+        services.AddScoped<IScopeMatcher, ScopeMatcher>();
+        services.AddScoped<IGrantResolver, GrantResolver>();
+        services.AddScoped<ICandidateGrantResolver, GrantResolver>();
+        services.AddScoped<IDecisionTraceWriter, NullDecisionTraceWriter>();
         services.AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>();
         services.AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>();
         services.AddScoped<RoleGroupGrantMaterializer>();
-        services.AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>();
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
         services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
         return services;

@@ -1,6 +1,6 @@
-namespace qc_authorization.Application.UnitTests.TestSupport;
+namespace AccessManagement.Application.UnitTests.TestSupport;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 internal static class TestUsers
 {

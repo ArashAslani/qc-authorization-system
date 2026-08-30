@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <RootNamespace>qc_authorization.Domain.UnitTests</RootNamespace>
-        <AssemblyName>qc_authorization.Domain.UnitTests</AssemblyName>
+        <RootNamespace>AccessManagement.Domain.UnitTests</RootNamespace>
+        <AssemblyName>AccessManagement.Domain.UnitTests</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
+        <ProjectReference Include="..\..\src\Core\AccessManagement.Domain\AccessManagement.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>

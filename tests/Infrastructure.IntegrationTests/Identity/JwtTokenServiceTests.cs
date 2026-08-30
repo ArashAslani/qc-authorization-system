@@ -1,13 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
-using qc_authorization.Infrastructure.Identity;
+using AccessManagement.Infrastructure.Identity;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Identity;
+namespace AccessManagement.Infrastructure.IntegrationTests.Identity;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class JwtTokenServiceTests

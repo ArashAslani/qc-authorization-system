@@ -1,10 +1,10 @@
-using qc_authorization.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Authorization.ValueObjects;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Authorization.ValueObjects;
+namespace AccessManagement.Domain.UnitTests.Authorization.ValueObjects;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class ValidityTests

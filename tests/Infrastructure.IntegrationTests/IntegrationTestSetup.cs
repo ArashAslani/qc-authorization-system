@@ -1,9 +1,9 @@
-using qc_authorization.Application.Common.Mappings;
+using AccessManagement.Application.Common.Mappings;
 using NUnit.Framework;
 
-namespace qc_authorization.Infrastructure.IntegrationTests;
+namespace AccessManagement.Infrastructure.IntegrationTests;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [SetUpFixture]
 public class IntegrationTestSetup

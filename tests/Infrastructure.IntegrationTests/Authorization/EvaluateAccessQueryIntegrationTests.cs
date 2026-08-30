@@ -1,24 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Queries.EvaluateAccess;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Mappings;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.Services;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Queries.EvaluateAccess;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Mappings;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class EvaluateAccessQueryIntegrationTests
@@ -69,8 +70,7 @@ public class EvaluateAccessQueryIntegrationTests
         var result = await _mediator.Send(new EvaluateAccessQuery(
             SubjectType.User, Guid.Empty, TestUsers.UserE, "Read", "Personnel", null, T0));
 
-        result.Effect.ShouldBe("Allow");
-        result.Trace.CandidateCount.ShouldBeGreaterThan(0);
+        result.Allowed.ShouldBeTrue();
     }
 
     [Test]
@@ -79,6 +79,6 @@ public class EvaluateAccessQueryIntegrationTests
         var result = await _mediator.Send(new EvaluateAccessQuery(
             SubjectType.User, Guid.Empty, TestUsers.Unknown, "Read", "Personnel", null, T0));
 
-        result.Effect.ShouldBe("Deny");
+        result.Allowed.ShouldBeFalse();
     }
 }

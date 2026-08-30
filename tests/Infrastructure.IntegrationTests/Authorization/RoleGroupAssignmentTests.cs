@@ -1,31 +1,32 @@
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Commands.AssignRoleGroupToPosition;
-using qc_authorization.Application.Authorization.Commands.AssignRoleGroupToUser;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.CreateRole;
-using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
-using qc_authorization.Application.Authorization.Commands.RevokeRoleGroupFromPosition;
-using qc_authorization.Application.Authorization.Commands.RevokeRoleGroupFromUser;
-using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
-using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.Services;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Enums;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Commands.AssignRoleGroupToPosition;
+using AccessManagement.Application.Authorization.Commands.AssignRoleGroupToUser;
+using AccessManagement.Application.Authorization.Commands.CreatePermission;
+using AccessManagement.Application.Authorization.Commands.CreateRole;
+using AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
+using AccessManagement.Application.Authorization.Commands.RevokeRoleGroupFromPosition;
+using AccessManagement.Application.Authorization.Commands.RevokeRoleGroupFromUser;
+using AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
+using AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Enums;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Tests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
 [TestFixture]
 public class RoleGroupAssignmentTests
@@ -177,14 +178,8 @@ public class RoleGroupAssignmentTests
         await _mediator.Send(new AssignRoleGroupToUserCommand(userId, groupId, DateTimeOffset.UtcNow.AddDays(-1)));
 
         var evaluator = _services.GetRequiredService<IAccessEvaluator>();
-        var decision = await evaluator.EvaluateAsync(new AccessRequest(
-            SubjectType.User,
-            Guid.Empty,
-            userId,
-            "VIEW",
-            "REPORT",
-            null,
-            DateTimeOffset.UtcNow));
+        var decision = await evaluator.EvaluateAsync(AccessRequest.ForUser(
+            userId, "VIEW", "REPORT", null, DateTimeOffset.UtcNow));
 
         decision.Effect.ShouldBe(Effect.Allow);
     }

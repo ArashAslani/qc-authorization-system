@@ -1,16 +1,16 @@
-using qc_authorization.Application.Authorization.Audit.Queries.GetAuditEntries;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization.Audit;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Audit.Queries.GetAuditEntries;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Authorization.Audit;
+using AccessManagement.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class AuditQueryIntegrationTests

@@ -1,10 +1,10 @@
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Exceptions;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Exceptions;
+using AccessManagement.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Organization;
+namespace AccessManagement.Domain.UnitTests.Organization;
 
 [TestFixture]
 public class PositionHierarchyServiceTests

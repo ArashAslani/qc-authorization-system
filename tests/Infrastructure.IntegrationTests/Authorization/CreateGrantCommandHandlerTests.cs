@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Commands.CreateGrant;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Commands.CreateGrant;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class CreateGrantCommandHandlerTests
@@ -62,8 +62,7 @@ public class CreateGrantCommandHandlerTests
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,
-            ScopeKind.Unbounded,
-            ScopeIdentifier: null,
+            ScopeUnitId: null,
             Effect.Allow,
             SourceType.Role,
             SourceId: TestGuids.Subject50,
@@ -93,8 +92,7 @@ public class CreateGrantCommandHandlerTests
             PermissionId: permissionId,
             Resource: "Personnel",
             ResourceId: null,
-            ScopeKind.Company,
-            ScopeIdentifier: "C-1",
+            ScopeUnitId: TestGuids.CompanyA,
             Effect.Deny,
             SourceType.Position,
             SourceId: TestGuids.Subject50,
@@ -104,8 +102,7 @@ public class CreateGrantCommandHandlerTests
 
         var g = await _context.Grants.SingleAsync(x => x.Id == id);
         g.Effect.ShouldBe(Effect.Deny);
-        g.ScopeKind.ShouldBe(ScopeKind.Company);
-        g.ScopeIdentifier.ShouldBe("C-1");
+        g.ScopeUnitId.ShouldBe(TestGuids.CompanyA);
         g.Priority.ShouldBe(SourcePriority.PositionOverride);
     }
 
@@ -123,8 +120,7 @@ public class CreateGrantCommandHandlerTests
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,
-            ScopeKind.Unbounded,
-            ScopeIdentifier: null,
+            ScopeUnitId: null,
             Effect.Allow,
             SourceType.User,
             SourceId: Guid.Empty,
@@ -150,8 +146,7 @@ public class CreateGrantCommandHandlerTests
             PermissionId: permissionId,
             Resource: null,
             ResourceId: null,
-            ScopeKind.Unbounded,
-            ScopeIdentifier: null,
+            ScopeUnitId: null,
             Effect.Allow,
             SourceType.RoleGroup,
             SourceId: TestGuids.Subject50,

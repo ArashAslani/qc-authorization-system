@@ -1,23 +1,23 @@
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Commands.CreateDelegation;
-using qc_authorization.Application.Authorization.Delegation;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.UnitTests.TestSupport;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Exceptions;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Enums;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Commands.CreateDelegation;
+using AccessManagement.Application.Authorization.Delegation;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.UnitTests.TestSupport;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Exceptions;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Enums;
+using AccessManagement.Infrastructure.Data;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Application.UnitTests.Authorization;
+namespace AccessManagement.Application.UnitTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class DelegationHierarchyTests
@@ -55,7 +55,7 @@ public class DelegationHierarchyTests
         await Should.NotThrowAsync(async () =>
             await _mediator.Send(new CreateDelegationCommand(
                 TestUsers.UserA, TestUsers.UserB, _perm.Id, T0, null,
-                ScopeKind.Company, TestGuids.CompanyA.ToString())));
+                TestGuids.CompanyA)));
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class DelegationHierarchyTests
         await Should.ThrowAsync<AuthorizationDomainException>(async () =>
             await _mediator.Send(new CreateDelegationCommand(
                 TestUsers.UserA, TestUsers.UserC, _perm.Id, T0, null,
-                ScopeKind.Company, TestGuids.CompanyA.ToString())));
+                TestGuids.CompanyA)));
     }
 
     [Test]
@@ -80,7 +80,7 @@ public class DelegationHierarchyTests
         await Should.NotThrowAsync(async () =>
             await _mediator.Send(new CreateDelegationCommand(
                 TestUsers.UserA, TestUsers.UserC, _perm.Id, T0, null,
-                ScopeKind.Company, TestGuids.CompanyA.ToString())));
+                TestGuids.CompanyA)));
     }
 
     private async Task SeedHierarchyWithScopedGrantAsync()
@@ -120,8 +120,7 @@ public class DelegationHierarchyTests
             T0.AddDays(-30),
             null,
             SourcePriority.IndividualOverride,
-            scopeKind: ScopeKind.Company,
-            scopeIdentifier: TestGuids.CompanyA.ToString()));
+            scopeUnitId: TestGuids.CompanyA));
 
         await _context.SaveChangesAsync();
     }

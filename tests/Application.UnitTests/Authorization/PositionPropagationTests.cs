@@ -1,18 +1,18 @@
 using Microsoft.EntityFrameworkCore;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.UnitTests.TestSupport;
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.UnitTests.TestSupport;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
 using NUnit.Framework;
 using Shouldly;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
-namespace qc_authorization.Application.UnitTests.Authorization;
+namespace AccessManagement.Application.UnitTests.Authorization;
 [TestFixture]
 [NonParallelizable]
 public class PositionPropagationTests
@@ -176,8 +176,21 @@ public class PositionPropagationTests
             "another user in B must not be affected by user A's individual deny");
     }
 
-    private Task<AccessDecision> EvaluateForUser(Guid userId) =>
-        _evaluator.EvaluateAsync(AccessRequest.ForUser(userId, "Read", "Personnel", null, T0));
+    private async Task<AccessDecision> EvaluateForUser(Guid userId)
+    {
+        var personnel = _context.Personnel.Local.FirstOrDefault(p => p.IdentityUserId == userId)
+            ?? _context.Personnel.FirstOrDefault(p => p.IdentityUserId == userId);
+        Guid? positionId = null;
+        if (personnel is not null)
+        {
+            var assignment = _context.PositionAssignments.Local.FirstOrDefault(a => a.PersonnelId == personnel.Id)
+                ?? _context.PositionAssignments.FirstOrDefault(a => a.PersonnelId == personnel.Id);
+            positionId = assignment?.PositionId;
+        }
+
+        return await _evaluator.EvaluateAsync(
+            AccessRequest.ForUser(userId, "Read", "Personnel", null, T0, positionId, TestGuids.CompanyA));
+    }
 
     private void AssignUser(Guid identityUserId, Guid positionId)
     {
@@ -230,8 +243,7 @@ public class PositionPropagationTests
         SourceType sourceType,
         Guid sourceId,
         int priority,
-        ScopeKind scopeKind = ScopeKind.Unbounded,
-        string? scopeIdentifier = null,
+        Guid? scopeUnitId = null,
         DateTimeOffset? validFrom = null,
         DateTimeOffset? validTo = null) =>
         Grant.Create(
@@ -244,6 +256,5 @@ public class PositionPropagationTests
             validFrom ?? T0.AddDays(-1),
             validTo,
             priority,
-            scopeKind: scopeKind,
-            scopeIdentifier: scopeIdentifier);
+            scopeUnitId: scopeUnitId);
 }

@@ -1,33 +1,33 @@
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
-using qc_authorization.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
-using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.CreateRole;
-using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
-using qc_authorization.Application.Authorization.Commands.RemovePermissionFromRole;
-using qc_authorization.Application.Authorization.Commands.RemoveRoleFromGroup;
-using qc_authorization.Application.Authorization.Queries.GetActionCatalogs;
-using qc_authorization.Application.Authorization.Queries.GetPermissionById;
-using qc_authorization.Application.Authorization.Queries.GetPermissions;
-using qc_authorization.Application.Authorization.Queries.GetResourceCatalogs;
-using qc_authorization.Application.Authorization.Queries.GetRoleById;
-using qc_authorization.Application.Authorization.Queries.GetRoleGroupById;
-using qc_authorization.Application.Authorization.Queries.GetRoleGroups;
-using qc_authorization.Application.Authorization.Queries.GetRoles;
-using qc_authorization.Application.Authorization.Queries.GetUserRoles;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
+using AccessManagement.Application.Authorization.Commands.AssignAuthorizationRoleToUser;
+using AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
+using AccessManagement.Application.Authorization.Commands.CreatePermission;
+using AccessManagement.Application.Authorization.Commands.CreateRole;
+using AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
+using AccessManagement.Application.Authorization.Commands.RemovePermissionFromRole;
+using AccessManagement.Application.Authorization.Commands.RemoveRoleFromGroup;
+using AccessManagement.Application.Authorization.Queries.GetActionCatalogs;
+using AccessManagement.Application.Authorization.Queries.GetPermissionById;
+using AccessManagement.Application.Authorization.Queries.GetPermissions;
+using AccessManagement.Application.Authorization.Queries.GetResourceCatalogs;
+using AccessManagement.Application.Authorization.Queries.GetRoleById;
+using AccessManagement.Application.Authorization.Queries.GetRoleGroupById;
+using AccessManagement.Application.Authorization.Queries.GetRoleGroups;
+using AccessManagement.Application.Authorization.Queries.GetRoles;
+using AccessManagement.Application.Authorization.Queries.GetUserRoles;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class AccessDefinitionQueryIntegrationTests

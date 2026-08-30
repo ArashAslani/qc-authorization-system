@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>qc_authorization.ArchitectureTests</RootNamespace>
-    <AssemblyName>qc_authorization.ArchitectureTests</AssemblyName>
+    <RootNamespace>AccessManagement.ArchitectureTests</RootNamespace>
+    <AssemblyName>AccessManagement.ArchitectureTests</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -19,10 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Application\Application.csproj" />
-    <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
-    <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Web\Web.csproj" />
+    <ProjectReference Include="..\..\src\Core\AccessManagement.Application\AccessManagement.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\AccessManagement.Domain\AccessManagement.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\AccessManagement.Infrastructure\AccessManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Host\WebApi\WebApi.csproj" />
   </ItemGroup>
 
 </Project>

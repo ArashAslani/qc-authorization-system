@@ -1,10 +1,11 @@
-# Qc Authorization System
+# Access Management Core
 
-A CleanArchitecture-based .NET 10 implementation of the Qc Authorization
-and Access Management system. It models organization hierarchy, position-based
+A CleanArchitecture-based .NET 10 implementation of a product-agnostic
+Access Management Core. It models organization hierarchy, position-based
 grants, role-based grants, individual overrides, and delegations. A single
-Access Evaluation Engine is the only component that produces Allow/Deny
-decisions.
+`IAccessEvaluator` is the only component that produces Allow/Deny
+decisions. Product-specific permissions and scopes are added via
+`IAccessPluginSeeder` on a product branch — never in Core.
 
 ## Architecture
 
@@ -23,12 +24,13 @@ rationale is in [`docs/decisions/`](docs/decisions/).
 ```text
 docs/                  architecture, plan, testing, ADRs
 src/
-  Domain/              pure C# entities, value objects, domain services
-  Application/         use cases, IAccessEvaluator, contracts
-  Infrastructure/      EF Core + SQLite persistence
+  Core/
+    AccessManagement.Domain/         entities, value objects, domain services
+    AccessManagement.Application/    use cases, IAccessEvaluator, plugin contract
+    AccessManagement.Infrastructure/ EF Core + SQLite + ASP.NET Identity
+  Host/WebApi/         ASP.NET Core minimal API (Core only on main)
   Shared/              cross-cutting primitives
   ServiceDefaults/     default observability
-  Web/                 ASP.NET Core minimal API
 tests/
   Domain.UnitTests/                 NUnit unit tests for Domain
   Application.UnitTests/            NUnit unit tests for Application
@@ -57,13 +59,13 @@ in `docs/ARCHITECTURE.md`.
 ## How to run the API
 
 ```bash
-dotnet run --project src/Web
+dotnet run --project src/Host/WebApi
 ```
 
 Apply database migrations (development auto-runs on startup; manual):
 
 ```bash
-dotnet ef database update --project src/Infrastructure --startup-project src/Web
+dotnet ef database update --project src/Core/AccessManagement.Infrastructure --startup-project src/Host/WebApi
 ```
 
 The default URL is printed by ASP.NET Core; OpenAPI is available at
@@ -103,12 +105,12 @@ with `dotnet build && dotnet test` and a local commit.
 
 SQLite via EF Core 10. The provider is selected by connection string
 (`appsettings.json`); switching to SQL Server or PostgreSQL is a
-one-line change in `src/Infrastructure/DependencyInjection.cs`. Migrations
-live under `src/Infrastructure/Data/Migrations/`:
+one-line change in `src/Core/AccessManagement.Infrastructure/DependencyInjection.cs`. Migrations
+live under `src/Core/AccessManagement.Infrastructure/Data/Migrations/`:
 
 ```bash
-dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/Web
-dotnet ef database update --project src/Infrastructure --startup-project src/Web
+dotnet ef migrations add <Name> --project src/Core/AccessManagement.Infrastructure --startup-project src/Host/WebApi
+dotnet ef database update --project src/Core/AccessManagement.Infrastructure --startup-project src/Host/WebApi
 ```
 
 ## License

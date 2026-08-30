@@ -1,11 +1,11 @@
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Enums;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Enums;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Organization;
+namespace AccessManagement.Domain.UnitTests.Organization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class PersonnelTests
@@ -17,7 +17,18 @@ public class PersonnelTests
         p.NationalId.ShouldBe("1234567890");
         p.FirstName.ShouldBe("Ali");
         p.LastName.ShouldBe("Ahmadi");
-        p.PersonalCode.ShouldBe("PC-001");
+        p.PersonnelCode.ShouldBe("PC-001");
         p.Status.ShouldBe(PersonnelStatus.Active);
+        p.IsSystemUser.ShouldBeFalse();
+        p.FullName.ShouldBe("Ali Ahmadi");
+    }
+
+    [Test]
+    public void NationalId_And_PersonnelCode_May_Be_Null()
+    {
+        var p = Personnel.Create(null, "Sys", "Admin", null, isSystemUser: true);
+        p.NationalId.ShouldBeNull();
+        p.PersonnelCode.ShouldBeNull();
+        p.IsSystemUser.ShouldBeTrue();
     }
 }

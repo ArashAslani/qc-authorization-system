@@ -1,12 +1,12 @@
-using qc_authorization.Application.Common.Behaviours;
-using qc_authorization.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Behaviours;
+using AccessManagement.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
-namespace qc_authorization.Application.UnitTests.Common.Behaviours;
+namespace AccessManagement.Application.UnitTests.Common.Behaviours;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 public class RequestLoggerTests
 {

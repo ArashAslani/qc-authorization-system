@@ -1,24 +1,24 @@
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Organization.Commands.AssignPersonnelToPosition;
-using qc_authorization.Application.Organization.Commands.CreatePersonnel;
-using qc_authorization.Application.Organization.Commands.CreatePosition;
-using qc_authorization.Application.Organization.Queries.GetPersonnel;
-using qc_authorization.Application.Organization.Queries.GetPersonnelById;
-using qc_authorization.Application.Organization.Queries.GetPositionAssignments;
-using qc_authorization.Application.Organization.Queries.GetPositionById;
-using qc_authorization.Application.Organization.Queries.GetPositions;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Enums;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Organization.Commands.AssignPersonnelToPosition;
+using AccessManagement.Application.Organization.Commands.CreatePersonnel;
+using AccessManagement.Application.Organization.Commands.CreatePosition;
+using AccessManagement.Application.Organization.Queries.GetPersonnel;
+using AccessManagement.Application.Organization.Queries.GetPersonnelById;
+using AccessManagement.Application.Organization.Queries.GetPositionAssignments;
+using AccessManagement.Application.Organization.Queries.GetPositionById;
+using AccessManagement.Application.Organization.Queries.GetPositions;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Enums;
+using AccessManagement.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Organization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class OrganizationQueryIntegrationTests
@@ -37,10 +37,10 @@ public class OrganizationQueryIntegrationTests
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<GetPersonnelQuery>())
             .AddSingleton<PositionHierarchyService>()
             .AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>())
-            .AddIdentityCore<qc_authorization.Infrastructure.Identity.ApplicationUser>()
+            .AddIdentityCore<AccessManagement.Infrastructure.Identity.ApplicationUser>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .Services
-            .AddScoped<IPersonnelIdentityBridge, qc_authorization.Infrastructure.Identity.PersonnelIdentityBridge>()
+            .AddScoped<IPersonnelIdentityBridge, AccessManagement.Infrastructure.Identity.PersonnelIdentityBridge>()
             .BuildServiceProvider();
 
         _context = _services.GetRequiredService<ApplicationDbContext>();

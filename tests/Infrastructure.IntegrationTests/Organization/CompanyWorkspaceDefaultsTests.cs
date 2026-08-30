@@ -1,10 +1,10 @@
-using qc_authorization.Application.Organization.Queries.GetPersonnelWorkspaces;
+using AccessManagement.Application.Organization.Queries.GetPersonnelWorkspaces;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Organization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class CompanyWorkspaceDefaultsTests

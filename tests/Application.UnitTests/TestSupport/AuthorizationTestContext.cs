@@ -1,46 +1,56 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Commands.CreateGrant;
-using qc_authorization.Application.Authorization.Delegation;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Authorization.Services;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Common.Mappings;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.Services;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Commands.CreateGrant;
+using AccessManagement.Application.Authorization.Delegation;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Authorization.Services;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Mappings;
+using AccessManagement.Application.Organization;
+using AccessManagement.Application.Session;
+using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Tests.TestSupport;
 
-namespace qc_authorization.Application.UnitTests.TestSupport;
+namespace AccessManagement.Application.UnitTests.TestSupport;
 
-/// <summary>
-/// Builds the authorization evaluation stack backed by an in-memory database.
-/// </summary>
 internal static class AuthorizationTestContext
 {
     public static (ApplicationDbContext Context, AccessEvaluator Evaluator) Create(Guid? activeCompanyId = null)
     {
         var companyId = activeCompanyId ?? TestGuids.CompanyA;
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"qc-auth-{Guid.NewGuid():N}")
+            .UseInMemoryDatabase($"access-{Guid.NewGuid():N}")
             .EnableServiceProviderCaching(false)
             .Options;
 
         var context = new ApplicationDbContext(options);
+        SeedCompany(context, companyId);
+
         var hierarchy = new PositionHierarchyService();
         var applicability = new GrantApplicabilityService(hierarchy);
-        var engine = new AccessEvaluationEngine();
-        var currentUser = new StaticCurrentUser(activeCompanyId: companyId);
-
         var catalogFilter = new CatalogGrantFilter(context);
-
-        var evaluator = new AccessEvaluator(
-            new PositionAwareCandidateGrantResolver(context, applicability, catalogFilter, currentUser),
-            engine);
+        var resolver = new GrantResolver(context, applicability, catalogFilter);
+        var units = new OrganizationalUnitHierarchyService(context);
+        var evaluator = new AccessEvaluator(resolver, new ScopeMatcher(units), new NullDecisionTraceWriter());
 
         return (context, evaluator);
+    }
+
+    public static void SeedCompany(ApplicationDbContext context, Guid companyUnitId, string name = "Company")
+    {
+        if (context.OrganizationalUnits.Any(u => u.Id == companyUnitId))
+        {
+            return;
+        }
+
+        var unit = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, name);
+        unit.Id = companyUnitId;
+        context.OrganizationalUnits.Add(unit);
+        context.SaveChanges();
     }
 
     public static IServiceProvider CreateMediatorServices(ApplicationDbContext context, Guid? activeCompanyId = null)
@@ -50,23 +60,27 @@ internal static class AuthorizationTestContext
 
         var hierarchy = new PositionHierarchyService();
         var applicability = new GrantApplicabilityService(hierarchy);
-        var engine = new AccessEvaluationEngine();
 
         return new ServiceCollection()
             .AddLogging()
             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreateGrantCommand>())
             .AddSingleton(hierarchy)
             .AddSingleton(applicability)
-            .AddSingleton(engine)
             .AddSingleton<ICurrentUser>(new StaticCurrentUser(activeCompanyId: companyId))
             .AddScoped<IApplicationDbContext>(_ => context)
             .AddScoped<IAuthorizationAuditService, AuthorizationAuditService>()
             .AddScoped<ICatalogGrantFilter, CatalogGrantFilter>()
+            .AddScoped<IOrganizationalUnitHierarchy, OrganizationalUnitHierarchyService>()
+            .AddScoped<IPositionHierarchyQuery, PositionHierarchyQuery>()
+            .AddScoped<IScopeMatcher, ScopeMatcher>()
+            .AddScoped<IGrantResolver, GrantResolver>()
+            .AddScoped<ICandidateGrantResolver, GrantResolver>()
+            .AddScoped<IDecisionTraceWriter, NullDecisionTraceWriter>()
             .AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>()
             .AddScoped<RoleGroupGrantMaterializer>()
-            .AddScoped<ICandidateGrantResolver, PositionAwareCandidateGrantResolver>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
+            .AddScoped<CompanyWorkspaceService>()
             .BuildServiceProvider();
     }
 }

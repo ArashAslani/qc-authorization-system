@@ -1,11 +1,11 @@
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Exceptions;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Exceptions;
+using AccessManagement.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Authorization;
+namespace AccessManagement.Domain.UnitTests.Authorization;
 
 [TestFixture]
 public class GrantTests

@@ -2,15 +2,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Identity;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.Identity;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Identity;
+namespace AccessManagement.Infrastructure.IntegrationTests.Identity;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class IdentityIntegrationTests

@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <IsAspireSharedProject>true</IsAspireSharedProject>
-    <RootNamespace>qc_authorization.ServiceDefaults</RootNamespace>
-    <AssemblyName>qc_authorization.ServiceDefaults</AssemblyName>
+    <RootNamespace>AccessManagement.ServiceDefaults</RootNamespace>
+    <AssemblyName>AccessManagement.ServiceDefaults</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

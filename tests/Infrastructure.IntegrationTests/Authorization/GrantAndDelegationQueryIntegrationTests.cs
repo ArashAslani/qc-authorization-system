@@ -1,33 +1,33 @@
-using qc_authorization.Application.Authorization.Audit;
-using qc_authorization.Application.Authorization.Commands.CreateDelegation;
-using qc_authorization.Application.Authorization.Commands.CreateGrant;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.RevokeDelegation;
-using qc_authorization.Application.Authorization.Commands.RevokeGrant;
-using qc_authorization.Application.Authorization.Delegation;
-using qc_authorization.Application.Authorization.Evaluation;
-using qc_authorization.Application.Authorization.Queries.EvaluateAccessForSubject;
-using qc_authorization.Application.Authorization.Queries.GetDelegationById;
-using qc_authorization.Application.Authorization.Queries.GetDelegations;
-using qc_authorization.Application.Authorization.Queries.GetGrantById;
-using qc_authorization.Application.Authorization.Queries.GetGrants;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.Services;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Authorization.Audit;
+using AccessManagement.Application.Authorization.Commands.CreateDelegation;
+using AccessManagement.Application.Authorization.Commands.CreateGrant;
+using AccessManagement.Application.Authorization.Commands.CreatePermission;
+using AccessManagement.Application.Authorization.Commands.RevokeDelegation;
+using AccessManagement.Application.Authorization.Commands.RevokeGrant;
+using AccessManagement.Application.Authorization.Delegation;
+using AccessManagement.Application.Authorization.Evaluation;
+using AccessManagement.Application.Authorization.Queries.EvaluateAccessForSubject;
+using AccessManagement.Application.Authorization.Queries.GetDelegationById;
+using AccessManagement.Application.Authorization.Queries.GetDelegations;
+using AccessManagement.Application.Authorization.Queries.GetGrantById;
+using AccessManagement.Application.Authorization.Queries.GetGrants;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class GrantAndDelegationQueryIntegrationTests
@@ -75,7 +75,6 @@ public class GrantAndDelegationQueryIntegrationTests
             permId,
             "INSPECTION",
             null,
-            ScopeKind.Unbounded,
             null,
             Effect.Allow,
             SourceType.User,
@@ -110,7 +109,6 @@ public class GrantAndDelegationQueryIntegrationTests
             permId,
             "TASK",
             null,
-            ScopeKind.Unbounded,
             null,
             Effect.Allow,
             SourceType.User,
@@ -154,7 +152,6 @@ public class GrantAndDelegationQueryIntegrationTests
             permId,
             "REPORT",
             null,
-            ScopeKind.Unbounded,
             null,
             Effect.Allow,
             SourceType.User,
@@ -172,9 +169,6 @@ public class GrantAndDelegationQueryIntegrationTests
             null,
             DateTimeOffset.UtcNow));
 
-        decision.Effect.ShouldBe("Allow");
-        decision.Trace.ShouldNotBeNull();
-        decision.Trace.CandidateGrants.Count.ShouldBe(1);
-        decision.Trace.ApplicableGrants.Count.ShouldBe(1);
+        decision.Allowed.ShouldBeTrue();
     }
 }

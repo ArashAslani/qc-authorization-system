@@ -1,6 +1,6 @@
-namespace qc_authorization.Infrastructure.IntegrationTests;
+namespace AccessManagement.Infrastructure.IntegrationTests;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class SmokeTest
@@ -8,7 +8,7 @@ public class SmokeTest
     [Test]
     public void InfrastructureAssembly_Loads()
     {
-        var asm = typeof(qc_authorization.Infrastructure.Data.ApplicationDbContext).Assembly;
+        var asm = typeof(AccessManagement.Infrastructure.Data.ApplicationDbContext).Assembly;
         Assert.That(asm, Is.Not.Null);
     }
 }

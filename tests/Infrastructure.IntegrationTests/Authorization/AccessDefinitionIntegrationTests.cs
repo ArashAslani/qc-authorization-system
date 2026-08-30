@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using qc_authorization.Application.Authorization.Commands.CreatePermission;
-using qc_authorization.Application.Authorization.Commands.CreateRole;
-using qc_authorization.Application.Authorization.Commands.CreateRoleGroup;
-using qc_authorization.Application.Authorization.Commands.AddRoleToGroup;
-using qc_authorization.Application.Authorization.Commands.AssignPermissionToRole;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Application.Authorization.Commands.CreatePermission;
+using AccessManagement.Application.Authorization.Commands.CreateRole;
+using AccessManagement.Application.Authorization.Commands.CreateRoleGroup;
+using AccessManagement.Application.Authorization.Commands.AddRoleToGroup;
+using AccessManagement.Application.Authorization.Commands.AssignPermissionToRole;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Authorization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class AccessDefinitionIntegrationTests

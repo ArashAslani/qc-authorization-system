@@ -1,4 +1,4 @@
-namespace qc_authorization.Tests.TestSupport;
+namespace AccessManagement.Tests.TestSupport;
 
 /// <summary>
 /// Well-known GUID constants for tests (stable across runs). All values are valid hex GUIDs.

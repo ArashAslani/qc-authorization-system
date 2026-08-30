@@ -1,39 +1,59 @@
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Evaluation;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Exceptions;
+using AccessManagement.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Authorization;
+namespace AccessManagement.Domain.UnitTests.Authorization;
 
 [TestFixture]
-public class AccessEvaluationEngineTests
+public class GrantPriorityTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-    private readonly AccessEvaluationEngine _engine = new();
 
     [Test]
-    public void No_Candidates_Returns_Deny()
+    public void Individual_Override_Outranks_Role()
     {
-        var request = new AccessRequest(SubjectType.Role, TestGuids.Role1, null, "Read", "Personnel", null, T0);
-        var decision = _engine.Evaluate(request, []);
-        decision.Effect.ShouldBe(Effect.Deny);
-        decision.Reason.ShouldBe(DecisionReason.NoCandidateGrants);
+        SourcePriority.IndividualOverride.ShouldBeGreaterThan(SourcePriority.RoleOrRoleGroup);
+        SourcePriority.PositionOverride.ShouldBeGreaterThan(SourcePriority.Delegation);
+        SourcePriority.Delegation.ShouldBeGreaterThan(SourcePriority.RoleOrRoleGroup);
     }
 
     [Test]
-    public void Higher_Priority_Grant_Wins()
+    public void Grant_Stores_ScopeUnitId_As_Dumb_Data()
     {
-        var grants = new List<Grant>
-        {
-            Grant.Create(SubjectType.Role, TestGuids.Role1, TestGuids.Permission1, SourceType.Role, TestGuids.Role1, Effect.Allow, T0, null, 10),
-            Grant.Create(SubjectType.Role, TestGuids.Role1, TestGuids.Permission1, SourceType.Role, TestGuids.Role1, Effect.Deny, T0, null, 100),
-        };
-        var decision = _engine.Evaluate(
-            new AccessRequest(SubjectType.Role, TestGuids.Role1, null, "Read", "Personnel", null, T0),
-            grants);
-        decision.Effect.ShouldBe(Effect.Deny);
+        var grant = Grant.Create(
+            SubjectType.Position,
+            TestGuids.PosA1,
+            TestGuids.Permission1,
+            SourceType.Position,
+            TestGuids.PosA1,
+            Effect.Allow,
+            T0,
+            null,
+            SourcePriority.PositionOverride,
+            scopeUnitId: TestGuids.CompanyA);
+
+        grant.ScopeUnitId.ShouldBe(TestGuids.CompanyA);
+        grant.Effect.ShouldBe(Effect.Allow);
+    }
+
+    [Test]
+    public void Company_Positions_Cannot_Cross_Parent()
+    {
+        var companyA = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "A");
+        companyA.Id = TestGuids.CompanyA;
+        var companyB = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "B");
+        companyB.Id = TestGuids.CompanyB;
+
+        var manager = Position.Create(companyA.Id, "MGR", "Manager");
+        var other = Position.Create(companyB.Id, "MGR", "Manager B");
+        var hierarchy = new PositionHierarchyService();
+
+        Should.Throw<OrganizationDomainException>(() =>
+            manager.Reparent(other, [manager, other], hierarchy));
     }
 }

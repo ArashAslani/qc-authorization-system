@@ -1,14 +1,14 @@
 using NetArchTest.Rules;
 
-namespace qc_authorization.ArchitectureTests;
+namespace AccessManagement.ArchitectureTests;
 
 [TestFixture]
 public class LayeringTests
 {
-    private const string ApplicationNamespace = "qc_authorization.Application";
-    private const string DomainNamespace = "qc_authorization.Domain";
-    private const string InfrastructureNamespace = "qc_authorization.Infrastructure";
-    private const string WebNamespace = "qc_authorization.Web";
+    private const string ApplicationNamespace = "AccessManagement.Application";
+    private const string DomainNamespace = "AccessManagement.Domain";
+    private const string InfrastructureNamespace = "AccessManagement.Infrastructure";
+    private const string WebNamespace = "AccessManagement.WebApi";
 
     [Test]
     public void Domain_ShouldNotDependOnInfrastructureOrWeb()
@@ -80,6 +80,18 @@ public class LayeringTests
 
         Assert.That(result.IsSuccessful, Is.True,
             "Infrastructure must not depend on Web: " + string.Join(", ", result.FailingTypeNames ?? Array.Empty<string>()));
+    }
+
+    [Test]
+    public void Application_ShouldNotDependOnQcPlugin()
+    {
+        var result = Types.InAssembly(typeof(Application.Common.Interfaces.IApplicationDbContext).Assembly)
+            .ShouldNot()
+            .HaveDependencyOnAny("Qc.AccessPlugin", "Qc")
+            .GetResult();
+
+        Assert.That(result.IsSuccessful, Is.True,
+            "Core Application must not reference QC plugin: " + string.Join(", ", result.FailingTypeNames ?? Array.Empty<string>()));
     }
 
     [Test]

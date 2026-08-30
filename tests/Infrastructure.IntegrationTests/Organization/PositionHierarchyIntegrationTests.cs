@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Domain.Organization.Exceptions;
-using qc_authorization.Infrastructure.Data;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Domain.Organization.Exceptions;
+using AccessManagement.Infrastructure.Data;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Organization;
+namespace AccessManagement.Infrastructure.IntegrationTests.Organization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 [NonParallelizable]

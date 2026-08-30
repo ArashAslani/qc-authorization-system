@@ -5,20 +5,20 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using qc_authorization.Application.Common.Interfaces;
-using qc_authorization.Application.Organization.Commands.CreatePersonnel;
-using qc_authorization.Application.Organization.Commands.LinkPersonnelToIdentityUser;
-using qc_authorization.Domain.Organization;
-using qc_authorization.Infrastructure.Data;
-using qc_authorization.Infrastructure.Identity;
-using qc_authorization.Infrastructure.IntegrationTests.TestSupport;
+using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Organization.Commands.CreatePersonnel;
+using AccessManagement.Application.Organization.Commands.LinkPersonnelToIdentityUser;
+using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
+using AccessManagement.Infrastructure.Identity;
+using AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 using MediatR;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Infrastructure.IntegrationTests.Identity;
+namespace AccessManagement.Infrastructure.IntegrationTests.Identity;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class PersonnelIdentityBridgeTests

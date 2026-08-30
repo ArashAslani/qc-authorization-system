@@ -1,4 +1,4 @@
-﻿namespace qc_authorization.Shared;
+namespace AccessManagement.Shared;
 
 public static class Services
 {

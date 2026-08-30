@@ -1,12 +1,12 @@
-using qc_authorization.Domain.Authorization;
-using qc_authorization.Domain.Authorization.Enums;
-using qc_authorization.Domain.Authorization.Exceptions;
-using qc_authorization.Domain.Authorization.ValueObjects;
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Domain.Authorization;
+using AccessManagement.Domain.Authorization.Enums;
+using AccessManagement.Domain.Authorization.Exceptions;
+using AccessManagement.Domain.Authorization.ValueObjects;
+using AccessManagement.Tests.TestSupport;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Authorization;
+namespace AccessManagement.Domain.UnitTests.Authorization;
 
 [TestFixture]
 public class DelegationTests
@@ -44,7 +44,7 @@ public class DelegationTests
     [Test]
     public void ToGrant_Produces_Delegation_Sourced_Grant()
     {
-        var delegation = Delegation.Create(Delegator, Delegate, TestGuids.Permission100, T0, null, ScopeKind.Company, "C-1");
+        var delegation = Delegation.Create(Delegator, Delegate, TestGuids.Permission100, T0, null, TestGuids.CompanyA);
         delegation.Id = TestGuids.Delegation1;
 
         var grant = delegation.ToGrant();
@@ -54,7 +54,6 @@ public class DelegationTests
         grant.SourceType.ShouldBe(SourceType.Delegation);
         grant.SourceId.ShouldBe(TestGuids.Delegation1);
         grant.Priority.ShouldBe(SourcePriority.Delegation);
-        grant.ScopeKind.ShouldBe(ScopeKind.Company);
-        grant.ScopeIdentifier.ShouldBe("C-1");
+        grant.ScopeUnitId.ShouldBe(TestGuids.CompanyA);
     }
 }

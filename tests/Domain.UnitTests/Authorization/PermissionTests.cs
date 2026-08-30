@@ -1,10 +1,10 @@
-using qc_authorization.Domain.Authorization;
+using AccessManagement.Domain.Authorization;
 using NUnit.Framework;
 using Shouldly;
 
-namespace qc_authorization.Domain.UnitTests.Authorization;
+namespace AccessManagement.Domain.UnitTests.Authorization;
 
-using qc_authorization.Tests.TestSupport;
+using AccessManagement.Tests.TestSupport;
 
 [TestFixture]
 public class PermissionTests
