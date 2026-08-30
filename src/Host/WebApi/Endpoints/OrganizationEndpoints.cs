@@ -1,4 +1,5 @@
 using AccessManagement.Application.Organization.Commands.AssignPersonnelToPosition;
+using AccessManagement.Application.Organization.Commands.BootstrapSystemAdmin;
 using AccessManagement.Application.Organization.Commands.CreatePersonnel;
 using AccessManagement.Application.Organization.Commands.CreatePosition;
 using AccessManagement.Application.Organization.Commands.EndPositionAssignment;
@@ -25,6 +26,10 @@ public class OrganizationEndpoints : IEndpointGroup
 
     public static void Map(RouteGroupBuilder group)
     {
+        // Self-disabling first-admin path. AllowAnonymous is required because no user
+        // exists yet to obtain a token; the handler (anyAdminExists) is the security gate.
+        group.MapPost(BootstrapAdmin, "bootstrap/admin").AllowAnonymous();
+
         // Personnel
         group.MapGet(GetPersonnel, "personnel");
         group.MapGet(GetPersonnelById, "personnel/{id:guid}");
@@ -44,6 +49,18 @@ public class OrganizationEndpoints : IEndpointGroup
         group.MapPost(AssignPersonnel, "assignments");
         group.MapPost(EndAssignment, "assignments/{id:guid}/end");
         group.MapPost(SetPrimaryAssignment, "assignments/set-primary");
+    }
+
+    private static async Task<IResult> BootstrapAdmin(BootstrapAdminRequest request, ISender sender)
+    {
+        var id = await sender.Send(new BootstrapSystemAdminCommand(
+            request.NationalId,
+            request.FirstName,
+            request.LastName,
+            request.PersonnelCode,
+            request.IdentityUserId));
+
+        return Results.Created($"/api/organization/personnel/{id}", new { id });
     }
 
     private static async Task<IResult> GetPersonnel(
@@ -162,6 +179,13 @@ public class OrganizationEndpoints : IEndpointGroup
         return Results.NoContent();
     }
 }
+
+public record BootstrapAdminRequest(
+    string NationalId,
+    string FirstName,
+    string LastName,
+    string PersonnelCode,
+    Guid IdentityUserId);
 
 public record CreatePersonnelRequest(
     string NationalId,

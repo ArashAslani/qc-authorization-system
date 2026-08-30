@@ -65,6 +65,7 @@ public class GetPositionsQueryHandler : IRequestHandler<GetPositionsQuery, IRead
 
         var positions = await query.OrderBy(p => p.Code).ToListAsync(cancellationToken);
         var allPositions = await _context.Positions.AsNoTracking().ToDictionaryAsync(p => p.Id, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
 
         return positions.Select(p => new PositionDto(
             p.Id,
@@ -80,14 +81,16 @@ public class GetPositionsQueryHandler : IRequestHandler<GetPositionsQuery, IRead
             _context.Grants
                 .Where(g => g.SubjectType == SubjectType.Position
                          && g.SubjectId == p.Id
-                         && g.SourceType == SourceType.Role)
+                         && g.SourceType == SourceType.Role
+                         && (g.ValidTo == null || g.ValidTo > now))
                 .Select(g => g.SourceId)
                 .Distinct()
                 .Count(),
             _context.Grants
                 .Where(g => g.SubjectType == SubjectType.Position
                          && g.SubjectId == p.Id
-                         && g.SourceType == SourceType.RoleGroup)
+                         && g.SourceType == SourceType.RoleGroup
+                         && (g.ValidTo == null || g.ValidTo > now))
                 .Select(g => g.SourceId)
                 .Distinct()
                 .Count(),

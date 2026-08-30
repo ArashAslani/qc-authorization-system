@@ -116,7 +116,9 @@ public class UsAccess01BackendTests
             position.Id, roleId, T0.AddDays(-1)));
         await _mediator.Send(new RevokeAuthorizationRoleFromPositionCommand(position.Id, roleId));
 
-        (await _context.Grants.CountAsync(g => g.SubjectId == position.Id)).ShouldBe(0);
+        var grants = await _context.Grants.Where(g => g.SubjectId == position.Id).ToListAsync();
+        grants.Count.ShouldBeGreaterThan(0);
+        grants.ShouldAllBe(g => g.ValidTo != null);
     }
 
     [Test]

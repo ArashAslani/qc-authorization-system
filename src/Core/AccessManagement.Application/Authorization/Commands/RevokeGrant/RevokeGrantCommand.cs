@@ -5,6 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Commands.RevokeGrant;
 
+/// <summary>
+/// Internal/system revoke of a single Grant by id. Not exposed by WebApi
+/// (the public path is <c>RevokeAccessCommand</c>). Do not map this command
+/// to an HTTP endpoint without adding <c>IRequireUserAdmin</c> (or an equivalent
+/// line-manager gate).
+/// </summary>
 public record RevokeGrantCommand(Guid GrantId, Guid? ActorUserId = null) : IRequest;
 
 public class RevokeGrantCommandHandler : IRequestHandler<RevokeGrantCommand>

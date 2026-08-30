@@ -24,14 +24,19 @@ public class RevokeRoleGroupFromPositionCommandHandler : IRequestHandler<RevokeR
 
     public async Task Handle(RevokeRoleGroupFromPositionCommand request, CancellationToken cancellationToken)
     {
+        var now = DateTimeOffset.UtcNow;
         var grants = await _context.Grants
             .Where(g => g.SubjectType == SubjectType.Position
                      && g.SubjectId == request.PositionId
                      && g.SourceType == SourceType.RoleGroup
-                     && g.SourceId == request.RoleGroupId)
+                     && g.SourceId == request.RoleGroupId
+                     && (g.ValidTo == null || g.ValidTo > now))
             .ToListAsync(cancellationToken);
 
-        _context.Grants.RemoveRange(grants);
+        foreach (var grant in grants)
+        {
+            grant.Deactivate(now);
+        }
         await _audit.RecordAsync(
             "RoleGroupRevokedFromPosition",
             null,

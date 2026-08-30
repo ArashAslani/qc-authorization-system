@@ -17,12 +17,15 @@ if (app.Environment.IsDevelopment())
     await app.InitialiseDatabaseAsync();
     app.MapOpenApi();
 }
-else
+else if (!app.Environment.IsEnvironment("Testing"))
 {
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 var allowedOrigins = app.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 app.UseCors(policy =>
 {
@@ -43,3 +46,5 @@ app.UseExceptionHandler(options => { });
 app.MapEndpoints(typeof(Program).Assembly);
 
 app.Run();
+
+public partial class Program { }

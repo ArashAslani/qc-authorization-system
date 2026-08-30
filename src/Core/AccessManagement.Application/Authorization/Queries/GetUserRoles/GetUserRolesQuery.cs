@@ -48,7 +48,8 @@ public class GetUserRolesQueryHandler : IRequestHandler<GetUserRolesQuery, IRead
             .AsNoTracking()
             .Where(g => g.SubjectType == SubjectType.User
                      && g.SubjectUserId == request.UserId
-                     && g.SourceType == SourceType.Role)
+                     && g.SourceType == SourceType.Role
+                     && (g.ValidTo == null || g.ValidTo > now))
             .ToListAsync(cancellationToken);
 
         var roleIds = userRoleGrants.Select(g => g.SourceId).Distinct().ToList();

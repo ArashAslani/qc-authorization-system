@@ -108,7 +108,9 @@ public class RoleGroupAssignmentTests
         (await _context.Grants.CountAsync(g => g.SubjectUserId == userId)).ShouldBe(1);
 
         await _mediator.Send(new RevokeRoleGroupFromUserCommand(userId, groupId));
-        (await _context.Grants.CountAsync(g => g.SubjectUserId == userId)).ShouldBe(0);
+        var remaining = await _context.Grants.Where(g => g.SubjectUserId == userId).ToListAsync();
+        remaining.Count.ShouldBeGreaterThan(0);
+        remaining.ShouldAllBe(g => g.ValidTo != null);
     }
 
     [Test]
@@ -160,7 +162,9 @@ public class RoleGroupAssignmentTests
             position.Id, groupId, DateTimeOffset.UtcNow.AddDays(-1)));
         await _mediator.Send(new RevokeRoleGroupFromPositionCommand(position.Id, groupId));
 
-        (await _context.Grants.CountAsync(g => g.SubjectId == position.Id)).ShouldBe(0);
+        var remaining = await _context.Grants.Where(g => g.SubjectId == position.Id).ToListAsync();
+        remaining.Count.ShouldBeGreaterThan(0);
+        remaining.ShouldAllBe(g => g.ValidTo != null);
     }
 
     [Test]

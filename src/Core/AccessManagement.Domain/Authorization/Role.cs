@@ -15,6 +15,9 @@ public class Role : BaseAuditableEntity, IAggregateRoot
 
     /// <summary>
     /// Optional parent in the role catalog. Flattened at materialize time (not by the engine).
+    /// Set only in <see cref="Create"/>; there is no public re-parent method.
+    /// If re-parenting is added later, the same command must rematerialize
+    /// (call <c>RoleGrantRematerializer</c>) so assignment grants do not go stale.
     /// </summary>
     public Guid? ParentRoleId { get; private set; }
 

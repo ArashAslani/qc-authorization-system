@@ -17,6 +17,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
         <PackageReference Include="Shouldly" />
     </ItemGroup>
@@ -25,6 +26,7 @@
         <ProjectReference Include="..\..\src\Core\AccessManagement.Application\AccessManagement.Application.csproj" />
         <ProjectReference Include="..\..\src\Core\AccessManagement.Domain\AccessManagement.Domain.csproj" />
         <ProjectReference Include="..\..\src\Core\AccessManagement.Infrastructure\AccessManagement.Infrastructure.csproj" />
+        <ProjectReference Include="..\..\src\Host\WebApi\WebApi.csproj" />
     </ItemGroup>
 
     <ItemGroup>

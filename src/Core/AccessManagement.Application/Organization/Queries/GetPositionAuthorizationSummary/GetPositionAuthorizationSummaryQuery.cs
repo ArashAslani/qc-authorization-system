@@ -48,11 +48,14 @@ public class GetPositionAuthorizationSummaryQueryHandler
             throw new NotFoundException(nameof(Domain.Organization.Position), request.PositionId);
         }
 
+        var now = DateTimeOffset.UtcNow;
+
         var roleSourceIds = await _context.Grants
             .AsNoTracking()
             .Where(g => g.SubjectType == SubjectType.Position
                      && g.SubjectId == request.PositionId
-                     && g.SourceType == SourceType.Role)
+                     && g.SourceType == SourceType.Role
+                     && (g.ValidTo == null || g.ValidTo > now))
             .Select(g => g.SourceId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -61,7 +64,8 @@ public class GetPositionAuthorizationSummaryQueryHandler
             .AsNoTracking()
             .Where(g => g.SubjectType == SubjectType.Position
                      && g.SubjectId == request.PositionId
-                     && g.SourceType == SourceType.RoleGroup)
+                     && g.SourceType == SourceType.RoleGroup
+                     && (g.ValidTo == null || g.ValidTo > now))
             .Select(g => g.SourceId)
             .Distinct()
             .ToListAsync(cancellationToken);

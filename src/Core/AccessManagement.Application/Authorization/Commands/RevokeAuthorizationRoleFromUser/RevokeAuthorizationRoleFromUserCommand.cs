@@ -24,13 +24,18 @@ public class RevokeAuthorizationRoleFromUserCommandHandler : IRequestHandler<Rev
 
     public async Task Handle(RevokeAuthorizationRoleFromUserCommand request, CancellationToken cancellationToken)
     {
+        var now = DateTimeOffset.UtcNow;
         var grants = await _context.Grants
             .Where(g => g.SubjectUserId == request.UserId
                      && g.SourceType == SourceType.Role
-                     && g.SourceId == request.RoleId)
+                     && g.SourceId == request.RoleId
+                     && (g.ValidTo == null || g.ValidTo > now))
             .ToListAsync(cancellationToken);
 
-        _context.Grants.RemoveRange(grants);
+        foreach (var grant in grants)
+        {
+            grant.Deactivate(now);
+        }
         await _audit.RecordAsync(
             "RoleRevokedFromUser",
             null,

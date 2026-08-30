@@ -35,6 +35,13 @@ public sealed class RoleGrantRematerializer
         }
     }
 
+    /// <summary>
+    /// Deactivates current source grants and recreates them for every assignment × permission
+    /// in a single change-tracker pass. Callers persist via <c>SaveChangesAsync</c>.
+    /// TODO (performance phase, not V1): if a Role has hundreds of assignments
+    /// (for example more than 500 Position/User rows), batch Deactivate+Recreate
+    /// instead of loading and rewriting the full set in one transaction.
+    /// </summary>
     private async Task RematerializeSourceAsync(SourceType sourceType, Guid sourceId, CancellationToken cancellationToken)
     {
         var permissionIds = sourceType == SourceType.Role

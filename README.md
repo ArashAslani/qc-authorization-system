@@ -71,6 +71,20 @@ dotnet ef database update --project src/Core/AccessManagement.Infrastructure --s
 The default URL is printed by ASP.NET Core; OpenAPI is available at
 `/openapi/v1.json`. The SQLite database file is created on first run.
 
+### First-time setup
+
+A fresh database has no UserAdmin, and every organization write path is
+gated by `IRequireUserAdmin`. Bootstrap is step zero so the system is
+portable to a new deployment:
+
+1. Register an identity user: `POST /api/users/register`.
+2. Call `POST /api/organization/bootstrap/admin` **without a JWT**, using
+   that user's `identityUserId` plus personnel fields (`nationalId`,
+   `firstName`, `lastName`, `personnelCode`).
+3. Log in as that user. Subsequent `POST /api/organization/bootstrap/admin`
+   calls are rejected: the route disables itself as soon as any
+   `Personnel.IsSystemUser` row exists.
+
 ### API endpoint groups
 
 | Group | Use cases |

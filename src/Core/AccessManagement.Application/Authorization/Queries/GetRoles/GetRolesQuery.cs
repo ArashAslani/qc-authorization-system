@@ -34,6 +34,8 @@ public class GetRolesQueryHandler : IRequestHandler<GetRolesQuery, IReadOnlyList
             query = query.Where(r => r.Code.ToLower().Contains(term) || r.Name.ToLower().Contains(term));
         }
 
+        var now = DateTimeOffset.UtcNow;
+
         return await query
             .OrderBy(r => r.Code)
             .Select(r => new RoleDto(
@@ -45,14 +47,18 @@ public class GetRolesQueryHandler : IRequestHandler<GetRolesQuery, IReadOnlyList
                 _context.RolePermissions.Count(rp => rp.RoleId == r.Id),
                 _context.RoleGroupMembers.Count(m => m.RoleId == r.Id),
                 _context.Grants
-                    .Where(g => g.SourceType == SourceType.Role && g.SourceId == r.Id && g.SubjectUserId != null)
+                    .Where(g => g.SourceType == SourceType.Role
+                             && g.SourceId == r.Id
+                             && g.SubjectUserId != null
+                             && (g.ValidTo == null || g.ValidTo > now))
                     .Select(g => g.SubjectUserId)
                     .Distinct()
                     .Count(),
                 _context.Grants
                     .Where(g => g.SourceType == SourceType.Role
                              && g.SourceId == r.Id
-                             && g.SubjectType == SubjectType.Position)
+                             && g.SubjectType == SubjectType.Position
+                             && (g.ValidTo == null || g.ValidTo > now))
                     .Select(g => g.SubjectId)
                     .Distinct()
                     .Count()))
