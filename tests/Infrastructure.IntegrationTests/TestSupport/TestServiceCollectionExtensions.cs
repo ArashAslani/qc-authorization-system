@@ -6,6 +6,7 @@ using AccessManagement.Application.Authorization.Evaluation;
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Application.Organization;
+using AccessManagement.Application.Session;
 using AccessManagement.Domain.Authorization.Services;
 using AccessManagement.Domain.Organization;
 using AccessManagement.Tests.TestSupport;
@@ -36,6 +37,9 @@ public static class TestServiceCollectionExtensions
         services.AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>();
         services.AddScoped<RoleGroupGrantMaterializer>();
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
+        services.AddScoped<IActorAccessService, ActorAccessService>();
+        services.AddScoped<LineManagerTargetPolicy>();
+        services.AddScoped<CompanyWorkspaceService>();
         services.AddScoped<IAuthorizationAuditService, AuthorizationAuditService>();
         return services;
     }

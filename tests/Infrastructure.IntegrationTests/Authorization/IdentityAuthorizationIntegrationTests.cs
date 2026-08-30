@@ -69,7 +69,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignAuthorizationRoleToUserCommand(TestUsers.UserA, roleId, T0));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, Guid.Empty, TestUsers.UserA, "Read", "Personnel", null, T0));
+            TestUsers.UserA, "PERSONNEL.READ", When: T0));
 
         result.Allowed.ShouldBeTrue();
     }
@@ -83,7 +83,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignPermissionToRoleCommand(roleId, permissionId));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, Guid.Empty, TestUsers.Unknown, "Read", "Personnel", null, T0));
+            TestUsers.Unknown, "PERSONNEL.READ", When: T0));
 
         result.Allowed.ShouldBeFalse();
     }

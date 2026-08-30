@@ -161,13 +161,9 @@ public class GrantAndDelegationQueryIntegrationTests
             100));
 
         var decision = await _mediator.Send(new EvaluateAccessForSubjectQuery(
-            SubjectType.User,
-            Guid.Empty,
             userId,
-            "GENERATE",
-            "REPORT",
-            null,
-            DateTimeOffset.UtcNow));
+            "REPORT.GENERATE",
+            When: DateTimeOffset.UtcNow));
 
         decision.Allowed.ShouldBeTrue();
     }

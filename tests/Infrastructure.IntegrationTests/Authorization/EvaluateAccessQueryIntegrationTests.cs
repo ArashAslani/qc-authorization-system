@@ -68,7 +68,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Allow_With_Trace()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, Guid.Empty, TestUsers.UserE, "Read", "Personnel", null, T0));
+            TestUsers.UserE, "PERSONNEL.READ", When: T0));
 
         result.Allowed.ShouldBeTrue();
     }
@@ -77,7 +77,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Deny_For_Unknown_User()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            SubjectType.User, Guid.Empty, TestUsers.Unknown, "Read", "Personnel", null, T0));
+            TestUsers.Unknown, "PERSONNEL.READ", When: T0));
 
         result.Allowed.ShouldBeFalse();
     }

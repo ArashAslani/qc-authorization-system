@@ -177,4 +177,33 @@ public class TddAccessMatrixTests
         scopes.IsUnrestricted.ShouldBeFalse();
         scopes.ScopeRootUnitIds.ShouldContain(TestGuids.CompanyA);
     }
+
+    [Test]
+    public async Task GetAccessibleScopes_Individual_Deny_Removes_Allow_Root()
+    {
+        _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.Role, Guid.NewGuid(), Effect.Allow, T0, null, SourcePriority.RoleOrRoleGroup, scopeUnitId: TestGuids.CompanyA));
+        _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Deny, T0, null, SourcePriority.IndividualOverride, scopeUnitId: TestGuids.CompanyA));
+        await _db.SaveChangesAsync();
+
+        var scopes = await _evaluator.GetAccessibleScopesAsync(UserA, null, "RESOURCE.READ");
+        scopes.IsUnrestricted.ShouldBeFalse();
+        scopes.ScopeRootUnitIds.ShouldNotContain(TestGuids.CompanyA);
+        scopes.DeniedScopeUnitIds.ShouldContain(TestGuids.CompanyA);
+    }
+
+    [Test]
+    public async Task GetAccessibleScopes_Deny_Hole_Inside_Allow_Root()
+    {
+        var company = await _db.OrganizationalUnits.FindAsync(TestGuids.CompanyA);
+        var station = OrganizationalUnit.Create(OrganizationalUnitTypes.Workstation, "WS-1", company!.Id);
+        _db.OrganizationalUnits.Add(station);
+        _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.Role, Guid.NewGuid(), Effect.Allow, T0, null, SourcePriority.RoleOrRoleGroup, scopeUnitId: company.Id));
+        _db.Grants.Add(Grant.CreateForUser(UserA, _perm.Id, SourceType.User, UserA, Effect.Deny, T0, null, SourcePriority.IndividualOverride, scopeUnitId: station.Id));
+        await _db.SaveChangesAsync();
+
+        var scopes = await _evaluator.GetAccessibleScopesAsync(UserA, null, "RESOURCE.READ");
+        scopes.IsUnrestricted.ShouldBeFalse();
+        scopes.ScopeRootUnitIds.ShouldContain(company.Id);
+        scopes.DeniedScopeUnitIds.ShouldContain(station.Id);
+    }
 }

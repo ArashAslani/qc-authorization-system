@@ -79,6 +79,8 @@ internal static class AuthorizationTestContext
             .AddScoped<IDelegationHierarchyPolicy, DelegationHierarchyPolicy>()
             .AddScoped<RoleGroupGrantMaterializer>()
             .AddScoped<IAccessEvaluator, AccessEvaluator>()
+            .AddScoped<IActorAccessService, ActorAccessService>()
+            .AddScoped<LineManagerTargetPolicy>()
             .AddScoped<IDelegationSubsetPolicy, DelegationSubsetPolicy>()
             .AddScoped<CompanyWorkspaceService>()
             .BuildServiceProvider();
