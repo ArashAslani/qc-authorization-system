@@ -22,7 +22,8 @@ public static class EndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         return builder.MapGet(pattern, handler)
-              .WithName(handler.Method.Name);
+              .WithName(handler.Method.Name)
+              .RequireAuthorization();
     }
 
     /// <inheritdoc cref="EndpointRouteBuilderExtensions"/>
@@ -31,7 +32,8 @@ public static class EndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         return builder.MapPost(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name)
+            .RequireAuthorization();
     }
 
     /// <inheritdoc cref="EndpointRouteBuilderExtensions"/>
@@ -40,7 +42,8 @@ public static class EndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         return builder.MapPut(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name)
+            .RequireAuthorization();
     }
 
     /// <inheritdoc cref="EndpointRouteBuilderExtensions"/>
@@ -49,7 +52,8 @@ public static class EndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         return builder.MapPatch(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name)
+            .RequireAuthorization();
     }
 
     /// <inheritdoc cref="EndpointRouteBuilderExtensions"/>
@@ -58,6 +62,7 @@ public static class EndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         return builder.MapDelete(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name)
+            .RequireAuthorization();
     }
 }

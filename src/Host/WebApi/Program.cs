@@ -22,10 +22,18 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseCors(static builder =>
-    builder.AllowAnyMethod()
-        .AllowAnyHeader()
-        .AllowAnyOrigin());
+var allowedOrigins = app.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+app.UseCors(policy =>
+{
+    if (allowedOrigins.Length > 0)
+    {
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+    }
+    else
+    {
+        policy.SetIsOriginAllowed(_ => false);
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

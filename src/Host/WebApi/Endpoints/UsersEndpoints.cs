@@ -18,10 +18,10 @@ public class UsersEndpoints : IEndpointGroup
     {
         group.MapGet(GetUsers);
         group.MapGet(GetUserById, "{id:guid}");
-        group.MapGet(GetMyWorkspaces, "me/workspaces").RequireAuthorization();
-        group.MapPost(Register, "register");
-        group.MapPost(Login, "login");
-        group.MapPost(SwitchCompany, "me/switch-company").RequireAuthorization();
+        group.MapGet(GetMyWorkspaces, "me/workspaces");
+        group.MapPost(Register, "register").AllowAnonymous();
+        group.MapPost(Login, "login").AllowAnonymous();
+        group.MapPost(SwitchCompany, "me/switch-company");
     }
 
     private static async Task<IResult> GetUsers(
