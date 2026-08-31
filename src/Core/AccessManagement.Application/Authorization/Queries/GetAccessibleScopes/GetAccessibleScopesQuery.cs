@@ -21,21 +21,39 @@ public sealed record AccessibleScopesDto(
 public sealed class GetAccessibleScopesQueryHandler : IRequestHandler<GetAccessibleScopesQuery, AccessibleScopesDto>
 {
     private readonly IActorAccessService _actorAccess;
-    private readonly IAccessEvaluator _evaluator;
     private readonly IApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
 
     public GetAccessibleScopesQueryHandler(
         IActorAccessService actorAccess,
-        IAccessEvaluator evaluator,
-        IApplicationDbContext db)
+        IApplicationDbContext db,
+        ICurrentUser currentUser)
     {
         _actorAccess = actorAccess;
-        _evaluator = evaluator;
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<AccessibleScopesDto> Handle(GetAccessibleScopesQuery request, CancellationToken cancellationToken)
     {
+        if (_currentUser.UserId is not Guid actorUserId)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        if (request.SubjectUserId != actorUserId
+            && !await _actorAccess.IsUserAdminAsync(actorUserId, request.ActorCompanyUnitId ?? _currentUser.ActiveCompanyId, cancellationToken))
+        {
+            throw new ForbiddenAccessException("SubjectUserId must match the authenticated user.");
+        }
+
+        if (request.ActorCompanyUnitId is null && _currentUser.ActiveCompanyId is null)
+        {
+            throw new ForbiddenAccessException("An active company workspace is required.");
+        }
+
+        var companyId = request.ActorCompanyUnitId ?? _currentUser.ActiveCompanyId!.Value;
+
         if (request.ActivePositionId is Guid positionId)
         {
             var now = DateTimeOffset.UtcNow;
@@ -43,12 +61,9 @@ public sealed class GetAccessibleScopesQueryHandler : IRequestHandler<GetAccessi
                 .AsNoTracking()
                 .Where(a => a.PositionId == positionId
                          && a.Personnel.IdentityUserId == request.SubjectUserId
+                         && a.Position.CompanyUnitId == companyId
                          && a.ValidFrom <= now
                          && (a.ValidTo == null || now <= a.ValidTo));
-            if (request.ActorCompanyUnitId is Guid company)
-            {
-                assigned = assigned.Where(a => a.Position.CompanyUnitId == company);
-            }
 
             if (!await assigned.AnyAsync(cancellationToken))
             {
@@ -56,10 +71,8 @@ public sealed class GetAccessibleScopesQueryHandler : IRequestHandler<GetAccessi
             }
         }
 
-        var result = request.ActorCompanyUnitId is Guid companyId
-            ? await _actorAccess.GetAccessibleRootsAsync(request.SubjectUserId, companyId, request.PermissionCode, cancellationToken)
-            : await _evaluator.GetAccessibleScopesAsync(
-                request.SubjectUserId, request.ActivePositionId, request.PermissionCode, cancellationToken);
+        var result = await _actorAccess.GetAccessibleRootsAsync(
+            request.SubjectUserId, companyId, request.PermissionCode, cancellationToken);
 
         return new AccessibleScopesDto(result.IsUnrestricted, result.ScopeRootUnitIds, result.DeniedScopeUnitIds);
     }

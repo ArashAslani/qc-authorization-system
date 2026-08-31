@@ -50,6 +50,7 @@ public class RoleGroupAssignmentTests
 
         _context = _services.GetRequiredService<ApplicationDbContext>();
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
         _mediator = _services.GetRequiredService<IMediator>();
     }
 

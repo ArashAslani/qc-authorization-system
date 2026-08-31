@@ -31,13 +31,14 @@ public class JwtTokenServiceTests
             PersonnelId = TestGuids.Personnel1,
         };
 
-        var token = service.GenerateToken(user, activeCompanyId: TestGuids.CompanyA, nationalId: "0012345678");
+        var token = service.GenerateToken(user, activeCompanyId: TestGuids.CompanyA);
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
 
         jwt.Claims.Single(c => c.Type == ClaimTypes.NameIdentifier).Value
             .ShouldBe(user.Id.ToString());
         jwt.Claims.Single(c => c.Type == "personnel_id").Value.ShouldBe(TestGuids.Personnel1.ToString());
         jwt.Claims.Single(c => c.Type == "active_company_id").Value.ShouldBe(TestGuids.CompanyA.ToString());
-        jwt.Claims.Single(c => c.Type == "national_id").Value.ShouldBe("0012345678");
+        jwt.Claims.Any(c => c.Type == "national_id").ShouldBeFalse();
+        jwt.Claims.Single(c => c.Type == JwtTokenService.TokenUseClaim).Value.ShouldBe(JwtTokenService.TokenUseAccess);
     }
 }

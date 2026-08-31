@@ -27,8 +27,8 @@ public class OrganizationEndpoints : IEndpointGroup
     public static void Map(RouteGroupBuilder group)
     {
         // Self-disabling first-admin path. AllowAnonymous is required because no user
-        // exists yet to obtain a token; the handler (anyAdminExists) is the security gate.
-        group.MapPost(BootstrapAdmin, "bootstrap/admin").AllowAnonymous();
+        // exists yet to obtain a token; the handler plus bootstrap key are the security gate.
+        group.MapPost(BootstrapAdmin, "bootstrap/admin").AllowAnonymous().RequireRateLimiting(UsersEndpoints.AuthRateLimitPolicy);
 
         // Personnel
         group.MapGet(GetPersonnel, "personnel");
@@ -51,8 +51,28 @@ public class OrganizationEndpoints : IEndpointGroup
         group.MapPost(SetPrimaryAssignment, "assignments/set-primary");
     }
 
-    private static async Task<IResult> BootstrapAdmin(BootstrapAdminRequest request, ISender sender)
+    private static async Task<IResult> BootstrapAdmin(
+        BootstrapAdminRequest request,
+        ISender sender,
+        IHostEnvironment environment,
+        IConfiguration configuration,
+        HttpContext httpContext)
     {
+        if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
+        {
+            var expected = configuration["Bootstrap:Key"];
+            if (string.IsNullOrWhiteSpace(expected))
+            {
+                return Results.NotFound();
+            }
+
+            if (!httpContext.Request.Headers.TryGetValue("X-Bootstrap-Key", out var provided)
+                || !CryptographicEquals(provided.ToString(), expected))
+            {
+                return Results.NotFound();
+            }
+        }
+
         var id = await sender.Send(new BootstrapSystemAdminCommand(
             request.NationalId,
             request.FirstName,
@@ -63,13 +83,28 @@ public class OrganizationEndpoints : IEndpointGroup
         return Results.Created($"/api/organization/personnel/{id}", new { id });
     }
 
+    private static bool CryptographicEquals(string left, string right)
+    {
+        var leftBytes = System.Text.Encoding.UTF8.GetBytes(left);
+        var rightBytes = System.Text.Encoding.UTF8.GetBytes(right);
+        return leftBytes.Length == rightBytes.Length
+            && System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
+    }
+
     private static async Task<IResult> GetPersonnel(
         [FromQuery] string? searchTerm,
         [FromQuery] PersonnelStatus? status,
         [FromQuery] bool? hasIdentityUser,
+        [FromQuery] int pageNumber,
+        [FromQuery] int pageSize,
         ISender sender)
     {
-        var result = await sender.Send(new GetPersonnelQuery(searchTerm, status, hasIdentityUser));
+        var result = await sender.Send(new GetPersonnelQuery(
+            searchTerm,
+            status,
+            hasIdentityUser,
+            pageNumber == 0 ? 1 : pageNumber,
+            pageSize == 0 ? 50 : pageSize));
         return Results.Ok(result);
     }
 

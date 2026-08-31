@@ -1,6 +1,7 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Common.Interfaces;
 using AccessManagement.Domain.Authorization.Evaluation;
+using AccessManagement.Domain.Organization.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Session;
@@ -28,7 +29,9 @@ public sealed class CompanyWorkspaceService
             .AsNoTracking()
             .Include(a => a.Position)
             .Where(a => a.Personnel.IdentityUserId == userId
+                     && a.Personnel.Status == PersonnelStatus.Active
                      && a.Position.CompanyUnitId == companyUnitId
+                     && a.Position.Status == PositionStatus.Active
                      && a.ValidFrom <= now
                      && (a.ValidTo == null || now <= a.ValidTo))
             .Select(a => a.PositionId)
@@ -42,6 +45,8 @@ public sealed class CompanyWorkspaceService
             .AsNoTracking()
             .Include(a => a.Position)
             .Where(a => a.Personnel.IdentityUserId == userId
+                     && a.Personnel.Status == PersonnelStatus.Active
+                     && a.Position.Status == PositionStatus.Active
                      && a.ValidFrom <= now
                      && (a.ValidTo == null || now <= a.ValidTo))
             .Select(a => a.PositionId)
@@ -55,17 +60,12 @@ public sealed class CompanyWorkspaceService
         Guid? scopeUnitId,
         CancellationToken ct = default)
     {
-        var positions = await GetActivePositionsAsync(userId, companyUnitId, ct);
-        return await EvaluateForPositionsAsync(userId, positions, permissionCode, scopeUnitId, ct);
-    }
+        if (await IsPersonnelInactiveAsync(userId, ct))
+        {
+            return AccessDecision.Deny(Guid.NewGuid(), AccessDecisionReasons.NoGrant);
+        }
 
-    public async Task<AccessDecision> EvaluateAcrossCompaniesAsync(
-        Guid userId,
-        string permissionCode,
-        Guid? scopeUnitId,
-        CancellationToken ct = default)
-    {
-        var positions = await GetAllActivePositionsAsync(userId, ct);
+        var positions = await GetActivePositionsAsync(userId, companyUnitId, ct);
         return await EvaluateForPositionsAsync(userId, positions, permissionCode, scopeUnitId, ct);
     }
 
@@ -78,6 +78,17 @@ public sealed class CompanyWorkspaceService
     {
         var decision = await EvaluateInCompanyAsync(userId, companyUnitId, permissionCode, scopeUnitId, ct);
         return decision.Allowed;
+    }
+
+    private async Task<bool> IsPersonnelInactiveAsync(Guid userId, CancellationToken ct)
+    {
+        var status = await _db.Personnel
+            .AsNoTracking()
+            .Where(p => p.IdentityUserId == userId)
+            .Select(p => (PersonnelStatus?)p.Status)
+            .FirstOrDefaultAsync(ct);
+
+        return status == PersonnelStatus.Inactive;
     }
 
     private async Task<AccessDecision> EvaluateForPositionsAsync(

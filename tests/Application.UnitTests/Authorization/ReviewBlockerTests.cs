@@ -84,7 +84,7 @@ public class ReviewBlockerTests
         var bossPosId = _db.Positions.Single(p => p.Code == "BOS").Id;
         var mediator = MediatorFor(WorkerUser);
         await Should.ThrowAsync<ForbiddenAccessException>(() =>
-            mediator.Send(new EvaluateAccessQuery(WorkerUser, "RESOURCE.READ", bossPosId, TestGuids.CompanyA, T0)));
+            mediator.Send(new EvaluateAccessQuery(WorkerUser, "RESOURCE.READ", bossPosId, TestGuids.CompanyA)));
     }
 
     [Test]
@@ -131,9 +131,9 @@ public class ReviewBlockerTests
     {
         var mediator = MediatorFor(WorkerUser);
         var list = await mediator.Send(new GetPersonnelQuery());
-        list.Select(p => p.IdentityUserId).ShouldContain(WorkerUser);
-        list.Select(p => p.IdentityUserId).ShouldContain(BossUser);
-        list.Select(p => p.IdentityUserId).ShouldNotContain(StrangerUser);
+        list.Items.Select(p => p.IdentityUserId).ShouldContain(WorkerUser);
+        list.Items.Select(p => p.IdentityUserId).ShouldNotContain(BossUser);
+        list.Items.Select(p => p.IdentityUserId).ShouldNotContain(StrangerUser);
     }
 
     [Test]
@@ -167,12 +167,12 @@ public class ReviewBlockerTests
 
         var worker = MediatorFor(WorkerUser);
         var after = await worker.Send(new EvaluateAccessQuery(
-            WorkerUser, "RESOURCE.READ", newPos.Id, TestGuids.CompanyA, T0.AddHours(2)));
+            WorkerUser, "RESOURCE.READ", newPos.Id, TestGuids.CompanyA));
         after.Allowed.ShouldBeTrue();
 
         await Should.ThrowAsync<ForbiddenAccessException>(() =>
             worker.Send(new EvaluateAccessQuery(
-                WorkerUser, "RESOURCE.READ", oldPosId, TestGuids.CompanyA, T0.AddHours(2))));
+                WorkerUser, "RESOURCE.READ", oldPosId, TestGuids.CompanyA)));
     }
 
     [Test]

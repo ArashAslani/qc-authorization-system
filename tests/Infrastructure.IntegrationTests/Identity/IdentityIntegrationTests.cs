@@ -67,7 +67,7 @@ public class IdentityIntegrationTests
             EmailConfirmed = true,
         };
 
-        var result = await userManager.CreateAsync(user, "password1");
+        var result = await userManager.CreateAsync(user, TestPasswords.Valid);
         result.Succeeded.ShouldBeTrue();
 
         var stored = await userManager.FindByIdAsync(TestUsers.UserA.ToString());
@@ -87,12 +87,12 @@ public class IdentityIntegrationTests
             Email = "user.a@test.local",
             EmailConfirmed = true,
         };
-        (await userManager.CreateAsync(user, "password1")).Succeeded.ShouldBeTrue();
+        (await userManager.CreateAsync(user, TestPasswords.Valid)).Succeeded.ShouldBeTrue();
 
         var stored = await userManager.FindByEmailAsync("user.a@test.local");
         stored.ShouldNotBeNull();
 
-        (await userManager.CheckPasswordAsync(stored!, "password1")).ShouldBeTrue();
+        (await userManager.CheckPasswordAsync(stored!, TestPasswords.Valid)).ShouldBeTrue();
         (await userManager.CheckPasswordAsync(stored!, "wrong-pass")).ShouldBeFalse();
     }
 }

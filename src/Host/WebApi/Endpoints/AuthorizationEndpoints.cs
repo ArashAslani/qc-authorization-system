@@ -42,6 +42,8 @@ public class AuthorizationEndpoints : IEndpointGroup
         [FromQuery] Effect? effect,
         [FromQuery] SourceType? sourceType,
         [FromQuery] bool? activeOnly,
+        [FromQuery] int pageNumber,
+        [FromQuery] int pageSize,
         ISender sender)
     {
         var result = await sender.Send(new GetGrantsQuery(
@@ -51,7 +53,9 @@ public class AuthorizationEndpoints : IEndpointGroup
             permissionId,
             effect,
             sourceType,
-            activeOnly));
+            activeOnly,
+            pageNumber == 0 ? 1 : pageNumber,
+            pageSize == 0 ? 50 : pageSize));
 
         return Results.Ok(result);
     }
@@ -149,8 +153,7 @@ public class AuthorizationEndpoints : IEndpointGroup
             userId,
             request.PermissionCode,
             request.ActivePositionId,
-            request.ResourceScopeUnitId,
-            request.When));
+            request.ResourceScopeUnitId));
 
         return Results.Ok(result);
     }
@@ -226,8 +229,7 @@ public record RevokeAccessRequest(
 public record EvaluateAccessRequest(
     string PermissionCode,
     Guid? ActivePositionId = null,
-    Guid? ResourceScopeUnitId = null,
-    DateTimeOffset? When = null);
+    Guid? ResourceScopeUnitId = null);
 
 public record AccessibleScopesRequest(
     string PermissionCode,

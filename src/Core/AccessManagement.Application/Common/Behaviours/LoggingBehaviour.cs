@@ -21,8 +21,8 @@ public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest>
         var requestName = typeof(TRequest).Name;
         var userId = _user.UserId?.ToString() ?? string.Empty;
 
-        _logger.LogInformation("qc_authorization Request: {Name} {@UserId} {@Request}",
-            requestName, userId, request);
+        _logger.LogInformation("qc_authorization Request: {Name} {UserId}",
+            requestName, userId);
 
         return Task.CompletedTask;
     }

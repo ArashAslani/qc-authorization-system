@@ -80,7 +80,7 @@ public class OrganizationCommandIntegrationTests
             UserName = "user.a@test.local",
             Email = "user.a@test.local",
             EmailConfirmed = true,
-        }, "password1")).Succeeded.ShouldBeTrue();
+        }, TestPasswords.Valid)).Succeeded.ShouldBeTrue();
 
         var id = await _mediator.Send(new CreatePersonnelCommand(
             "1234567890", "Ali", "Ahmadi", "PC-001", IdentityUserId: TestUsers.UserA));

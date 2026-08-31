@@ -26,13 +26,17 @@ public class DelegationEndpoints : IEndpointGroup
         [FromQuery] Guid? delegateUserId,
         [FromQuery] Guid? permissionId,
         [FromQuery] bool? activeOnly,
+        [FromQuery] int pageNumber,
+        [FromQuery] int pageSize,
         ISender sender)
     {
         var result = await sender.Send(new GetDelegationsQuery(
             delegatorUserId,
             delegateUserId,
             permissionId,
-            activeOnly));
+            activeOnly,
+            pageNumber == 0 ? 1 : pageNumber,
+            pageSize == 0 ? 50 : pageSize));
 
         return Results.Ok(result);
     }
@@ -88,5 +92,5 @@ public record CreateDelegationRequest(
     DateTimeOffset ValidFrom,
     DateTimeOffset? ValidTo,
     Guid? ScopeUnitId = null,
-    bool Delegable = true,
+    bool Delegable = false,
     Guid? ParentDelegationId = null);

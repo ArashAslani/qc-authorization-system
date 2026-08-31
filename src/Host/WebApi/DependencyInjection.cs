@@ -11,7 +11,10 @@ public static class DependencyInjection
     {
         builder.AddIdentityServices();
 
-        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+        }
 
         builder.Services.AddExceptionHandler<ProblemDetailsExceptionHandler>();
 

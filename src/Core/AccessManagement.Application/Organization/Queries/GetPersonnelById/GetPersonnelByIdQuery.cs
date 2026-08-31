@@ -35,11 +35,16 @@ public class GetPersonnelByIdQueryHandler : IRequestHandler<GetPersonnelByIdQuer
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyVisibilityService _visibility;
+    private readonly ICurrentUser _currentUser;
 
-    public GetPersonnelByIdQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    public GetPersonnelByIdQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility,
+        ICurrentUser currentUser)
     {
         _context = context;
         _visibility = visibility;
+        _currentUser = currentUser;
     }
 
     public async Task<PersonnelDetailsDto> Handle(GetPersonnelByIdQuery request, CancellationToken cancellationToken)
@@ -75,13 +80,15 @@ public class GetPersonnelByIdQueryHandler : IRequestHandler<GetPersonnelByIdQuer
                 a.ValidFrom <= now && (a.ValidTo == null || a.ValidTo >= now)))
             .ToList();
 
+        var revealPii = vis.IsAdmin || (_currentUser.PersonnelId is Guid self && self == personnel.Id);
+
         return new PersonnelDetailsDto(
             personnel.Id,
-            personnel.NationalId,
+            revealPii ? personnel.NationalId : null,
             personnel.FirstName,
             personnel.LastName,
             personnel.PersonnelCode,
-            personnel.PhoneNumber,
+            revealPii ? personnel.PhoneNumber : null,
             personnel.Gender,
             personnel.Status,
             personnel.IdentityUserId,

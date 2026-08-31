@@ -57,6 +57,7 @@ public sealed class PersonnelIdentityBridge : IPersonnelIdentityBridge
                 new ValidationFailure(e.Code, e.Description)));
         }
 
+        await _userManager.UpdateSecurityStampAsync(user);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

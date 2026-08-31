@@ -1,5 +1,6 @@
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Models;
 using AccessManagement.Domain.Organization.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,9 @@ namespace AccessManagement.Application.Organization.Queries.GetPersonnel;
 public record GetPersonnelQuery(
     string? SearchTerm = null,
     PersonnelStatus? Status = null,
-    bool? HasIdentityUser = null) : IRequest<IReadOnlyList<PersonnelDto>>;
+    bool? HasIdentityUser = null,
+    int PageNumber = 1,
+    int PageSize = PaginatedList<PersonnelDto>.DefaultPageSize) : IRequest<PaginatedList<PersonnelDto>>;
 
 public record PersonnelDto(
     Guid Id,
@@ -22,18 +25,24 @@ public record PersonnelDto(
     PersonnelStatus Status,
     Guid? IdentityUserId);
 
-public class GetPersonnelQueryHandler : IRequestHandler<GetPersonnelQuery, IReadOnlyList<PersonnelDto>>
+public class GetPersonnelQueryHandler : IRequestHandler<GetPersonnelQuery, PaginatedList<PersonnelDto>>
 {
+    private const int MaxSearchTermLength = 100;
     private readonly IApplicationDbContext _context;
     private readonly ICompanyVisibilityService _visibility;
+    private readonly ICurrentUser _currentUser;
 
-    public GetPersonnelQueryHandler(IApplicationDbContext context, ICompanyVisibilityService visibility)
+    public GetPersonnelQueryHandler(
+        IApplicationDbContext context,
+        ICompanyVisibilityService visibility,
+        ICurrentUser currentUser)
     {
         _context = context;
         _visibility = visibility;
+        _currentUser = currentUser;
     }
 
-    public async Task<IReadOnlyList<PersonnelDto>> Handle(GetPersonnelQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<PersonnelDto>> Handle(GetPersonnelQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Personnel.AsNoTracking().AsQueryable();
 
@@ -46,7 +55,13 @@ public class GetPersonnelQueryHandler : IRequestHandler<GetPersonnelQuery, IRead
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var term = request.SearchTerm.Trim().ToLower();
+            var term = request.SearchTerm.Trim();
+            if (term.Length > MaxSearchTermLength)
+            {
+                term = term[..MaxSearchTermLength];
+            }
+
+            term = term.ToLower();
             query = query.Where(p =>
                 p.FirstName.ToLower().Contains(term) ||
                 p.LastName.ToLower().Contains(term) ||
@@ -66,19 +81,28 @@ public class GetPersonnelQueryHandler : IRequestHandler<GetPersonnelQuery, IRead
                 : query.Where(p => p.IdentityUserId == null);
         }
 
-        return await query
+        var (pageNumber, pageSize) = PaginatedList<PersonnelDto>.Normalize(request.PageNumber, request.PageSize);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var revealPii = vis.IsAdmin;
+        var selfPersonnelId = _currentUser.PersonnelId;
+
+        var items = await query
             .OrderBy(p => p.LastName)
             .ThenBy(p => p.FirstName)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(p => new PersonnelDto(
                 p.Id,
-                p.NationalId,
+                revealPii || p.Id == selfPersonnelId ? p.NationalId : null,
                 p.FirstName,
                 p.LastName,
                 p.PersonnelCode,
-                p.PhoneNumber,
+                revealPii || p.Id == selfPersonnelId ? p.PhoneNumber : null,
                 p.Gender,
                 p.Status,
                 p.IdentityUserId))
             .ToListAsync(cancellationToken);
+
+        return new PaginatedList<PersonnelDto>(items, totalCount, pageNumber, pageSize);
     }
 }

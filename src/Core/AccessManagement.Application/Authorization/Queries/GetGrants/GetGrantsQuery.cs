@@ -1,5 +1,6 @@
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Models;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Authorization.ValueObjects;
 using MediatR;
@@ -14,7 +15,9 @@ public record GetGrantsQuery(
     Guid? PermissionId = null,
     Effect? Effect = null,
     SourceType? SourceType = null,
-    bool? ActiveOnly = null) : IRequest<IReadOnlyList<GrantDto>>;
+    bool? ActiveOnly = null,
+    int PageNumber = 1,
+    int PageSize = PaginatedList<GrantDto>.DefaultPageSize) : IRequest<PaginatedList<GrantDto>>;
 
 public record GrantDto(
     Guid Id,
@@ -35,7 +38,7 @@ public record GrantDto(
     int Priority,
     bool IsActive);
 
-public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyList<GrantDto>>
+public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, PaginatedList<GrantDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyVisibilityService _visibility;
@@ -46,7 +49,7 @@ public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyLi
         _visibility = visibility;
     }
 
-    public async Task<IReadOnlyList<GrantDto>> Handle(GetGrantsQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<GrantDto>> Handle(GetGrantsQuery request, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var query = _context.Grants
@@ -106,9 +109,14 @@ public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyLi
             query = query.Where(g => g.ValidFrom <= now && (g.ValidTo == null || g.ValidTo >= now));
         }
 
-        return await query
+        var (pageNumber, pageSize) = PaginatedList<GrantDto>.Normalize(request.PageNumber, request.PageSize);
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(g => g.Priority)
             .ThenByDescending(g => g.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(g => new GrantDto(
                 g.Id,
                 g.SubjectType,
@@ -128,5 +136,7 @@ public class GetGrantsQueryHandler : IRequestHandler<GetGrantsQuery, IReadOnlyLi
                 g.Priority,
                 g.ValidFrom <= now && (g.ValidTo == null || g.ValidTo >= now)))
             .ToListAsync(cancellationToken);
+
+        return new PaginatedList<GrantDto>(items, totalCount, pageNumber, pageSize);
     }
 }

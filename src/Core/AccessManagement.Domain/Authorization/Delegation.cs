@@ -21,10 +21,12 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
 
     public Guid? ScopeUnitId { get; private set; }
 
+    public Guid? ParentDelegationId { get; private set; }
+
     public DateTimeOffset ValidFrom { get; private set; }
     public DateTimeOffset? ValidTo { get; private set; }
 
-    public bool Delegable { get; private set; } = true;
+    public bool Delegable { get; private set; }
 
     public bool IsRevoked { get; private set; }
     public DateTimeOffset? RevokedAt { get; private set; }
@@ -38,7 +40,8 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
         DateTimeOffset validFrom,
         DateTimeOffset? validTo,
         Guid? scopeUnitId = null,
-        bool delegable = true)
+        bool delegable = false,
+        Guid? parentDelegationId = null)
     {
         if (delegatorUserId == Guid.Empty || delegateUserId == Guid.Empty)
         {
@@ -58,6 +61,7 @@ public class Delegation : BaseAuditableEntity, IAggregateRoot
             DelegateUserId = delegateUserId,
             PermissionId = permissionId,
             ScopeUnitId = scopeUnitId,
+            ParentDelegationId = parentDelegationId,
             ValidFrom = validFrom,
             ValidTo = validTo,
             Delegable = delegable,

@@ -21,7 +21,7 @@ public class DelegationTests
         var delegation = Delegation.Create(Delegator, Delegate, TestGuids.Permission100, T0, T0.AddDays(7));
         delegation.DelegatorUserId.ShouldBe(Delegator);
         delegation.DelegateUserId.ShouldBe(Delegate);
-        delegation.Delegable.ShouldBeTrue();
+        delegation.Delegable.ShouldBeFalse();
     }
 
     [Test]

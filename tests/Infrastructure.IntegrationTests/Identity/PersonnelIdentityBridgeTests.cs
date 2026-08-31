@@ -84,7 +84,7 @@ public class PersonnelIdentityBridgeTests
             Email = "user.a@test.local",
             EmailConfirmed = true,
         };
-        (await userManager.CreateAsync(user, "password1")).Succeeded.ShouldBeTrue();
+        (await userManager.CreateAsync(user, TestPasswords.Valid)).Succeeded.ShouldBeTrue();
 
         var personnel = Personnel.Create("123", "Ali", "Ahmadi", "PC-001");
         context.Personnel.Add(personnel);
@@ -113,7 +113,7 @@ public class PersonnelIdentityBridgeTests
             Email = "user.a@test.local",
             EmailConfirmed = true,
         };
-        (await userManager.CreateAsync(user, "password1")).Succeeded.ShouldBeTrue();
+        (await userManager.CreateAsync(user, TestPasswords.Valid)).Succeeded.ShouldBeTrue();
 
         var personnelId = await mediator.Send(new CreatePersonnelCommand(
             "1234567890", "Ali", "Ahmadi", "PC-001", IdentityUserId: TestUsers.UserA));
@@ -139,7 +139,7 @@ public class PersonnelIdentityBridgeTests
             Email = "user.b@test.local",
             EmailConfirmed = true,
         };
-        (await userManager.CreateAsync(user, "password1")).Succeeded.ShouldBeTrue();
+        (await userManager.CreateAsync(user, TestPasswords.Valid)).Succeeded.ShouldBeTrue();
 
         var personnelId = await mediator.Send(new CreatePersonnelCommand(
             "9876543210", "Sara", "Karimi", "PC-002"));

@@ -58,9 +58,10 @@ internal static class AuthorizationTestContext
     public static IServiceProvider CreateMediatorServices(
         ApplicationDbContext context,
         Guid? activeCompanyId = null,
-        Guid? userId = null)
+        Guid? userId = null,
+        bool hasCompany = true)
     {
-        var companyId = activeCompanyId ?? TestGuids.CompanyA;
+        Guid? companyId = hasCompany ? (activeCompanyId ?? TestGuids.CompanyA) : null;
         MappingConfig.RegisterMappings();
 
         var hierarchy = new PositionHierarchyService();

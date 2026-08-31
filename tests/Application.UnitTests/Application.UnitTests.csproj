@@ -30,6 +30,7 @@
 
     <ItemGroup>
         <Compile Include="..\TestSupport\TestGuids.cs" Link="TestSupport\TestGuids.cs" />
+        <Compile Include="..\TestSupport\TestPasswords.cs" Link="TestSupport\TestPasswords.cs" />
     </ItemGroup>
 
 </Project>

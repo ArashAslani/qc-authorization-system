@@ -41,6 +41,7 @@ public class AuthorizationAuditIntegrationTests
             .Options;
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
 
         _perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
         _context.Permissions.Add(_perm);

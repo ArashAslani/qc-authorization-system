@@ -16,6 +16,12 @@ public static class DependencyInjection
         var connectionString = builder.Configuration.GetConnectionString(Services.Database);
         Guard.Against.Null(connectionString, message: $"Connection string '{Services.Database}' not found.");
 
+        if (builder.Environment.IsProduction()
+            && connectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("SQLite is not supported in Production.");
+        }
+
         builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
         builder.Services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
 

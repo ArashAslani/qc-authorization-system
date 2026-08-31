@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Authorization.Audit;
@@ -9,18 +10,41 @@ using AccessManagement.Application.Organization;
 using AccessManagement.Application.Session;
 using AccessManagement.Domain.Authorization.Services;
 using AccessManagement.Domain.Organization;
+using AccessManagement.Infrastructure.Data;
 using AccessManagement.Tests.TestSupport;
 
 namespace AccessManagement.Infrastructure.IntegrationTests.TestSupport;
 
 public static class TestServiceCollectionExtensions
 {
+    public static readonly Guid TestAdminUserId = Guid.Parse("0a0a0a0a-0a0a-0a0a-0a0a-0a0a0a0a0a0a");
+
     public static IServiceCollection AddTestCurrentUser(
         this IServiceCollection services,
         Guid? activeCompanyId = null,
         Guid? userId = null,
         Guid? personnelId = null) =>
-        services.AddSingleton<ICurrentUser>(new StaticCurrentUser(userId, personnelId, activeCompanyId ?? TestGuids.CompanyA));
+        services.AddSingleton<ICurrentUser>(new StaticCurrentUser(
+            userId ?? TestAdminUserId,
+            personnelId,
+            activeCompanyId ?? TestGuids.CompanyA));
+
+    public static async Task SeedTestAdminAsync(this ApplicationDbContext db)
+    {
+        if (await db.Personnel.AnyAsync(p => p.IdentityUserId == TestAdminUserId))
+        {
+            return;
+        }
+
+        db.Personnel.Add(Personnel.Create(
+            "0000000000",
+            "Sys",
+            "Admin",
+            "SYS-ADMIN",
+            identityUserId: TestAdminUserId,
+            isSystemUser: true));
+        await db.SaveChangesAsync();
+    }
 
     public static IServiceCollection AddAuthorizationEvaluationServices(this IServiceCollection services)
     {

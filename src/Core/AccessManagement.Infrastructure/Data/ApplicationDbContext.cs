@@ -32,6 +32,7 @@ public class ApplicationDbContext
     public DbSet<ModuleScopeConfig> ModuleScopeConfigs => Set<ModuleScopeConfig>();
     public DbSet<AuthorizationAuditEntry> AuthorizationAuditEntries => Set<AuthorizationAuditEntry>();
     public DbSet<AccessDecisionLog> AccessDecisionLogs => Set<AccessDecisionLog>();
+    public DbSet<RevokedAccessToken> RevokedAccessTokens => Set<RevokedAccessToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -9,6 +9,7 @@ namespace AccessManagement.Application.Organization.Commands.BootstrapSystemAdmi
 /// <summary>
 /// The only command that does not implement <c>IRequireUserAdmin</c>.
 /// Self-disabling: succeeds only while no Personnel with <c>IsSystemUser</c> exists.
+/// A filtered unique index on <c>IsSystemUser</c> makes the first-admin race fail at the database.
 /// </summary>
 public sealed record BootstrapSystemAdminCommand(
     string NationalId,
@@ -26,10 +27,43 @@ public sealed class BootstrapSystemAdminCommandHandler : IRequestHandler<Bootstr
 
     public async Task<Guid> Handle(BootstrapSystemAdminCommand request, CancellationToken ct)
     {
-        var anyAdminExists = await _db.Personnel.AsNoTracking().AnyAsync(p => p.IsSystemUser, ct);
+        if (_db is not DbContext ef)
+        {
+            return await CreateAdminAsync(request, ct);
+        }
+
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+        try
+        {
+            transaction = await ef.Database.BeginTransactionAsync(ct);
+        }
+        catch (InvalidOperationException)
+        {
+            return await CreateAdminAsync(request, ct);
+        }
+
+        await using (transaction)
+        {
+            try
+            {
+                var id = await CreateAdminAsync(request, ct);
+                await transaction.CommitAsync(ct);
+                return id;
+            }
+            catch (DbUpdateException)
+            {
+                await transaction.RollbackAsync(ct);
+                throw new AuthorizationDomainException(
+                    "System already has at least one admin. Bootstrap is disabled.");
+            }
+        }
+    }
+
+    private async Task<Guid> CreateAdminAsync(BootstrapSystemAdminCommand request, CancellationToken ct)
+    {
+        var anyAdminExists = await _db.Personnel.AnyAsync(p => p.IsSystemUser, ct);
         if (anyAdminExists)
         {
-            // This path is permanently locked after the first successful run.
             throw new AuthorizationDomainException(
                 "System already has at least one admin. Bootstrap is disabled.");
         }

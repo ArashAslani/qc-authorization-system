@@ -1,4 +1,5 @@
 using AccessManagement.Application.Abstractions;
+using AccessManagement.Application.Common.Security;
 using AccessManagement.Domain.Authorization.Evaluation;
 using MediatR;
 
@@ -9,7 +10,7 @@ public record EvaluateAccessForSubjectQuery(
     string PermissionCode,
     Guid? ActivePositionId = null,
     Guid? ResourceScopeUnitId = null,
-    DateTimeOffset? When = null) : IRequest<AdminAccessDecisionDto>;
+    DateTimeOffset? When = null) : IRequest<AdminAccessDecisionDto>, IRequireUserAdmin;
 
 public record AdminAccessDecisionDto(
     bool Allowed,

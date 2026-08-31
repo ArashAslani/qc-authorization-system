@@ -51,6 +51,7 @@ public class GrantAndDelegationQueryIntegrationTests
 
         _context = _services.GetRequiredService<ApplicationDbContext>();
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
         _mediator = _services.GetRequiredService<IMediator>();
     }
 
@@ -84,10 +85,10 @@ public class GrantAndDelegationQueryIntegrationTests
             100));
 
         var grants = await _mediator.Send(new GetGrantsQuery(SubjectUserId: userId));
-        grants.Count.ShouldBe(1);
-        grants[0].Id.ShouldBe(grantId);
-        grants[0].PermissionCode.ShouldBe("INSPECTION.SIGN");
-        grants[0].IsActive.ShouldBeTrue();
+        grants.TotalCount.ShouldBe(1);
+        grants.Items[0].Id.ShouldBe(grantId);
+        grants.Items[0].PermissionCode.ShouldBe("INSPECTION.SIGN");
+        grants.Items[0].IsActive.ShouldBeTrue();
 
         var details = await _mediator.Send(new GetGrantByIdQuery(grantId));
         details.Id.ShouldBe(grantId);
@@ -125,9 +126,9 @@ public class GrantAndDelegationQueryIntegrationTests
             DateTimeOffset.UtcNow.AddDays(5)));
 
         var delegations = await _mediator.Send(new GetDelegationsQuery(DelegateUserId: @delegate));
-        delegations.Count.ShouldBe(1);
-        delegations[0].Id.ShouldBe(delId);
-        delegations[0].IsActive.ShouldBeTrue();
+        delegations.TotalCount.ShouldBe(1);
+        delegations.Items[0].Id.ShouldBe(delId);
+        delegations.Items[0].IsActive.ShouldBeTrue();
 
         var details = await _mediator.Send(new GetDelegationByIdQuery(delId));
         details.Id.ShouldBe(delId);

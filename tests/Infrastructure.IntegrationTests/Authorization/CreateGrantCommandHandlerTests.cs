@@ -30,6 +30,7 @@ public class CreateGrantCommandHandlerTests
             .Options;
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
 
         _mediator = new ServiceCollection()
             .AddLogging()

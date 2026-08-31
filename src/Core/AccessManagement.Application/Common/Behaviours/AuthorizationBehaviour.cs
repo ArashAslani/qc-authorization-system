@@ -17,13 +17,24 @@ public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRe
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var authorizeAttributes = request.GetType().GetCustomAttributes<AuthorizeAttribute>();
+        var authorizeAttributes = request.GetType().GetCustomAttributes<AuthorizeAttribute>().ToArray();
 
-        if (authorizeAttributes.Any())
+        if (authorizeAttributes.Length == 0)
         {
-            if (!_user.IsAuthenticated || _user.UserId is null)
+            return await next();
+        }
+
+        if (!_user.IsAuthenticated || _user.UserId is null)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        foreach (var attribute in authorizeAttributes)
+        {
+            if (!string.IsNullOrWhiteSpace(attribute.Roles) || !string.IsNullOrWhiteSpace(attribute.Policy))
             {
-                throw new UnauthorizedAccessException();
+                throw new ForbiddenAccessException(
+                    "MediatR Roles/Policy attributes are not mapped to ASP.NET policies. Use IRequireUserAdmin.");
             }
         }
 

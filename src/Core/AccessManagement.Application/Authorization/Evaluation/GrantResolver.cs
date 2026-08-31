@@ -4,6 +4,7 @@ using AccessManagement.Domain.Authorization;
 using AccessManagement.Domain.Authorization.Enums;
 using AccessManagement.Domain.Authorization.Evaluation;
 using AccessManagement.Domain.Authorization.Services;
+using AccessManagement.Domain.Organization.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Evaluation;
@@ -68,14 +69,36 @@ public sealed class GrantResolver : IGrantResolver, ICandidateGrantResolver
 
         allGrants = (await _catalogFilter.FilterActiveCatalogSourcesAsync(allGrants, ct)).ToList();
 
+        var personnelInactive = await _context.Personnel
+            .AsNoTracking()
+            .AnyAsync(p => p.IdentityUserId == request.SubjectUserId && p.Status == PersonnelStatus.Inactive, ct);
+        if (personnelInactive)
+        {
+            return Array.Empty<Grant>();
+        }
+
         var allPositions = await _context.Positions.AsNoTracking().ToListAsync(ct);
+        var inactivePositionIds = allPositions
+            .Where(p => p.Status == PositionStatus.Inactive)
+            .Select(p => p.Id)
+            .ToHashSet();
         var requestPositionIds = request.ActivePositionId is Guid requestPid
             ? new HashSet<Guid> { requestPid }
             : new HashSet<Guid>();
 
+        if (request.ActivePositionId is Guid activePid && inactivePositionIds.Contains(activePid))
+        {
+            requestPositionIds.Clear();
+        }
+
         var result = new List<Grant>();
         foreach (var grant in allGrants)
         {
+            if (grant.SubjectType == SubjectType.Position && inactivePositionIds.Contains(grant.SubjectId))
+            {
+                continue;
+            }
+
             if (_applicability.Applies(
                     grant,
                     SubjectType.User,

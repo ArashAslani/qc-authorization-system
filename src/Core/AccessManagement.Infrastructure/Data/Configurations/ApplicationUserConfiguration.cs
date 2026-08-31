@@ -10,6 +10,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
         builder.Property(u => u.PersonnelId);
+        builder.Property(u => u.ActiveCompanyId);
 
         builder.HasOne<Personnel>()
             .WithMany()

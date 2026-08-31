@@ -1,5 +1,6 @@
 using AccessManagement.Application.Authorization.Audit;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Security;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,7 @@ namespace AccessManagement.Application.Authorization.Commands.RevokeGrant;
 /// to an HTTP endpoint without adding <c>IRequireUserAdmin</c> (or an equivalent
 /// line-manager gate).
 /// </summary>
-public record RevokeGrantCommand(Guid GrantId, Guid? ActorUserId = null) : IRequest;
+public record RevokeGrantCommand(Guid GrantId, Guid? ActorUserId = null) : IRequest, IRequireUserAdmin;
 
 public class RevokeGrantCommandHandler : IRequestHandler<RevokeGrantCommand>
 {

@@ -48,6 +48,7 @@ public class OrganizationQueryIntegrationTests
 
         _context = _services.GetRequiredService<ApplicationDbContext>();
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
         var company = OrganizationalUnit.Create(OrganizationalUnitTypes.Company, "A");
         company.Id = TestGuids.CompanyA;
         _context.OrganizationalUnits.Add(company);
@@ -70,15 +71,16 @@ public class OrganizationQueryIntegrationTests
         var p2Id = await _mediator.Send(new CreatePersonnelCommand("2222222222", "Sara", "Karimi", "P-102", Gender: PersonnelGender.Female, Status: PersonnelStatus.Inactive));
 
         var list = await _mediator.Send(new GetPersonnelQuery());
-        list.Count.ShouldBe(2);
+        list.Items.ShouldContain(p => p.FirstName == "Reza");
+        list.Items.ShouldContain(p => p.FirstName == "Sara");
 
         var searchList = await _mediator.Send(new GetPersonnelQuery(SearchTerm: "Karimi"));
-        searchList.Count.ShouldBe(1);
-        searchList[0].FirstName.ShouldBe("Sara");
+        searchList.TotalCount.ShouldBe(1);
+        searchList.Items[0].FirstName.ShouldBe("Sara");
 
         var statusList = await _mediator.Send(new GetPersonnelQuery(Status: PersonnelStatus.Inactive));
-        statusList.Count.ShouldBe(1);
-        statusList[0].Id.ShouldBe(p2Id);
+        statusList.TotalCount.ShouldBe(1);
+        statusList.Items[0].Id.ShouldBe(p2Id);
 
         var details = await _mediator.Send(new GetPersonnelByIdQuery(p1Id));
         details.Id.ShouldBe(p1Id);

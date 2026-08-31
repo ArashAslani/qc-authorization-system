@@ -41,6 +41,7 @@ public class IdentityAuthorizationIntegrationTests
             .Options;
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
 
         _mediator = new ServiceCollection()
             .AddLogging()
@@ -69,7 +70,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignAuthorizationRoleToUserCommand(TestUsers.UserA, roleId, T0));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            TestUsers.UserA, "PERSONNEL.READ", When: T0));
+            TestUsers.UserA, "PERSONNEL.READ"));
 
         result.Allowed.ShouldBeTrue();
     }
@@ -83,7 +84,7 @@ public class IdentityAuthorizationIntegrationTests
         await _mediator.Send(new AssignPermissionToRoleCommand(roleId, permissionId));
 
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            TestUsers.Unknown, "PERSONNEL.READ", When: T0));
+            TestUsers.Unknown, "PERSONNEL.READ"));
 
         result.Allowed.ShouldBeFalse();
     }

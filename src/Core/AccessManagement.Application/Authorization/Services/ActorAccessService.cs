@@ -71,7 +71,7 @@ public sealed class ActorAccessService : IActorAccessService
             return _workspace.EvaluateInCompanyAsync(userId, company, permissionCode, scopeUnitId, ct);
         }
 
-        return _workspace.EvaluateAcrossCompaniesAsync(userId, permissionCode, scopeUnitId, ct);
+        return Task.FromResult(AccessDecision.Deny(Guid.NewGuid(), AccessDecisionReasons.NoGrant));
     }
 
     public async Task<bool> IsUserAdminAsync(Guid userId, Guid? companyUnitId, CancellationToken ct = default)
@@ -82,6 +82,11 @@ public sealed class ActorAccessService : IActorAccessService
         if (isSystem)
         {
             return true;
+        }
+
+        if (companyUnitId is null)
+        {
+            return false;
         }
 
         return await HasPermissionAsync(userId, companyUnitId, CoreAccessPermissions.AdministerAll, companyUnitId, ct);

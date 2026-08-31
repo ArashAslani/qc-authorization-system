@@ -38,6 +38,7 @@ public class EvaluateAccessQueryIntegrationTests
             .Options;
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
+        await _context.SeedTestAdminAsync();
 
         var perm = Permission.Create("PERSONNEL.READ", "Personnel", "Read");
         _context.Permissions.Add(perm);
@@ -68,7 +69,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Allow_With_Trace()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            TestUsers.UserE, "PERSONNEL.READ", When: T0));
+            TestUsers.UserE, "PERSONNEL.READ"));
 
         result.Allowed.ShouldBeTrue();
     }
@@ -77,7 +78,7 @@ public class EvaluateAccessQueryIntegrationTests
     public async Task EvaluateAccess_Returns_Deny_For_Unknown_User()
     {
         var result = await _mediator.Send(new EvaluateAccessQuery(
-            TestUsers.Unknown, "PERSONNEL.READ", When: T0));
+            TestUsers.Unknown, "PERSONNEL.READ"));
 
         result.Allowed.ShouldBeFalse();
     }

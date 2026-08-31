@@ -1,8 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Models;
 using AccessManagement.Application.Organization.Queries.GetPersonnelWorkspaces;
 using AccessManagement.Infrastructure.Data;
 using AccessManagement.Infrastructure.Identity;
@@ -13,6 +16,8 @@ namespace AccessManagement.WebApi.Endpoints;
 
 public class UsersEndpoints : IEndpointGroup
 {
+    public const string AuthRateLimitPolicy = "auth";
+
     public static string? RoutePrefix => "/api/users";
 
     public static void Map(RouteGroupBuilder group)
@@ -20,14 +25,20 @@ public class UsersEndpoints : IEndpointGroup
         group.MapGet(GetUsers);
         group.MapGet(GetUserById, "{id:guid}");
         group.MapGet(GetMyWorkspaces, "me/workspaces");
-        group.MapPost(Register, "register").AllowAnonymous();
-        group.MapPost(Login, "login").AllowAnonymous();
+        group.MapPost(Register, "register").AllowAnonymous().RequireRateLimiting(AuthRateLimitPolicy);
+        group.MapPost(ConfirmEmail, "confirm-email").AllowAnonymous().RequireRateLimiting(AuthRateLimitPolicy);
+        group.MapPost(Login, "login").AllowAnonymous().RequireRateLimiting(AuthRateLimitPolicy);
+        group.MapPost(LoginTwoFactor, "login/2fa").AllowAnonymous().RequireRateLimiting(AuthRateLimitPolicy);
+        group.MapPost(Logout, "logout");
         group.MapPost(SwitchCompany, "me/switch-company");
+        group.MapPost(SetTwoFactor, "me/two-factor");
     }
 
     private static async Task<IResult> GetUsers(
         [FromQuery] string? searchTerm,
         [FromQuery] bool? hasPersonnel,
+        [FromQuery] int pageNumber,
+        [FromQuery] int pageSize,
         ApplicationDbContext context,
         ICompanyVisibilityService visibility)
     {
@@ -42,7 +53,13 @@ public class UsersEndpoints : IEndpointGroup
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.Trim().ToLower();
+            var term = searchTerm.Trim();
+            if (term.Length > 100)
+            {
+                term = term[..100];
+            }
+
+            term = term.ToLower();
             query = query.Where(u =>
                 (u.Email != null && u.Email.ToLower().Contains(term)) ||
                 (u.UserName != null && u.UserName.ToLower().Contains(term)));
@@ -55,19 +72,20 @@ public class UsersEndpoints : IEndpointGroup
                 : query.Where(u => u.PersonnelId == null);
         }
 
+        var (page, size) = PaginatedList<UserSummaryDto>.Normalize(
+            pageNumber == 0 ? 1 : pageNumber,
+            pageSize == 0 ? PaginatedList<UserSummaryDto>.DefaultPageSize : pageSize);
+        var totalCount = await query.CountAsync();
         var users = await query
             .OrderBy(u => u.Email)
-            .Select(u => new UserSummaryDto(
-                u.Id,
-                u.UserName,
-                u.Email,
-                u.EmailConfirmed,
-                u.PersonnelId,
-                u.LockoutEnabled,
-                u.LockoutEnd))
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Select(u => vis.IsAdmin
+                ? new UserSummaryDto(u.Id, u.UserName, u.Email, u.EmailConfirmed, u.PersonnelId, u.LockoutEnabled, u.LockoutEnd)
+                : new UserSummaryDto(u.Id, u.UserName, null, false, u.PersonnelId, false, null))
             .ToListAsync();
 
-        return Results.Ok(users);
+        return Results.Ok(new PaginatedList<UserSummaryDto>(users, totalCount, page, size));
     }
 
     private static async Task<IResult> GetUserById(
@@ -102,18 +120,19 @@ public class UsersEndpoints : IEndpointGroup
             }
         }
 
+        var isSelfOrAdmin = vis.IsAdmin || currentUser.UserId == id;
         var details = new UserDetailsDto(
             user.Id,
             user.UserName,
-            user.Email,
-            user.EmailConfirmed,
+            isSelfOrAdmin ? user.Email : null,
+            isSelfOrAdmin && vis.IsAdmin ? user.EmailConfirmed : false,
             user.PersonnelId,
             personnelName,
-            user.PhoneNumber,
-            user.PhoneNumberConfirmed,
-            user.TwoFactorEnabled,
-            user.LockoutEnabled,
-            user.LockoutEnd);
+            isSelfOrAdmin ? user.PhoneNumber : null,
+            isSelfOrAdmin && vis.IsAdmin && user.PhoneNumberConfirmed,
+            isSelfOrAdmin ? user.TwoFactorEnabled : false,
+            vis.IsAdmin && user.LockoutEnabled,
+            vis.IsAdmin ? user.LockoutEnd : null);
 
         return Results.Ok(details);
     }
@@ -142,14 +161,16 @@ public class UsersEndpoints : IEndpointGroup
     private static async Task<IResult> Register(
         RegisterRequest request,
         UserManager<ApplicationUser> userManager,
-        JwtTokenService jwtTokenService)
+        IEmailConfirmationService emailConfirmation,
+        IHostEnvironment environment)
     {
         var user = new ApplicationUser
         {
             Id = Guid.NewGuid(),
             UserName = request.Email.Trim(),
             Email = request.Email.Trim(),
-            EmailConfirmed = true,
+            EmailConfirmed = false,
+            LockoutEnabled = true,
         };
 
         var createResult = await userManager.CreateAsync(user, request.Password);
@@ -160,8 +181,28 @@ public class UsersEndpoints : IEndpointGroup
                 e => new[] { e.Description }));
         }
 
-        var token = jwtTokenService.GenerateToken(user, activeCompanyId: null, nationalId: null);
-        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId: null, workspaces: null));
+        var confirmationToken = await emailConfirmation.CreateTokenAsync(user.Id, user.Email!);
+        object payload = environment.IsDevelopment() || environment.IsEnvironment("Testing")
+            ? new RegisterResponse(user.Id, confirmationToken)
+            : new RegisterResponse(user.Id, null);
+        return Results.Ok(payload);
+    }
+
+    private static async Task<IResult> ConfirmEmail(
+        ConfirmEmailRequest request,
+        UserManager<ApplicationUser> userManager,
+        IEmailConfirmationService emailConfirmation)
+    {
+        var user = await userManager.FindByIdAsync(request.UserId.ToString());
+        if (user is null)
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        await emailConfirmation.ConfirmAsync(request.UserId, request.Token);
+        user.EmailConfirmed = true;
+        await userManager.UpdateAsync(user);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> Login(
@@ -169,60 +210,109 @@ public class UsersEndpoints : IEndpointGroup
         UserManager<ApplicationUser> userManager,
         JwtTokenService jwtTokenService,
         ApplicationDbContext context,
-        ISender sender)
+        ISender sender,
+        ITwoFactorChallengeService twoFactor,
+        IHostEnvironment environment)
     {
-        ApplicationUser? user = null;
-        string? nationalId = null;
+        var user = await FindUserForLoginAsync(request, userManager, context);
 
-        if (!string.IsNullOrWhiteSpace(request.NationalId))
+        if (user is null || !user.EmailConfirmed)
         {
-            nationalId = request.NationalId.Trim();
-            var personnel = await context.Personnel
-                .AsNoTracking()
-                .SingleOrDefaultAsync(p => p.NationalId == nationalId);
+            if (user is not null)
+            {
+                await userManager.AccessFailedAsync(user);
+            }
 
-            if (personnel?.IdentityUserId is Guid identityUserId)
-            {
-                user = await userManager.FindByIdAsync(identityUserId.ToString());
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(request.Email))
-        {
-            user = await userManager.FindByEmailAsync(request.Email.Trim());
-            if (user?.PersonnelId is Guid personnelId)
-            {
-                nationalId = await context.Personnel
-                    .AsNoTracking()
-                    .Where(p => p.Id == personnelId)
-                    .Select(p => p.NationalId)
-                    .SingleOrDefaultAsync();
-            }
+            throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (await userManager.IsLockedOutAsync(user))
         {
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
-        PersonnelWorkspacesDto? workspaces = null;
-        Guid? activeCompanyId = null;
-        if (user.PersonnelId.HasValue)
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
         {
-            workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(user.PersonnelId.Value));
-            activeCompanyId = workspaces.DefaultCompanyId;
+            await userManager.AccessFailedAsync(user);
+            throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
-        var token = jwtTokenService.GenerateToken(user, activeCompanyId, nationalId);
-        return Results.Ok(BuildAuthResponse(token, user, activeCompanyId, workspaces));
+        await userManager.ResetAccessFailedCountAsync(user);
+
+        if (user.TwoFactorEnabled)
+        {
+            var code = await twoFactor.CreateChallengeCodeAsync(user.Id);
+            var challenge = jwtTokenService.GenerateTwoFactorToken(user);
+            return Results.Ok(new TwoFactorChallengeResponse(
+                true,
+                challenge,
+                environment.IsDevelopment() || environment.IsEnvironment("Testing") ? code : null));
+        }
+
+        return Results.Ok(await IssueAccessAsync(user, userManager, jwtTokenService, sender));
+    }
+
+    private static async Task<IResult> LoginTwoFactor(
+        LoginTwoFactorRequest request,
+        UserManager<ApplicationUser> userManager,
+        JwtTokenService jwtTokenService,
+        ISender sender,
+        ITwoFactorChallengeService twoFactor)
+    {
+        if (!jwtTokenService.TryReadToken(request.TwoFactorToken, out var jwt)
+            || jwt.Claims.FirstOrDefault(c => c.Type == JwtTokenService.TokenUseClaim)?.Value != JwtTokenService.TokenUseTwoFactor)
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        var sub = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+            ?? jwt.Subject;
+        if (!Guid.TryParse(sub, out var userId))
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || !user.TwoFactorEnabled)
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        if (!await twoFactor.VerifyAsync(userId, request.Code))
+        {
+            throw new UnauthorizedAccessException("Invalid credentials.");
+        }
+
+        return Results.Ok(await IssueAccessAsync(user, userManager, jwtTokenService, sender));
+    }
+
+    private static async Task<IResult> Logout(
+        HttpContext httpContext,
+        ICurrentUser currentUser,
+        ITokenRevocationStore revocation)
+    {
+        if (currentUser.UserId is not Guid userId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var jti = httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+        if (!string.IsNullOrEmpty(jti))
+        {
+            await revocation.RevokeAsync(jti, userId, DateTimeOffset.UtcNow.AddHours(2));
+        }
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> SwitchCompany(
         SwitchCompanyRequest request,
+        HttpContext httpContext,
         ICurrentUser currentUser,
         UserManager<ApplicationUser> userManager,
         JwtTokenService jwtTokenService,
-        ApplicationDbContext context,
-        ISender sender)
+        ISender sender,
+        ITokenRevocationStore revocation)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not Guid userId)
         {
@@ -247,14 +337,87 @@ public class UsersEndpoints : IEndpointGroup
         var user = await userManager.FindByIdAsync(userId.ToString())
             ?? throw new UnauthorizedAccessException("User not found.");
 
-        var nationalId = await context.Personnel
-            .AsNoTracking()
-            .Where(p => p.Id == personnelId)
-            .Select(p => p.NationalId)
-            .SingleOrDefaultAsync();
+        var previousJti = httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+        if (!string.IsNullOrEmpty(previousJti))
+        {
+            await revocation.RevokeAsync(previousJti, userId, DateTimeOffset.UtcNow.AddHours(2));
+        }
 
-        var token = jwtTokenService.GenerateToken(user, request.CompanyId, nationalId);
+        user.ActiveCompanyId = request.CompanyId;
+        await userManager.UpdateAsync(user);
+
+        var token = jwtTokenService.GenerateToken(user, request.CompanyId);
         return Results.Ok(BuildAuthResponse(token, user, request.CompanyId, workspaces));
+    }
+
+    private static async Task<IResult> SetTwoFactor(
+        SetTwoFactorRequest request,
+        ICurrentUser currentUser,
+        UserManager<ApplicationUser> userManager)
+    {
+        if (currentUser.UserId is not Guid userId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new UnauthorizedAccessException("User not found.");
+
+        // TODO: replace with TOTP authenticator enrollment.
+        user.TwoFactorEnabled = request.Enabled;
+        await userManager.UpdateAsync(user);
+        return Results.NoContent();
+    }
+
+    private static async Task<ApplicationUser?> FindUserForLoginAsync(
+        LoginRequest request,
+        UserManager<ApplicationUser> userManager,
+        ApplicationDbContext context)
+    {
+        if (!string.IsNullOrWhiteSpace(request.NationalId))
+        {
+            var personnel = await context.Personnel
+                .AsNoTracking()
+                .SingleOrDefaultAsync(p => p.NationalId == request.NationalId.Trim());
+
+            if (personnel?.IdentityUserId is Guid identityUserId)
+            {
+                return await userManager.FindByIdAsync(identityUserId.ToString());
+            }
+
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            return await userManager.FindByEmailAsync(request.Email.Trim());
+        }
+
+        return null;
+    }
+
+    private static async Task<AuthResponse> IssueAccessAsync(
+        ApplicationUser user,
+        UserManager<ApplicationUser> userManager,
+        JwtTokenService jwtTokenService,
+        ISender sender)
+    {
+        PersonnelWorkspacesDto? workspaces = null;
+        Guid? activeCompanyId = user.ActiveCompanyId;
+        if (user.PersonnelId.HasValue)
+        {
+            workspaces = await sender.Send(new GetPersonnelWorkspacesQuery(user.PersonnelId.Value));
+            if (activeCompanyId is null || workspaces.Companies.All(c => c.CompanyId != activeCompanyId))
+            {
+                activeCompanyId = workspaces.DefaultCompanyId;
+            }
+
+            user.ActiveCompanyId = activeCompanyId;
+            await userManager.UpdateAsync(user);
+        }
+
+        var token = jwtTokenService.GenerateToken(user, activeCompanyId);
+        return BuildAuthResponse(token, user, activeCompanyId, workspaces);
     }
 
     private static AuthResponse BuildAuthResponse(
@@ -301,7 +464,17 @@ public record UserDetailsDto(
 
 public record RegisterRequest(string Email, string Password);
 
+public record RegisterResponse(Guid UserId, string? EmailConfirmationToken);
+
+public record ConfirmEmailRequest(Guid UserId, string Token);
+
 public record LoginRequest(string Password, string? Email = null, string? NationalId = null);
+
+public record LoginTwoFactorRequest(string TwoFactorToken, string Code);
+
+public record TwoFactorChallengeResponse(bool RequiresTwoFactor, string TwoFactorToken, string? DebugCode);
+
+public record SetTwoFactorRequest(bool Enabled);
 
 public record SwitchCompanyRequest(Guid CompanyId);
 

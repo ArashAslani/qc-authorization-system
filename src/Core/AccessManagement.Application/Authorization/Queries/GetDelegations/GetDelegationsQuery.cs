@@ -1,5 +1,6 @@
 using AccessManagement.Application.Authorization.Services;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Application.Common.Models;
 using AccessManagement.Domain.Authorization.ValueObjects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,9 @@ public record GetDelegationsQuery(
     Guid? DelegatorUserId = null,
     Guid? DelegateUserId = null,
     Guid? PermissionId = null,
-    bool? ActiveOnly = null) : IRequest<IReadOnlyList<DelegationDto>>;
+    bool? ActiveOnly = null,
+    int PageNumber = 1,
+    int PageSize = PaginatedList<DelegationDto>.DefaultPageSize) : IRequest<PaginatedList<DelegationDto>>;
 
 public record DelegationDto(
     Guid Id,
@@ -23,9 +26,10 @@ public record DelegationDto(
     Guid? ScopeUnitId,
     bool Delegable,
     bool IsRevoked,
-    bool IsActive);
+    bool IsActive,
+    Guid? ParentDelegationId);
 
-public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, IReadOnlyList<DelegationDto>>
+public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, PaginatedList<DelegationDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyVisibilityService _visibility;
@@ -41,7 +45,7 @@ public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, I
         _currentUser = currentUser;
     }
 
-    public async Task<IReadOnlyList<DelegationDto>> Handle(GetDelegationsQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedList<DelegationDto>> Handle(GetDelegationsQuery request, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var query = _context.Delegations
@@ -80,8 +84,13 @@ public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, I
             query = query.Where(d => !d.IsRevoked && d.ValidFrom <= now && (d.ValidTo == null || d.ValidTo >= now));
         }
 
-        return await query
+        var (pageNumber, pageSize) = PaginatedList<DelegationDto>.Normalize(request.PageNumber, request.PageSize);
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(d => d.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(d => new DelegationDto(
                 d.Id,
                 d.DelegatorUserId,
@@ -93,7 +102,10 @@ public class GetDelegationsQueryHandler : IRequestHandler<GetDelegationsQuery, I
                 d.ScopeUnitId,
                 d.Delegable,
                 d.IsRevoked,
-                !d.IsRevoked && d.ValidFrom <= now && (d.ValidTo == null || d.ValidTo >= now)))
+                !d.IsRevoked && d.ValidFrom <= now && (d.ValidTo == null || d.ValidTo >= now),
+                d.ParentDelegationId))
             .ToListAsync(cancellationToken);
+
+        return new PaginatedList<DelegationDto>(items, totalCount, pageNumber, pageSize);
     }
 }

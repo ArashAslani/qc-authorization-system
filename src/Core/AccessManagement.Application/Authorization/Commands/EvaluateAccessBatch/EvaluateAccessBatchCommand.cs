@@ -34,6 +34,11 @@ public sealed class EvaluateAccessBatchCommandHandler
         EvaluateAccessBatchCommand request,
         CancellationToken cancellationToken)
     {
+        if (request.Rows.Count > 100)
+        {
+            throw new ForbiddenAccessException("evaluate-batch is limited to 100 rows.");
+        }
+
         var results = new List<EvaluateAccessBatchRowResult>(request.Rows.Count);
         for (var i = 0; i < request.Rows.Count; i++)
         {

@@ -1,6 +1,7 @@
 using AccessManagement.Application.Abstractions;
 using AccessManagement.Application.Common.Exceptions;
 using AccessManagement.Application.Common.Interfaces;
+using AccessManagement.Domain.Organization.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManagement.Application.Authorization.Services;
@@ -28,17 +29,20 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
     private readonly IActorAccessService _actorAccess;
     private readonly IApplicationDbContext _db;
     private readonly IOrganizationalUnitHierarchy _units;
+    private readonly LineManagerTargetPolicy _targets;
 
     public CompanyVisibilityService(
         ICurrentUser currentUser,
         IActorAccessService actorAccess,
         IApplicationDbContext db,
-        IOrganizationalUnitHierarchy units)
+        IOrganizationalUnitHierarchy units,
+        LineManagerTargetPolicy targets)
     {
         _currentUser = currentUser;
         _actorAccess = actorAccess;
         _db = db;
         _units = units;
+        _targets = targets;
     }
 
     public async Task<bool> IsAdminAsync(CancellationToken ct = default)
@@ -55,7 +59,7 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
     {
         if (_currentUser.UserId is null)
         {
-            return;
+            throw new ForbiddenAccessException();
         }
 
         if (!await IsAdminAsync(ct))
@@ -69,7 +73,7 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
         if (_currentUser.UserId is not Guid userId)
         {
             return new CompanyVisibility(
-                true,
+                false,
                 _currentUser.ActiveCompanyId,
                 new HashSet<Guid>(),
                 new HashSet<Guid>(),
@@ -95,22 +99,21 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
         var descendantIds = await _units.GetDescendantIdsAsync(companyId, ct);
         var unitIds = descendantIds.Append(companyId).ToHashSet();
 
-        var positionIds = await _db.Positions
-            .AsNoTracking()
-            .Where(p => p.CompanyUnitId == companyId)
-            .Select(p => p.Id)
-            .ToListAsync(ct);
+        var actorPositionIds = await _targets.GetActorPositionIdsAsync(userId, companyId, ct);
+        var subordinatePositionIds = await _targets.GetSubordinatePositionIdsAsync(actorPositionIds, ct);
+        var visiblePositions = actorPositionIds.Concat(subordinatePositionIds).ToHashSet();
 
-        var positionSet = positionIds.ToHashSet();
         var now = DateTimeOffset.UtcNow;
-
-        var personnelRows = await _db.PositionAssignments
-            .AsNoTracking()
-            .Where(a => positionSet.Contains(a.PositionId)
-                     && a.ValidFrom <= now
-                     && (a.ValidTo == null || now <= a.ValidTo))
-            .Select(a => new { a.PersonnelId, a.Personnel.IdentityUserId })
-            .ToListAsync(ct);
+        var personnelRows = visiblePositions.Count == 0
+            ? []
+            : await _db.PositionAssignments
+                .AsNoTracking()
+                .Where(a => visiblePositions.Contains(a.PositionId)
+                         && a.ValidFrom <= now
+                         && (a.ValidTo == null || now <= a.ValidTo)
+                         && a.Personnel.Status == PersonnelStatus.Active)
+                .Select(a => new { a.PersonnelId, a.Personnel.IdentityUserId })
+                .ToListAsync(ct);
 
         var personnelIds = personnelRows.Select(r => r.PersonnelId).ToHashSet();
         var userIds = personnelRows
@@ -118,11 +121,17 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
             .Select(r => r.IdentityUserId!.Value)
             .ToHashSet();
 
-        if (_currentUser.UserId is Guid self)
+        userIds.Add(userId);
+        var selfPersonnelId = await _db.Personnel
+            .AsNoTracking()
+            .Where(p => p.IdentityUserId == userId)
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync(ct);
+        if (selfPersonnelId is Guid pid)
         {
-            userIds.Add(self);
+            personnelIds.Add(pid);
         }
 
-        return new CompanyVisibility(false, companyId, unitIds, positionSet, personnelIds, userIds);
+        return new CompanyVisibility(false, companyId, unitIds, visiblePositions, personnelIds, userIds);
     }
 }

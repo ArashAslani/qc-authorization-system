@@ -12,8 +12,7 @@ public record EvaluateAccessQuery(
     Guid UserId,
     string PermissionCode,
     Guid? ActivePositionId = null,
-    Guid? ResourceScopeUnitId = null,
-    DateTimeOffset? When = null) : IRequest<AccessDecisionDto>;
+    Guid? ResourceScopeUnitId = null) : IRequest<AccessDecisionDto>;
 
 public record AccessDecisionDto(
     bool Allowed,
@@ -23,20 +22,17 @@ public record AccessDecisionDto(
 public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, AccessDecisionDto>
 {
     private readonly IAccessEvaluator _evaluator;
-    private readonly IActorAccessService _actorAccess;
     private readonly ICurrentUser _currentUser;
     private readonly CompanyWorkspaceService _workspace;
     private readonly IApplicationDbContext _db;
 
     public EvaluateAccessQueryHandler(
         IAccessEvaluator evaluator,
-        IActorAccessService actorAccess,
         ICurrentUser currentUser,
         CompanyWorkspaceService workspace,
         IApplicationDbContext db)
     {
         _evaluator = evaluator;
-        _actorAccess = actorAccess;
         _currentUser = currentUser;
         _workspace = workspace;
         _db = db;
@@ -44,7 +40,7 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
 
     public async Task<AccessDecisionDto> Handle(EvaluateAccessQuery request, CancellationToken cancellationToken)
     {
-        var when = request.When ?? DateTimeOffset.UtcNow;
+        var when = DateTimeOffset.UtcNow;
         AccessManagement.Domain.Authorization.Evaluation.AccessDecision decision;
 
         if (request.ActivePositionId is Guid positionId)
@@ -70,12 +66,7 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
         }
         else
         {
-            decision = await _actorAccess.EvaluateAsync(
-                request.UserId,
-                null,
-                request.PermissionCode,
-                request.ResourceScopeUnitId,
-                cancellationToken);
+            throw new ForbiddenAccessException("An active company workspace is required.");
         }
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -98,6 +89,10 @@ public class EvaluateAccessQueryHandler : IRequestHandler<EvaluateAccessQuery, A
         if (_currentUser.ActiveCompanyId is Guid companyId)
         {
             query = query.Where(a => a.Position.CompanyUnitId == companyId);
+        }
+        else
+        {
+            throw new ForbiddenAccessException("An active company workspace is required.");
         }
 
         if (!await query.AnyAsync(cancellationToken))

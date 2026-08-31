@@ -74,5 +74,7 @@ public class Personnel : BaseAuditableEntity, IAggregateRoot
         IdentityUserId = identityUserId;
     }
 
-    public void MarkSystemUser(bool isSystemUser = true) => IsSystemUser = isSystemUser;
+    public void UnlinkIdentityUser() => IdentityUserId = null;
+
+    public void SetStatus(PersonnelStatus status) => Status = status;
 }
