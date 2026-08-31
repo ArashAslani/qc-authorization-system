@@ -59,7 +59,7 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
     {
         if (_currentUser.UserId is null)
         {
-            throw new ForbiddenAccessException();
+            throw new UnauthorizedAccessException();
         }
 
         if (!await IsAdminAsync(ct))
@@ -72,13 +72,7 @@ public sealed class CompanyVisibilityService : ICompanyVisibilityService
     {
         if (_currentUser.UserId is not Guid userId)
         {
-            return new CompanyVisibility(
-                false,
-                _currentUser.ActiveCompanyId,
-                new HashSet<Guid>(),
-                new HashSet<Guid>(),
-                new HashSet<Guid>(),
-                new HashSet<Guid>());
+            throw new UnauthorizedAccessException();
         }
 
         var isAdmin = await _actorAccess.IsUserAdminAsync(userId, _currentUser.ActiveCompanyId, ct);
